@@ -12,8 +12,8 @@ export function GameBoard() {
   // Wallet connection
   const wallet = useRiseWallet();
 
-  // Game state (only active when connected)
-  const game = useGameState(wallet.address);
+  // Game state (pass wallet to avoid duplicate hook instances)
+  const game = useGameState(wallet);
 
   // Determine game result
   const getGameResult = (): GameResult => {

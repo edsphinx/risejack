@@ -1,0 +1,14 @@
+node_modules
+dist
+out
+build
+.turbo
+coverage
+*.min.js
+*.min.css
+bun.lock
+pnpm-lock.yaml
+package-lock.json
+lib
+broadcast
+cache

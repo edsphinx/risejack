@@ -12,7 +12,27 @@ export const riseTestnet = {
     },
 } as const;
 
-export const RISEJACK_ADDRESS = '0x8a0AaDE6ebDaEF9993084a29a46BD1C93eC6001a' as Address;
+// Default contract address (can be overridden by env variable)
+const DEFAULT_RISEJACK_ADDRESS = '0x8a0AaDE6ebDaEF9993084a29a46BD1C93eC6001a' as Address;
+
+/**
+ * Get RiseJack contract address from environment or use default
+ */
+export function getRiseJackAddress(): Address {
+    // Check for environment variable (Vite format)
+    const envAddress = typeof import.meta !== 'undefined'
+        ? (import.meta as { env?: Record<string, string> }).env?.VITE_RISEJACK_ADDRESS
+        : undefined;
+
+    if (envAddress && /^0x[a-fA-F0-9]{40}$/.test(envAddress)) {
+        return envAddress as Address;
+    }
+
+    return DEFAULT_RISEJACK_ADDRESS;
+}
+
+// Export for convenience (uses env or default)
+export const RISEJACK_ADDRESS = getRiseJackAddress();
 
 export const RISEJACK_ABI = [
     { type: 'function', name: 'getGameState', inputs: [{ name: 'player', type: 'address' }], outputs: [{ name: '', type: 'tuple', components: [{ name: 'player', type: 'address' }, { name: 'bet', type: 'uint256' }, { name: 'playerCards', type: 'uint8[]' }, { name: 'dealerCards', type: 'uint8[]' }, { name: 'state', type: 'uint8' }, { name: 'timestamp', type: 'uint256' }, { name: 'isDoubled', type: 'bool' }] }], stateMutability: 'view' },

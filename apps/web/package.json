@@ -12,10 +12,12 @@
         "clean": "rm -rf dist node_modules/.vite"
     },
     "dependencies": {
-        "preact": "^10.25.4",
-        "viem": "^2.21.54",
+        "@risejack/shared": "workspace:*",
         "ox": "^0.6.7",
-        "@risejack/shared": "workspace:*"
+        "porto": "^0.2.37",
+        "preact": "^10.25.4",
+        "rise-wallet-sdk": "^0.1.1",
+        "viem": "^2.21.54"
     },
     "devDependencies": {
         "@preact/preset-vite": "^2.9.4",

@@ -856,6 +856,91 @@ contract RiseJackTest is Test {
         }
     }
 
+    // ==================== PHASE 3: VRF TIMEOUT TESTS ====================
+
+    function test_RetryVRFRequest() public {
+        // Place bet to create a VRF request
+        vm.prank(player);
+        risejack.placeBet{value: 0.01 ether}();
+        
+        // Warp time past VRF_TIMEOUT
+        vm.warp(block.timestamp + 5 minutes + 1);
+        
+        // Anyone can retry the request
+        risejack.retryVRFRequest(1);
+        
+        // Should have created a new request (id 2)
+        // The old request should be marked as fulfilled
+        // New request should be pending
+    }
+
+    function test_RetryVRFRequestTooEarly() public {
+        vm.prank(player);
+        risejack.placeBet{value: 0.01 ether}();
+        
+        // Try to retry before timeout - should revert
+        vm.expectRevert("Request not timed out");
+        risejack.retryVRFRequest(1);
+    }
+
+    function test_ForceResolveGame() public {
+        vm.prank(player);
+        risejack.placeBet{value: 0.01 ether}();
+        
+        uint256 playerBalanceBefore = player.balance;
+        
+        // Owner force resolves
+        risejack.forceResolveGame(player);
+        
+        // Player should receive full refund
+        assertEq(player.balance, playerBalanceBefore + 0.01 ether, "Should receive full refund");
+        
+        // Game should be reset
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.Idle), "Game should be idle");
+    }
+
+    function test_ForceResolveGameOnlyOwner() public {
+        vm.prank(player);
+        risejack.placeBet{value: 0.01 ether}();
+        
+        // Non-owner tries to force resolve - should revert
+        vm.prank(player);
+        vm.expectRevert("Only owner");
+        risejack.forceResolveGame(player);
+    }
+
+    function test_ForceResolveDoubledGame() public {
+        vm.prank(player);
+        risejack.placeBet{value: 0.01 ether}();
+        
+        // Deal cards
+        uint256[] memory randomNumbers = new uint256[](4);
+        randomNumbers[0] = 5;  // Player: 6
+        randomNumbers[1] = 9;  // Dealer: 10
+        randomNumbers[2] = 8;  // Player: 9 (total 15)
+        randomNumbers[3] = 7;  // Dealer: 8
+        
+        vm.prank(vrfCoordinator);
+        risejack.rawFulfillRandomNumbers(1, randomNumbers);
+        
+        // Double down (pays another 0.01 ether, total bet now 0.02 ether)
+        vm.prank(player);
+        risejack.double{value: 0.01 ether}();
+        
+        uint256 playerBalanceBefore = player.balance;
+        
+        // Owner force resolves
+        risejack.forceResolveGame(player);
+        
+        // Player should receive full bet amount (0.02 ether - the total wagered)
+        assertEq(player.balance, playerBalanceBefore + 0.02 ether, "Should receive full bet refund");
+        
+        // Game should be reset
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.Idle), "Game should be idle");
+    }
+
     // Receive function for contract to receive ETH from withdrawHouseFunds
     receive() external payable {}
 }

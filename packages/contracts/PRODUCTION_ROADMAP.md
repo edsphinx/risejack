@@ -126,14 +126,14 @@ Comparison against standard casino blackjack rules:
   - [x] Implement `cancelTimedOutGame()` for timed out games
   - [x] Refund logic for abandoned bets
 
-- [ ] **3.2 VRF Request Timeout**
-  - [ ] Track VRF request timestamps
-  - [ ] Implement retry mechanism
-  - [ ] Handle permanently unfulfilled requests
+- [x] **3.2 VRF Request Timeout**
+  - [x] Track VRF request timestamps (`VRFRequest.timestamp`)
+  - [x] Implement retry mechanism (`retryVRFRequest()`)
+  - [x] Handle permanently unfulfilled requests (5 min timeout)
 
 - [x] **3.3 Admin Emergency Functions**
   - [x] `pause()` for emergencies
-  - [ ] `forceResolveGame()` for stuck games
+  - [x] `forceResolveGame()` for stuck games
   - [x] Proper access control on emergency functions
 
 ---

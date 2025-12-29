@@ -1,24 +1,23 @@
 import type { Address } from 'viem';
 
 /**
- * Session key data for Rise Wallet
+ * Session metadata for Rise Wallet
+ * Note: Porto manages private keys securely - we only store metadata
  */
 export interface SessionKeyData {
-    privateKey: Address;
-    publicKey: Address;
-    expiry: number;
-    createdAt: number;
-    address: Address;
+  expiry: number;
+  createdAt: number;
+  address: Address;
 }
 
 /**
  * Time remaining for session key
  */
 export interface TimeRemaining {
-    seconds: number;
-    minutes: number;
-    hours: number;
-    expired: boolean;
+  seconds: number;
+  minutes: number;
+  hours: number;
+  expired: boolean;
 }
 
 /**

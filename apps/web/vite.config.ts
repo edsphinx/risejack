@@ -18,7 +18,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      // React compat for any libraries that need it
+      // React compat for wagmi and react-query
       react: 'preact/compat',
       'react-dom': 'preact/compat',
       'react/jsx-runtime': 'preact/jsx-runtime',
@@ -36,12 +36,13 @@ export default defineConfig({
       output: {
         manualChunks: {
           viem: ['viem'],
+          'rise-wallet': ['rise-wallet', 'wagmi', '@tanstack/react-query'],
         },
       },
     },
   },
 
   optimizeDeps: {
-    include: ['preact', 'viem'],
+    include: ['preact', 'viem', 'rise-wallet', 'wagmi', '@tanstack/react-query', 'ox', 'shreds'],
   },
 });

@@ -1,0 +1,28 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "types": [
+            "bun-types"
+        ],
+        "baseUrl": ".",
+        "outDir": "./dist",
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ],
+            "@risejack/shared": [
+                "../../packages/shared/src"
+            ],
+            "@risejack/shared/*": [
+                "../../packages/shared/src/*"
+            ]
+        }
+    },
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

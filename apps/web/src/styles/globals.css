@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =================================================
+   RISE BLACKJACK - GLOBAL STYLES
+   ================================================= */
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #073d1d;
+  color: white;
+}
+
+/* -------------------- TIMING VARIABLES -------------------- */
+:root {
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-back: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  --duration-fast: 0.2s;
+  --duration-normal: 0.4s;
+  --duration-slow: 0.6s;
+}
+
+/* -------------------- CARD FLIP -------------------- */
+.card {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.card-inner {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform var(--duration-normal) var(--ease-back);
+}
+
+.card.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* -------------------- CARD INTERACTIONS -------------------- */
+.card-interactive {
+  transition: transform var(--duration-fast) var(--ease-bounce);
+}
+
+.card-interactive:hover {
+  transform: translateY(-8px) scale(1.02);
+}
+
+.card-interactive:active {
+  transform: scale(0.98);
+}
+
+/* -------------------- BUTTON INTERACTIONS -------------------- */
+.btn-game {
+  transition: all var(--duration-fast) var(--ease-bounce);
+}
+
+.btn-game:hover {
+  transform: scale(1.05);
+}
+
+.btn-game:active {
+  transform: scale(0.95);
+}
+
+.btn-game:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* -------------------- WIN GLOW -------------------- */
+.win-glow {
+  animation: win-pulse 1.5s ease-in-out infinite;
+}
+
+/* -------------------- LOADING SKELETON -------------------- */
+.skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, #1a1a2e 25%, #2a2a4e 50%, #1a1a2e 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* -------------------- SLIDE TRANSITIONS -------------------- */
+.slide-in-right {
+  animation: slide-in-right var(--duration-normal) var(--ease-bounce);
+}
+
+@keyframes slide-in-right {
+  0% { transform: translateX(100%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+.slide-in-up {
+  animation: slide-in-up var(--duration-normal) var(--ease-bounce);
+}
+
+@keyframes slide-in-up {
+  0% { transform: translateY(50px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}

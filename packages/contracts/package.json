@@ -1,0 +1,21 @@
+{
+    "name": "@risejack/contracts",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "forge build",
+        "test": "forge test",
+        "test:gas": "forge test --gas-report",
+        "coverage": "forge coverage",
+        "deploy:local": "forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast",
+        "deploy:testnet": "forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify",
+        "clean": "forge clean",
+        "fmt": "forge fmt",
+        "snapshot": "forge snapshot",
+        "typecheck": "echo 'No TypeScript in contracts'"
+    },
+    "devDependencies": {
+        "typescript": "^5.7.2"
+    }
+}

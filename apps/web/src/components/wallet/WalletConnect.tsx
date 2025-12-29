@@ -105,11 +105,22 @@ export function WalletConnect({
         </div>
       )}
 
-      {/* Address Badge */}
-      <div className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 flex items-center gap-2">
+      {/* Address Badge - Click to copy */}
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(account!);
+          // Optional: show copied feedback
+          const btn = document.activeElement as HTMLElement;
+          btn.setAttribute('data-copied', 'true');
+          setTimeout(() => btn.removeAttribute('data-copied'), 1500);
+        }}
+        className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 flex items-center gap-2 hover:bg-slate-700 transition-colors cursor-pointer group"
+        title={`Click to copy: ${account}`}
+      >
         <div className="w-2 h-2 bg-green-500 rounded-full" />
         <span className="text-white font-mono text-sm">{shortenAddress(account!)}</span>
-      </div>
+        <span className="text-slate-500 group-hover:text-slate-300 text-xs">📋</span>
+      </button>
 
       {/* Disconnect */}
       <button

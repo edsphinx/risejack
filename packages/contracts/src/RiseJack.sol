@@ -54,6 +54,17 @@ contract RiseJack is IVRFConsumer {
     /// @notice Game timeout - after this time, game can be cancelled
     uint256 public constant GAME_TIMEOUT = 1 hours;
 
+    /// @notice Blackjack game constants
+    uint8 public constant BLACKJACK_VALUE = 21;
+    uint8 public constant DEALER_STAND_VALUE = 17;
+    uint8 public constant ACE_HIGH_VALUE = 11;
+    uint8 public constant ACE_LOW_VALUE = 1;
+    uint8 public constant FACE_CARD_VALUE = 10;
+    uint8 public constant RANKS_PER_SUIT = 13;
+    uint8 public constant NUM_SUITS = 4;
+    uint8 public constant MAX_DEALER_CARDS = 10;
+    uint8 public constant MAX_DEALER_DRAW_ESTIMATE = 5;
+
     // ==================== STRUCTS ====================
 
     struct Game {
@@ -110,6 +121,12 @@ contract RiseJack is IVRFConsumer {
     event CircuitBreakerTriggered(uint256 lossAmount, uint256 timeWindow);
     event ReserveLow(uint256 currentBalance, uint256 minRequired);
     event GameTimedOut(address indexed player, uint256 refund);
+    
+    // Admin events
+    event BetLimitsChanged(uint256 newMinBet, uint256 newMaxBet);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event DailyProfitLimitChanged(uint256 newLimit);
+    event MinReserveChanged(uint256 newReserve);
 
     // ==================== STATE ====================
 
@@ -705,8 +722,8 @@ contract RiseJack is IVRFConsumer {
      * @return rank 0-12 (A, 2-10, J, Q, K)
      * @return suit 0-3 (Hearts, Diamonds, Clubs, Spades)
      */
-    function getCardInfo(uint8 card) public pure returns (uint8 rank, uint8 suit) {
-        return (card % 13, card / 13);
+    function getCardInfo(uint8 card) external pure returns (uint8 rank, uint8 suit) {
+        return (card % RANKS_PER_SUIT, card / RANKS_PER_SUIT);
     }
 
     // ==================== VIEW FUNCTIONS ====================
@@ -795,6 +812,7 @@ contract RiseJack is IVRFConsumer {
         require(_maxBet > _minBet, "Max must exceed min");
         minBet = _minBet;
         maxBet = _maxBet;
+        emit BetLimitsChanged(_minBet, _maxBet);
     }
 
     function withdrawHouseFunds(uint256 amount) external onlyOwner {
@@ -806,7 +824,9 @@ contract RiseJack is IVRFConsumer {
 
     function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0), "Invalid owner");
+        address previousOwner = owner;
         owner = newOwner;
+        emit OwnershipTransferred(previousOwner, newOwner);
     }
 
     // ==================== HOUSE PROTECTION ADMIN ====================
@@ -838,6 +858,7 @@ contract RiseJack is IVRFConsumer {
     function setDailyProfitLimit(uint256 _limit) external onlyOwner {
         require(_limit > 0, "Limit must be positive");
         dailyProfitLimit = _limit;
+        emit DailyProfitLimitChanged(_limit);
     }
 
     /**
@@ -845,6 +866,7 @@ contract RiseJack is IVRFConsumer {
      */
     function setMinReserve(uint256 _reserve) external onlyOwner {
         minReserve = _reserve;
+        emit MinReserveChanged(_reserve);
     }
 
     /**

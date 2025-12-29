@@ -2,9 +2,8 @@
 pragma solidity ^0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Blackjack} from "../src/Blackjack.sol";
+import {RiseJack} from "../src/RiseJack.sol";
 import {IVRFCoordinator} from "../src/interfaces/IVRFCoordinator.sol";
-import {IVRFConsumer} from "../src/interfaces/IVRFConsumer.sol";
 
 /**
  * @title MockVRFCoordinator
@@ -31,11 +30,11 @@ contract MockVRFCoordinator is IVRFCoordinator {
 }
 
 /**
- * @title BlackjackTest
- * @notice Test suite for Blackjack contract with VRF
+ * @title RiseJackTest
+ * @notice Test suite for RiseJack contract with VRF
  */
-contract BlackjackTest is Test {
-    Blackjack public blackjack;
+contract RiseJackTest is Test {
+    RiseJack public risejack;
     MockVRFCoordinator public mockVRF;
     
     address public player = address(0x1);
@@ -47,43 +46,43 @@ contract BlackjackTest is Test {
         vrfCoordinator = address(mockVRF);
         
         // Deploy Blackjack with mock VRF coordinator (dependency injection)
-        blackjack = new Blackjack(vrfCoordinator);
+        risejack = new RiseJack(vrfCoordinator);
         
         // Fund accounts
         vm.deal(player, 10 ether);
-        vm.deal(address(blackjack), 100 ether);
+        vm.deal(address(risejack), 100 ether);
     }
 
     // ==================== PLACE BET TESTS ====================
 
     function test_PlaceBet() public {
         vm.prank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
-        Blackjack.Game memory game = blackjack.getGameState(player);
+        RiseJack.Game memory game = risejack.getGameState(player);
         assertEq(game.player, player);
         assertEq(game.bet, 0.01 ether);
-        assertEq(uint256(game.state), uint256(Blackjack.GameState.WaitingForDeal));
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.WaitingForDeal));
     }
 
     function test_RevertOnBelowMinBet() public {
         vm.prank(player);
         vm.expectRevert("Invalid bet amount");
-        blackjack.placeBet{value: 0.0001 ether}();
+        risejack.placeBet{value: 0.0001 ether}();
     }
 
     function test_RevertOnAboveMaxBet() public {
         vm.prank(player);
         vm.expectRevert("Invalid bet amount");
-        blackjack.placeBet{value: 2 ether}();
+        risejack.placeBet{value: 2 ether}();
     }
 
     function test_RevertOnDoublePlace() public {
         vm.startPrank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
         vm.expectRevert("Invalid game state");
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         vm.stopPrank();
     }
 
@@ -92,7 +91,7 @@ contract BlackjackTest is Test {
     function test_InitialDeal() public {
         // Place bet (this generates requestId = 1)
         vm.prank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
         // Simulate VRF callback with specific cards
         uint256[] memory randomNumbers = new uint256[](4);
@@ -103,17 +102,17 @@ contract BlackjackTest is Test {
         
         // Call from VRF coordinator
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(1, randomNumbers);
+        risejack.rawFulfillRandomNumbers(1, randomNumbers);
         
-        Blackjack.Game memory game = blackjack.getGameState(player);
-        assertEq(uint256(game.state), uint256(Blackjack.GameState.PlayerTurn));
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.PlayerTurn));
         assertEq(game.playerCards.length, 2);
         assertEq(game.dealerCards.length, 2);
     }
 
     function test_PlayerBlackjack() public {
         vm.prank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
         // Give player blackjack: Ace + King
         uint256[] memory randomNumbers = new uint256[](4);
@@ -125,20 +124,20 @@ contract BlackjackTest is Test {
         uint256 playerBalanceBefore = player.balance;
         
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(1, randomNumbers);
+        risejack.rawFulfillRandomNumbers(1, randomNumbers);
         
         // Player should have received 3:2 payout
         // Payout: 0.01 * 1.5 + 0.01 = 0.025 ether
         assertEq(player.balance, playerBalanceBefore + 0.025 ether);
         
         // Game should be reset
-        Blackjack.Game memory game = blackjack.getGameState(player);
-        assertEq(uint256(game.state), uint256(Blackjack.GameState.Idle));
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.Idle));
     }
 
     function test_DealerBlackjack() public {
         vm.prank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
         // Give dealer blackjack: Ace + King
         uint256[] memory randomNumbers = new uint256[](4);
@@ -150,19 +149,19 @@ contract BlackjackTest is Test {
         uint256 playerBalanceBefore = player.balance;
         
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(1, randomNumbers);
+        risejack.rawFulfillRandomNumbers(1, randomNumbers);
         
         // Player loses, no payout
         assertEq(player.balance, playerBalanceBefore);
         
         // Game should be reset
-        Blackjack.Game memory game = blackjack.getGameState(player);
-        assertEq(uint256(game.state), uint256(Blackjack.GameState.Idle));
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.Idle));
     }
 
     function test_BothBlackjack() public {
         vm.prank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
         // Both get blackjack
         uint256[] memory randomNumbers = new uint256[](4);
@@ -174,7 +173,7 @@ contract BlackjackTest is Test {
         uint256 playerBalanceBefore = player.balance;
         
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(1, randomNumbers);
+        risejack.rawFulfillRandomNumbers(1, randomNumbers);
         
         // Push - player gets bet back
         assertEq(player.balance, playerBalanceBefore + 0.01 ether);
@@ -185,7 +184,7 @@ contract BlackjackTest is Test {
     function test_Hit() public {
         // Setup: place bet and deal initial cards
         vm.prank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
         uint256[] memory initialCards = new uint256[](4);
         initialCards[0] = 5;  // Player: 6
@@ -194,30 +193,30 @@ contract BlackjackTest is Test {
         initialCards[3] = 7;  // Dealer: 8
         
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(1, initialCards);
+        risejack.rawFulfillRandomNumbers(1, initialCards);
         
         // Player hits
         vm.prank(player);
-        blackjack.hit();
+        risejack.hit();
         
-        Blackjack.Game memory game = blackjack.getGameState(player);
-        assertEq(uint256(game.state), uint256(Blackjack.GameState.WaitingForHit));
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.WaitingForHit));
         
         // VRF callback for hit (requestId = 2)
         uint256[] memory hitCard = new uint256[](1);
         hitCard[0] = 4; // 5 (total now 18)
         
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(2, hitCard);
+        risejack.rawFulfillRandomNumbers(2, hitCard);
         
-        game = blackjack.getGameState(player);
-        assertEq(uint256(game.state), uint256(Blackjack.GameState.PlayerTurn));
+        game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.PlayerTurn));
         assertEq(game.playerCards.length, 3);
     }
 
     function test_HitAndBust() public {
         vm.prank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
         // Deal high cards
         uint256[] memory initialCards = new uint256[](4);
@@ -227,11 +226,11 @@ contract BlackjackTest is Test {
         initialCards[3] = 7;   // Dealer: 8
         
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(1, initialCards);
+        risejack.rawFulfillRandomNumbers(1, initialCards);
         
         // Player foolishly hits on 20
         vm.prank(player);
-        blackjack.hit();
+        risejack.hit();
         
         // Hit gives another face card - bust!
         uint256[] memory hitCard = new uint256[](1);
@@ -240,20 +239,20 @@ contract BlackjackTest is Test {
         uint256 playerBalanceBefore = player.balance;
         
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(2, hitCard);
+        risejack.rawFulfillRandomNumbers(2, hitCard);
         
         // Player busted, loses bet
         assertEq(player.balance, playerBalanceBefore);
         
-        Blackjack.Game memory game = blackjack.getGameState(player);
-        assertEq(uint256(game.state), uint256(Blackjack.GameState.Idle));
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.Idle));
     }
 
     // ==================== STAND TESTS ====================
 
     function test_Stand() public {
         vm.prank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
         // Deal: Player 20, Dealer showing 6
         uint256[] memory initialCards = new uint256[](4);
@@ -263,22 +262,22 @@ contract BlackjackTest is Test {
         initialCards[3] = 9;   // Dealer: 10 (hidden, total 16)
         
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(1, initialCards);
+        risejack.rawFulfillRandomNumbers(1, initialCards);
         
         // Player stands
         vm.prank(player);
-        blackjack.stand();
+        risejack.stand();
         
         // Dealer has 16, must hit
-        Blackjack.Game memory game = blackjack.getGameState(player);
-        assertEq(uint256(game.state), uint256(Blackjack.GameState.DealerTurn));
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.DealerTurn));
     }
 
     // ==================== SURRENDER TEST ====================
 
     function test_Surrender() public {
         vm.prank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
         // Deal initial cards
         uint256[] memory initialCards = new uint256[](4);
@@ -288,20 +287,20 @@ contract BlackjackTest is Test {
         initialCards[3] = 7;  // Dealer: 8
         
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(1, initialCards);
+        risejack.rawFulfillRandomNumbers(1, initialCards);
         
         uint256 playerBalanceBefore = player.balance;
         
         // Surrender
         vm.prank(player);
-        blackjack.surrender();
+        risejack.surrender();
         
         // Should get half bet back
         assertEq(player.balance, playerBalanceBefore + 0.005 ether);
         
         // Game should be reset
-        Blackjack.Game memory game = blackjack.getGameState(player);
-        assertEq(uint256(game.state), uint256(Blackjack.GameState.Idle));
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.Idle));
     }
 
     // ==================== HAND VALUE TESTS ====================
@@ -310,7 +309,7 @@ contract BlackjackTest is Test {
         uint8[] memory cards = new uint8[](2);
         cards[0] = 9;  // 10
         cards[1] = 6;  // 7
-        (uint8 value, bool isSoft) = blackjack.calculateHandValue(cards);
+        (uint8 value, bool isSoft) = risejack.calculateHandValue(cards);
         assertEq(value, 17);
         assertEq(isSoft, false);
     }
@@ -319,7 +318,7 @@ contract BlackjackTest is Test {
         uint8[] memory cards = new uint8[](2);
         cards[0] = 0;  // Ace
         cards[1] = 6;  // 7
-        (uint8 value, bool isSoft) = blackjack.calculateHandValue(cards);
+        (uint8 value, bool isSoft) = risejack.calculateHandValue(cards);
         assertEq(value, 18);
         assertEq(isSoft, true);
     }
@@ -329,7 +328,7 @@ contract BlackjackTest is Test {
         cards[0] = 0;  // Ace
         cards[1] = 6;  // 7
         cards[2] = 8;  // 9
-        (uint8 value, bool isSoft) = blackjack.calculateHandValue(cards);
+        (uint8 value, bool isSoft) = risejack.calculateHandValue(cards);
         assertEq(value, 17);
         assertEq(isSoft, false);
     }
@@ -338,16 +337,16 @@ contract BlackjackTest is Test {
         uint8[] memory cards = new uint8[](2);
         cards[0] = 0;   // Ace = 11
         cards[1] = 12;  // King = 10
-        (uint8 value,) = blackjack.calculateHandValue(cards);
+        (uint8 value,) = risejack.calculateHandValue(cards);
         assertEq(value, 21);
     }
 
     function test_GetCardInfo() public view {
-        (uint8 rank, uint8 suit) = blackjack.getCardInfo(0);
+        (uint8 rank, uint8 suit) = risejack.getCardInfo(0);
         assertEq(rank, 0);   // Ace
         assertEq(suit, 0);   // Hearts
         
-        (rank, suit) = blackjack.getCardInfo(51);
+        (rank, suit) = risejack.getCardInfo(51);
         assertEq(rank, 12);  // King
         assertEq(suit, 3);   // Spades
     }
@@ -356,24 +355,24 @@ contract BlackjackTest is Test {
 
     function test_OnlyVRFCanFulfill() public {
         vm.prank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
         uint256[] memory randomNumbers = new uint256[](4);
         
         vm.prank(player);
         vm.expectRevert("Only VRF coordinator");
-        blackjack.rawFulfillRandomNumbers(1, randomNumbers);
+        risejack.rawFulfillRandomNumbers(1, randomNumbers);
     }
 
     function test_CannotHitDuringWrongState() public {
         vm.prank(player);
         vm.expectRevert("Invalid game state");
-        blackjack.hit();
+        risejack.hit();
     }
 
     function test_CannotSurrenderAfterHit() public {
         vm.prank(player);
-        blackjack.placeBet{value: 0.01 ether}();
+        risejack.placeBet{value: 0.01 ether}();
         
         uint256[] memory initialCards = new uint256[](4);
         initialCards[0] = 5;
@@ -382,21 +381,21 @@ contract BlackjackTest is Test {
         initialCards[3] = 7;
         
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(1, initialCards);
+        risejack.rawFulfillRandomNumbers(1, initialCards);
         
         // Hit first
         vm.prank(player);
-        blackjack.hit();
+        risejack.hit();
         
         uint256[] memory hitCard = new uint256[](1);
         hitCard[0] = 2;
         
         vm.prank(vrfCoordinator);
-        blackjack.rawFulfillRandomNumbers(2, hitCard);
+        risejack.rawFulfillRandomNumbers(2, hitCard);
         
         // Try to surrender after hit - should fail
         vm.prank(player);
         vm.expectRevert("Can only surrender on initial hand");
-        blackjack.surrender();
+        risejack.surrender();
     }
 }

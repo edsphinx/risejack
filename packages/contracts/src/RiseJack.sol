@@ -5,8 +5,8 @@ import {IVRFConsumer} from "./interfaces/IVRFConsumer.sol";
 import {IVRFCoordinator} from "./interfaces/IVRFCoordinator.sol";
 
 /**
- * @title Blackjack
- * @author Rise Blackjack Team
+ * @title RiseJack
+ * @author edsphinx
  * @notice On-chain Blackjack game with provably fair randomness via Rise VRF
  * @dev Uses Rise Chain VRF for card dealing with async callback pattern
  *
@@ -26,7 +26,7 @@ import {IVRFCoordinator} from "./interfaces/IVRFCoordinator.sol";
  *   4. Circuit breaker: Emergency pause on anomalous losses
  *   5. Rate limiting: Prevents rapid-fire betting attacks
  */
-contract Blackjack is IVRFConsumer {
+contract RiseJack is IVRFConsumer {
     // ==================== CONSTANTS ====================
 
     /// @notice Rise Chain Testnet VRF Coordinator (default)

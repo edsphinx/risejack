@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
-import {Blackjack} from "../src/Blackjack.sol";
+import {RiseJack} from "../src/RiseJack.sol";
 import {MockVRFCoordinator} from "../src/mocks/MockVRFCoordinator.sol";
 
 contract DeployScript is Script {
@@ -31,12 +31,12 @@ contract DeployScript is Script {
             console.log("Using Rise Testnet VRF Coordinator");
         }
         
-        Blackjack blackjack = new Blackjack(vrfCoordinator);
-        console.log("Blackjack deployed to:", address(blackjack));
+        RiseJack risejack = new RiseJack(vrfCoordinator);
+        console.log("RiseJack deployed to:", address(risejack));
         
         // Fund contract for payouts (optional, can be done later)
         if (isLocal) {
-            (bool success,) = address(blackjack).call{value: 10 ether}("");
+            (bool success,) = address(risejack).call{value: 10 ether}("");
             require(success, "Funding failed");
             console.log("Contract funded with 10 ETH");
         }
@@ -59,11 +59,11 @@ contract DeployLocal is Script {
         console.log("Mock VRF Coordinator:", address(mockVRF));
         
         // Deploy Blackjack with Mock VRF
-        Blackjack blackjack = new Blackjack(address(mockVRF));
-        console.log("Blackjack:", address(blackjack));
+        RiseJack risejack = new RiseJack(address(mockVRF));
+        console.log("Blackjack:", address(risejack));
         
         // Fund contract
-        (bool success,) = address(blackjack).call{value: 10 ether}("");
+        (bool success,) = address(risejack).call{value: 10 ether}("");
         require(success, "Funding failed");
         console.log("Funded with 10 ETH");
         
@@ -81,8 +81,8 @@ contract DeployTestnet is Script {
         vm.startBroadcast(deployerPrivateKey);
         
         // Deploy with default Rise VRF (address(0) triggers default)
-        Blackjack blackjack = new Blackjack(address(0));
-        console.log("Blackjack deployed to:", address(blackjack));
+        RiseJack risejack = new RiseJack(address(0));
+        console.log("RiseJack deployed to:", address(risejack));
         
         vm.stopBroadcast();
     }

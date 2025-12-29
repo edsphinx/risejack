@@ -1,0 +1,115 @@
+name: Contracts CI
+
+on:
+  push:
+    branches: [main, develop, feature/*]
+    paths:
+      - 'packages/contracts/**'
+      - '.github/workflows/contracts.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'packages/contracts/**'
+      - '.github/workflows/contracts.yml'
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/contracts
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Check forge version
+        run: forge --version
+
+      - name: Cache Foundry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.foundry/cache
+            packages/contracts/cache
+            packages/contracts/out
+          key: foundry-${{ runner.os }}-${{ hashFiles('packages/contracts/foundry.toml') }}
+          restore-keys: |
+            foundry-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Build contracts
+        run: forge build --sizes
+
+      - name: Run tests
+        run: forge test -vvv
+
+      - name: Run coverage
+        run: forge coverage --no-match-coverage "script|mocks"
+        continue-on-error: true
+
+      - name: Check gas snapshots
+        run: forge snapshot --check --tolerance 5
+        continue-on-error: true
+
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/contracts
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run forge fmt check
+        run: forge fmt --check
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/contracts
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Slither
+        run: pip3 install slither-analyzer
+
+      - name: Run Slither
+        run: slither src/ --solc-remaps "@=lib/" --exclude-dependencies
+        continue-on-error: true
+

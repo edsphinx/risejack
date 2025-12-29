@@ -37,6 +37,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Fuzzing & Static Analysis
+packages/contracts/medusa-corpus/
+packages/contracts/medusa-logs/
+packages/contracts/crytic-export/
+packages/contracts/slither_results.json
+
 # Testing
 coverage/
 

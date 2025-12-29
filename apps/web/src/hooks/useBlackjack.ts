@@ -95,16 +95,24 @@ export function useBlackjack() {
                 transport: custom(window.ethereum!),
             });
 
-            const params = {
-                address: RISEJACK_ADDRESS,
-                abi: RISEJACK_ABI,
-                functionName,
-                account,
-            } as const;
+            let hash: `0x${string}`;
 
-            const hash = await walletClient.writeContract(
-                value ? { ...params, value } : params
-            );
+            if (value) {
+                hash = await walletClient.writeContract({
+                    address: RISEJACK_ADDRESS,
+                    abi: RISEJACK_ABI,
+                    functionName: functionName as 'placeBet' | 'double',
+                    account,
+                    value,
+                });
+            } else {
+                hash = await walletClient.writeContract({
+                    address: RISEJACK_ADDRESS,
+                    abi: RISEJACK_ABI,
+                    functionName: functionName as 'hit' | 'stand' | 'surrender',
+                    account,
+                });
+            }
 
             await publicClient.waitForTransactionReceipt({ hash });
             await fetchGameState();

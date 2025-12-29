@@ -13,8 +13,5 @@ interface IVRFConsumer {
      * @param requestId The request ID returned from requestRandomNumbers
      * @param randomNumbers Array of random numbers
      */
-    function rawFulfillRandomNumbers(
-        uint256 requestId,
-        uint256[] memory randomNumbers
-    ) external;
+    function rawFulfillRandomNumbers(uint256 requestId, uint256[] memory randomNumbers) external;
 }

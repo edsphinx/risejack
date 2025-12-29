@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IVRFConsumer} from "./interfaces/IVRFConsumer.sol";
-import {IVRFCoordinator} from "./interfaces/IVRFCoordinator.sol";
+import { IVRFConsumer } from "./interfaces/IVRFConsumer.sol";
+import { IVRFCoordinator } from "./interfaces/IVRFCoordinator.sol";
 
 /**
  * @title RiseJack
@@ -81,34 +81,36 @@ contract RiseJack is IVRFConsumer {
         uint8[] dealerCards;
         GameState state;
         uint256 timestamp;
-        bool isDoubled;  // Track if player doubled down
+        bool isDoubled; // Track if player doubled down
     }
 
     struct VRFRequest {
         address player;
         RequestType requestType;
         bool fulfilled;
-        uint256 timestamp;  // When the request was made
+        uint256 timestamp; // When the request was made
     }
 
     // ==================== ENUMS ====================
 
     enum GameState {
-        Idle,           // No active game
+        Idle, // No active game
         WaitingForDeal, // Waiting for initial cards VRF
-        PlayerTurn,     // Player can hit/stand/double/surrender
-        WaitingForHit,  // Waiting for hit card VRF
-        DealerTurn,     // Dealer drawing cards
-        PlayerWin,      // Player won
-        DealerWin,      // Dealer won
-        Push,           // Tie
+        PlayerTurn, // Player can hit/stand/double/surrender
+        WaitingForHit, // Waiting for hit card VRF
+        DealerTurn, // Dealer drawing cards
+        PlayerWin, // Player won
+        DealerWin, // Dealer won
+        Push, // Tie
         PlayerBlackjack // Player got 21 on initial deal
+
     }
 
     enum RequestType {
-        InitialDeal,    // Request for 4 cards (2 player + 2 dealer)
-        PlayerHit,      // Request for 1 card (player hit)
-        DealerDraw      // Request for dealer cards
+        InitialDeal, // Request for 4 cards (2 player + 2 dealer)
+        PlayerHit, // Request for 1 card (player hit)
+        DealerDraw // Request for dealer cards
+
     }
 
     // ==================== EVENTS ====================
@@ -121,7 +123,7 @@ contract RiseJack is IVRFConsumer {
     event HandValue(address indexed player, uint8 value, bool isSoft, bool isDealer);
     event PayoutFailed(address indexed player, uint256 amount);
     event Withdrawal(address indexed player, uint256 amount);
-    
+
     // House protection events
     event ContractPaused(string reason);
     event ContractUnpaused();
@@ -129,13 +131,13 @@ contract RiseJack is IVRFConsumer {
     event CircuitBreakerTriggered(uint256 lossAmount, uint256 timeWindow);
     event ReserveLow(uint256 currentBalance, uint256 minRequired);
     event GameTimedOut(address indexed player, uint256 refund);
-    
+
     // Admin events
     event BetLimitsChanged(uint256 newMinBet, uint256 newMaxBet);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event DailyProfitLimitChanged(uint256 newLimit);
     event MinReserveChanged(uint256 newReserve);
-    
+
     // VRF events
     event VRFRequestRetried(address indexed player, uint256 oldRequestId, uint256 newRequestId);
     event GameForceResolved(address indexed player, uint256 refund);
@@ -226,7 +228,9 @@ contract RiseJack is IVRFConsumer {
         }
     }
 
-    modifier checkDailyLimit(address player) {
+    modifier checkDailyLimit(
+        address player
+    ) {
         // Reset daily tracking if new day
         if (block.timestamp - lastProfitReset[player] >= 1 days) {
             dailyProfit[player] = 0;
@@ -237,10 +241,7 @@ contract RiseJack is IVRFConsumer {
     }
 
     modifier checkCooldown() {
-        require(
-            block.timestamp >= lastGameTimestamp[msg.sender] + GAME_COOLDOWN,
-            "Cooldown active"
-        );
+        require(block.timestamp >= lastGameTimestamp[msg.sender] + GAME_COOLDOWN, "Cooldown active");
         _;
     }
 
@@ -250,11 +251,14 @@ contract RiseJack is IVRFConsumer {
      * @notice Deploy Blackjack contract
      * @param _vrfCoordinator Address of VRF Coordinator (use address(0) for default Rise testnet)
      */
-    constructor(address _vrfCoordinator) {
+    constructor(
+        address _vrfCoordinator
+    ) {
         // Dependency injection: use provided coordinator or default to Rise testnet
         if (_vrfCoordinator == address(0)) {
             coordinator = IVRFCoordinator(DEFAULT_VRF_COORDINATOR);
         } else {
+            require(_vrfCoordinator.code.length > 0, "VRF must be contract");
             coordinator = IVRFCoordinator(_vrfCoordinator);
         }
         owner = msg.sender;
@@ -266,18 +270,18 @@ contract RiseJack is IVRFConsumer {
      * @notice Place a bet and start a new game
      * @dev Requests 4 random numbers for initial deal (2 player + 2 dealer)
      */
-    function placeBet() 
-        external 
-        payable 
-        whenNotPaused 
-        validBet 
-        gameInState(msg.sender, GameState.Idle) 
+    function placeBet()
+        external
+        payable
+        whenNotPaused
+        validBet
+        gameInState(msg.sender, GameState.Idle)
         checkDailyLimit(msg.sender)
         checkCooldown
     {
         // Track cooldown
         lastGameTimestamp[msg.sender] = block.timestamp;
-        
+
         // Track exposure (max possible payout)
         totalExposure += (msg.value * BLACKJACK_PAYOUT) / 100 + msg.value;
 
@@ -294,7 +298,8 @@ contract RiseJack is IVRFConsumer {
 
         // Request 4 random numbers for initial deal with improved seed
         uint256 nonce = playerNonces[msg.sender]++;
-        uint256 seed = uint256(keccak256(abi.encode(msg.sender, block.timestamp, block.prevrandao, nonce)));
+        uint256 seed =
+            uint256(keccak256(abi.encode(msg.sender, block.timestamp, block.prevrandao, nonce)));
         uint256 requestId = coordinator.requestRandomNumbers(4, seed);
 
         vrfRequests[requestId] = VRFRequest({
@@ -315,7 +320,11 @@ contract RiseJack is IVRFConsumer {
         games[msg.sender].state = GameState.WaitingForHit;
 
         uint256 nonce = playerNonces[msg.sender]++;
-        uint256 seed = uint256(keccak256(abi.encode(msg.sender, block.timestamp, games[msg.sender].playerCards.length, nonce)));
+        uint256 seed = uint256(
+            keccak256(
+                abi.encode(msg.sender, block.timestamp, games[msg.sender].playerCards.length, nonce)
+            )
+        );
         uint256 requestId = coordinator.requestRandomNumbers(1, seed);
 
         vrfRequests[requestId] = VRFRequest({
@@ -347,6 +356,10 @@ contract RiseJack is IVRFConsumer {
         games[msg.sender].bet += msg.value;
         games[msg.sender].isDoubled = true;
         games[msg.sender].state = GameState.WaitingForHit;
+
+        // Track additional exposure for doubled bet
+        // Note: doubled hands cannot get blackjack payout, max is 2x
+        totalExposure += msg.value * 2;
 
         uint256 nonce = playerNonces[msg.sender]++;
         uint256 seed = uint256(keccak256(abi.encode(msg.sender, block.timestamp, "double", nonce)));
@@ -400,12 +413,11 @@ contract RiseJack is IVRFConsumer {
         request.fulfilled = true;
         address player = request.player;
         Game storage game = games[player];
-        
+
         // Validate game is in a valid state for this callback
         require(
-            game.state == GameState.WaitingForDeal ||
-            game.state == GameState.WaitingForHit ||
-            game.state == GameState.DealerTurn,
+            game.state == GameState.WaitingForDeal || game.state == GameState.WaitingForHit
+                || game.state == GameState.DealerTurn,
             "Invalid game state for VRF callback"
         );
 
@@ -520,7 +532,9 @@ contract RiseJack is IVRFConsumer {
 
     // ==================== INTERNAL - DEALER LOGIC ====================
 
-    function _playDealer(address player) internal {
+    function _playDealer(
+        address player
+    ) internal {
         Game storage game = games[player];
         game.state = GameState.DealerTurn;
 
@@ -572,7 +586,9 @@ contract RiseJack is IVRFConsumer {
         }
     }
 
-    function _resolveDealerHand(address player) internal {
+    function _resolveDealerHand(
+        address player
+    ) internal {
         Game storage game = games[player];
 
         (uint8 dealerValue, bool isSoft) = calculateHandValue(game.dealerCards);
@@ -582,7 +598,9 @@ contract RiseJack is IVRFConsumer {
         if (_shouldDealerHit(dealerValue, isSoft) && game.dealerCards.length < 10) {
             // Need more cards - request one more with improved seed
             uint256 nonce = playerNonces[player]++;
-            uint256 seed = uint256(keccak256(abi.encode(player, block.timestamp, game.dealerCards.length, nonce)));
+            uint256 seed = uint256(
+                keccak256(abi.encode(player, block.timestamp, game.dealerCards.length, nonce))
+            );
             uint256 requestId = coordinator.requestRandomNumbers(1, seed);
 
             vrfRequests[requestId] = VRFRequest({
@@ -605,7 +623,9 @@ contract RiseJack is IVRFConsumer {
         return false;
     }
 
-    function _resolveGame(address player) internal checkReserve {
+    function _resolveGame(
+        address player
+    ) internal checkReserve {
         Game storage game = games[player];
 
         (uint8 playerValue,) = calculateHandValue(game.playerCards);
@@ -644,7 +664,7 @@ contract RiseJack is IVRFConsumer {
         if (payout > bet) {
             uint256 profit = payout - bet;
             dailyProfit[player] += profit;
-            
+
             // Check daily limit
             if (dailyProfit[player] >= dailyProfitLimit) {
                 emit DailyLimitReached(player, dailyProfit[player]);
@@ -662,7 +682,9 @@ contract RiseJack is IVRFConsumer {
         }
     }
 
-    function _resetGame(address player) internal {
+    function _resetGame(
+        address player
+    ) internal {
         delete games[player];
     }
 
@@ -673,7 +695,7 @@ contract RiseJack is IVRFConsumer {
      * @param amount Amount to pay
      */
     function _safePayout(address to, uint256 amount) internal {
-        (bool success,) = to.call{value: amount}("");
+        (bool success,) = to.call{ value: amount }("");
         if (!success) {
             // If transfer fails, store for manual withdrawal
             pendingWithdrawals[to] += amount;
@@ -685,7 +707,9 @@ contract RiseJack is IVRFConsumer {
      * @notice Track house losses for circuit breaker
      * @param lossAmount Amount the house lost this game
      */
-    function _trackHouseLoss(uint256 lossAmount) internal {
+    function _trackHouseLoss(
+        uint256 lossAmount
+    ) internal {
         // Reset window if expired
         if (block.timestamp - windowStartTime >= CIRCUIT_BREAKER_WINDOW) {
             windowStartTime = block.timestamp;
@@ -709,7 +733,9 @@ contract RiseJack is IVRFConsumer {
      * @param random The random number from VRF
      * @return Card value 0-51
      */
-    function _randomToCard(uint256 random) internal pure returns (uint8) {
+    function _randomToCard(
+        uint256 random
+    ) internal pure returns (uint8) {
         return uint8(random % CARDS_PER_DECK);
     }
 
@@ -719,7 +745,9 @@ contract RiseJack is IVRFConsumer {
      * @return value The hand value
      * @return isSoft Whether the hand is soft (ace counted as 11)
      */
-    function calculateHandValue(uint8[] memory cards) public pure returns (uint8 value, bool isSoft) {
+    function calculateHandValue(
+        uint8[] memory cards
+    ) public pure returns (uint8 value, bool isSoft) {
         uint8 total = 0;
         uint8 aces = 0;
         uint256 len = cards.length; // Cache length
@@ -729,16 +757,22 @@ contract RiseJack is IVRFConsumer {
 
             if (cardRank == 0) {
                 // Ace
-                unchecked { aces++; }
+                unchecked {
+                    aces++;
+                }
                 total += ACE_HIGH_VALUE;
             } else if (cardRank >= 10) {
                 // Face cards (J, Q, K)
                 total += FACE_CARD_VALUE;
             } else {
                 // Number cards (2-10)
-                unchecked { total += cardRank + 1; }
+                unchecked {
+                    total += cardRank + 1;
+                }
             }
-            unchecked { i++; }
+            unchecked {
+                i++;
+            }
         }
 
         // Adjust for aces if over 21
@@ -758,7 +792,9 @@ contract RiseJack is IVRFConsumer {
      * @return rank 0-12 (A, 2-10, J, Q, K)
      * @return suit 0-3 (Hearts, Diamonds, Clubs, Spades)
      */
-    function getCardInfo(uint8 card) external pure returns (uint8 rank, uint8 suit) {
+    function getCardInfo(
+        uint8 card
+    ) external pure returns (uint8 rank, uint8 suit) {
         return (card % RANKS_PER_SUIT, card / RANKS_PER_SUIT);
     }
 
@@ -767,21 +803,27 @@ contract RiseJack is IVRFConsumer {
     /**
      * @notice Get current game state for a player
      */
-    function getGameState(address player) external view returns (Game memory) {
+    function getGameState(
+        address player
+    ) external view returns (Game memory) {
         return games[player];
     }
 
     /**
      * @notice Get player's current hand value
      */
-    function getPlayerHandValue(address player) external view returns (uint8 value, bool isSoft) {
+    function getPlayerHandValue(
+        address player
+    ) external view returns (uint8 value, bool isSoft) {
         return calculateHandValue(games[player].playerCards);
     }
 
     /**
      * @notice Get dealer's visible hand value (excludes hole card before reveal)
      */
-    function getDealerVisibleValue(address player) external view returns (uint8 value) {
+    function getDealerVisibleValue(
+        address player
+    ) external view returns (uint8 value) {
         Game storage game = games[player];
         if (game.dealerCards.length == 0) return 0;
 
@@ -808,7 +850,7 @@ contract RiseJack is IVRFConsumer {
         pendingWithdrawals[msg.sender] = 0;
         emit Withdrawal(msg.sender, amount);
 
-        (bool success,) = msg.sender.call{value: amount}("");
+        (bool success,) = msg.sender.call{ value: amount }("");
         require(success, "Withdrawal failed");
     }
 
@@ -817,13 +859,15 @@ contract RiseJack is IVRFConsumer {
      * @dev Can be called by anyone for any player's timed out game
      * @param player Address of the player with timed out game
      */
-    function cancelTimedOutGame(address player) external {
+    function cancelTimedOutGame(
+        address player
+    ) external {
         Game storage game = games[player];
         require(game.state != GameState.Idle, "No active game");
         require(block.timestamp >= game.timestamp + GAME_TIMEOUT, "Game not timed out");
 
         uint256 refund = game.bet;
-        
+
         // Update exposure
         uint256 maxPayout = (refund * BLACKJACK_PAYOUT) / 100 + refund;
         if (totalExposure >= maxPayout) {
@@ -848,38 +892,40 @@ contract RiseJack is IVRFConsumer {
      * @param requestId The request ID to retry
      * @dev Anyone can call this after VRF_TIMEOUT has passed
      */
-    function retryVRFRequest(uint256 requestId) external {
+    function retryVRFRequest(
+        uint256 requestId
+    ) external {
         VRFRequest storage request = vrfRequests[requestId];
         require(request.player != address(0), "Unknown request");
         require(!request.fulfilled, "Already fulfilled");
         require(block.timestamp >= request.timestamp + VRF_TIMEOUT, "Request not timed out");
-        
+
         address player = request.player;
         RequestType requestType = request.requestType;
-        
+
         // Mark old request as fulfilled to prevent reuse
         request.fulfilled = true;
-        
+
         // Create new request based on type
         uint256 nonce = playerNonces[player]++;
         uint256 seed = uint256(keccak256(abi.encode(player, block.timestamp, "retry", nonce)));
         uint256 numNumbers;
-        
+
         if (requestType == RequestType.InitialDeal) {
             numNumbers = 4;
         } else {
             numNumbers = 1;
         }
-        
+
         uint256 newRequestId = coordinator.requestRandomNumbers(uint32(numNumbers), seed);
-        
+
         vrfRequests[newRequestId] = VRFRequest({
             player: player,
             requestType: requestType,
             fulfilled: false,
             timestamp: block.timestamp
         });
-        
+
         emit VRFRequestRetried(player, requestId, newRequestId);
         emit CardsRequested(player, newRequestId, requestType);
     }
@@ -889,26 +935,28 @@ contract RiseJack is IVRFConsumer {
      * @param player The player whose game to force resolve
      * @dev Refunds full bet amount - use only for stuck games
      */
-    function forceResolveGame(address player) external onlyOwner {
+    function forceResolveGame(
+        address player
+    ) external onlyOwner {
         Game storage game = games[player];
         require(game.state != GameState.Idle, "No active game");
-        
+
         // game.bet already contains total wagered (original + double if applicable)
         uint256 refund = game.bet;
-        
+
         // Calculate exposure to remove based on bet amount
         uint256 exposureToRemove = (refund * BLACKJACK_PAYOUT) / 100 + refund;
-        
+
         // Safely reduce exposure (cap at current exposure to avoid underflow)
         if (exposureToRemove > totalExposure) {
             totalExposure = 0;
         } else {
             totalExposure -= exposureToRemove;
         }
-        
+
         emit GameForceResolved(player, refund);
         _resetGame(player);
-        
+
         // Refund full bet
         if (refund > 0) {
             _safePayout(player, refund);
@@ -925,14 +973,18 @@ contract RiseJack is IVRFConsumer {
         emit BetLimitsChanged(_minBet, _maxBet);
     }
 
-    function withdrawHouseFunds(uint256 amount) external onlyOwner {
+    function withdrawHouseFunds(
+        uint256 amount
+    ) external onlyOwner {
         require(amount <= address(this).balance, "Insufficient balance");
         require(address(this).balance - amount >= minReserve, "Would breach min reserve");
-        (bool success,) = owner.call{value: amount}("");
+        (bool success,) = owner.call{ value: amount }("");
         require(success, "Withdraw failed");
     }
 
-    function transferOwnership(address newOwner) external onlyOwner {
+    function transferOwnership(
+        address newOwner
+    ) external onlyOwner {
         require(newOwner != address(0), "Invalid owner");
         address previousOwner = owner;
         owner = newOwner;
@@ -965,7 +1017,9 @@ contract RiseJack is IVRFConsumer {
     /**
      * @notice Set daily profit limit per player
      */
-    function setDailyProfitLimit(uint256 _limit) external onlyOwner {
+    function setDailyProfitLimit(
+        uint256 _limit
+    ) external onlyOwner {
         require(_limit > 0, "Limit must be positive");
         dailyProfitLimit = _limit;
         emit DailyProfitLimitChanged(_limit);
@@ -974,7 +1028,9 @@ contract RiseJack is IVRFConsumer {
     /**
      * @notice Set minimum house reserve
      */
-    function setMinReserve(uint256 _reserve) external onlyOwner {
+    function setMinReserve(
+        uint256 _reserve
+    ) external onlyOwner {
         minReserve = _reserve;
         emit MinReserveChanged(_reserve);
     }
@@ -982,21 +1038,19 @@ contract RiseJack is IVRFConsumer {
     /**
      * @notice Get current house stats
      */
-    function getHouseStats() external view returns (
-        uint256 balance,
-        uint256 exposure,
-        uint256 reserve,
-        uint256 recentLosses,
-        bool isPaused
-    ) {
-        return (
-            address(this).balance,
-            totalExposure,
-            minReserve,
-            windowLosses,
-            paused
-        );
+    function getHouseStats()
+        external
+        view
+        returns (
+            uint256 balance,
+            uint256 exposure,
+            uint256 reserve,
+            uint256 recentLosses,
+            bool isPaused
+        )
+    {
+        return (address(this).balance, totalExposure, minReserve, windowLosses, paused);
     }
 
-    receive() external payable {}
+    receive() external payable { }
 }

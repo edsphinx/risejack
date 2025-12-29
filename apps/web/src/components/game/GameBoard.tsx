@@ -7,7 +7,7 @@ import { ActionButtons } from './ActionButtons';
 import { GameState, type GameResult } from '@risejack/shared';
 
 export function GameBoard() {
-  const [betAmount, setBetAmount] = useState('0.0001');
+  const [betAmount, setBetAmount] = useState('0.00001');
 
   // Wallet connection
   const wallet = useRiseWallet();
@@ -204,7 +204,7 @@ export function GameBoard() {
 
                   {/* Quick bet buttons */}
                   <div className="flex gap-2">
-                    {['0.0001', '0.0005', '0.001', '0.005'].map((amount) => (
+                    {['0.00001', '0.00005', '0.0001', '0.0005'].map((amount) => (
                       <button
                         key={amount}
                         onClick={() => setBetAmount(amount)}

@@ -241,8 +241,10 @@ contract RiseJack is IVRFConsumer {
         _;
     }
 
-    modifier checkCooldown() {
-        require(block.timestamp >= lastGameTimestamp[msg.sender] + GAME_COOLDOWN, "Cooldown active");
+    modifier checkCooldown(
+        address player
+    ) {
+        require(block.timestamp >= lastGameTimestamp[player] + GAME_COOLDOWN, "Cooldown active");
         _;
     }
 
@@ -278,7 +280,7 @@ contract RiseJack is IVRFConsumer {
         validBet
         gameInState(msg.sender, GameState.Idle)
         checkDailyLimit(msg.sender)
-        checkCooldown
+        checkCooldown(msg.sender)
     {
         // Track cooldown
         lastGameTimestamp[msg.sender] = block.timestamp;
@@ -359,8 +361,11 @@ contract RiseJack is IVRFConsumer {
         games[msg.sender].state = GameState.WaitingForHit;
 
         // Track additional exposure for doubled bet
-        // Note: doubled hands cannot get blackjack payout, max is 2x
-        totalExposure += msg.value * 2;
+        // Original exposure was (bet * 2.5), new max is (2*bet * 2) = 4*bet
+        // Additional exposure = 4*bet - 2.5*bet = 1.5*bet = msg.value * 3 / 2
+        // But since we already tracked 2.5x, we need: new_total - old_total
+        // new_total = bet*2*2 = 4*bet, old_total = bet*2.5, diff = 1.5*bet
+        totalExposure += (msg.value * 3) / 2;
 
         uint256 nonce = playerNonces[msg.sender]++;
         uint256 seed = uint256(keccak256(abi.encode(msg.sender, block.timestamp, "double", nonce)));

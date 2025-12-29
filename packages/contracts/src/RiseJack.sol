@@ -65,6 +65,9 @@ contract RiseJack is IVRFConsumer {
     uint8 public constant MAX_DEALER_CARDS = 10;
     uint8 public constant MAX_DEALER_DRAW_ESTIMATE = 5;
 
+    /// @notice VRF request timeout - after this, request can be retried
+    uint256 public constant VRF_TIMEOUT = 5 minutes;
+
     // ==================== STRUCTS ====================
 
     struct Game {
@@ -81,6 +84,7 @@ contract RiseJack is IVRFConsumer {
         address player;
         RequestType requestType;
         bool fulfilled;
+        uint256 timestamp;  // When the request was made
     }
 
     // ==================== ENUMS ====================
@@ -127,6 +131,10 @@ contract RiseJack is IVRFConsumer {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event DailyProfitLimitChanged(uint256 newLimit);
     event MinReserveChanged(uint256 newReserve);
+    
+    // VRF events
+    event VRFRequestRetried(address indexed player, uint256 oldRequestId, uint256 newRequestId);
+    event GameForceResolved(address indexed player, uint256 refund);
 
     // ==================== STATE ====================
 
@@ -273,7 +281,8 @@ contract RiseJack is IVRFConsumer {
         vrfRequests[requestId] = VRFRequest({
             player: msg.sender,
             requestType: RequestType.InitialDeal,
-            fulfilled: false
+            fulfilled: false,
+            timestamp: block.timestamp
         });
 
         emit GameStarted(msg.sender, msg.value);
@@ -293,7 +302,8 @@ contract RiseJack is IVRFConsumer {
         vrfRequests[requestId] = VRFRequest({
             player: msg.sender,
             requestType: RequestType.PlayerHit,
-            fulfilled: false
+            fulfilled: false,
+            timestamp: block.timestamp
         });
 
         emit PlayerAction(msg.sender, "hit");
@@ -326,7 +336,8 @@ contract RiseJack is IVRFConsumer {
         vrfRequests[requestId] = VRFRequest({
             player: msg.sender,
             requestType: RequestType.PlayerHit, // Will trigger dealer play after
-            fulfilled: false
+            fulfilled: false,
+            timestamp: block.timestamp
         });
 
         emit PlayerAction(msg.sender, "double");
@@ -531,7 +542,8 @@ contract RiseJack is IVRFConsumer {
             vrfRequests[requestId] = VRFRequest({
                 player: player,
                 requestType: RequestType.DealerDraw,
-                fulfilled: false
+                fulfilled: false,
+                timestamp: block.timestamp
             });
 
             emit CardsRequested(player, requestId, RequestType.DealerDraw);
@@ -557,7 +569,8 @@ contract RiseJack is IVRFConsumer {
             vrfRequests[requestId] = VRFRequest({
                 player: player,
                 requestType: RequestType.DealerDraw,
-                fulfilled: false
+                fulfilled: false,
+                timestamp: block.timestamp
             });
 
             emit CardsRequested(player, requestId, RequestType.DealerDraw);
@@ -800,6 +813,80 @@ contract RiseJack is IVRFConsumer {
         _resetGame(player);
 
         // Refund full bet using safe payout
+        if (refund > 0) {
+            _safePayout(player, refund);
+        }
+    }
+
+    // ==================== VRF TIMEOUT FUNCTIONS ====================
+
+    /**
+     * @notice Retry a timed-out VRF request
+     * @param requestId The request ID to retry
+     * @dev Anyone can call this after VRF_TIMEOUT has passed
+     */
+    function retryVRFRequest(uint256 requestId) external {
+        VRFRequest storage request = vrfRequests[requestId];
+        require(request.player != address(0), "Unknown request");
+        require(!request.fulfilled, "Already fulfilled");
+        require(block.timestamp >= request.timestamp + VRF_TIMEOUT, "Request not timed out");
+        
+        address player = request.player;
+        RequestType requestType = request.requestType;
+        
+        // Mark old request as fulfilled to prevent reuse
+        request.fulfilled = true;
+        
+        // Create new request based on type
+        uint256 nonce = playerNonces[player]++;
+        uint256 seed = uint256(keccak256(abi.encode(player, block.timestamp, "retry", nonce)));
+        uint256 numNumbers;
+        
+        if (requestType == RequestType.InitialDeal) {
+            numNumbers = 4;
+        } else {
+            numNumbers = 1;
+        }
+        
+        uint256 newRequestId = coordinator.requestRandomNumbers(uint32(numNumbers), seed);
+        
+        vrfRequests[newRequestId] = VRFRequest({
+            player: player,
+            requestType: requestType,
+            fulfilled: false,
+            timestamp: block.timestamp
+        });
+        
+        emit VRFRequestRetried(player, requestId, newRequestId);
+        emit CardsRequested(player, newRequestId, requestType);
+    }
+
+    /**
+     * @notice Force resolve a stuck game (admin only)
+     * @param player The player whose game to force resolve
+     * @dev Refunds full bet amount - use only for stuck games
+     */
+    function forceResolveGame(address player) external onlyOwner {
+        Game storage game = games[player];
+        require(game.state != GameState.Idle, "No active game");
+        
+        // game.bet already contains total wagered (original + double if applicable)
+        uint256 refund = game.bet;
+        
+        // Calculate exposure to remove based on bet amount
+        uint256 exposureToRemove = (refund * BLACKJACK_PAYOUT) / 100 + refund;
+        
+        // Safely reduce exposure (cap at current exposure to avoid underflow)
+        if (exposureToRemove > totalExposure) {
+            totalExposure = 0;
+        } else {
+            totalExposure -= exposureToRemove;
+        }
+        
+        emit GameForceResolved(player, refund);
+        _resetGame(player);
+        
+        // Refund full bet
         if (refund > 0) {
             _safePayout(player, refund);
         }

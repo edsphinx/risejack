@@ -6,9 +6,10 @@ import {IVRFConsumer} from "../interfaces/IVRFConsumer.sol";
 
 /**
  * @title MockVRFCoordinator
- * @author Rise Blackjack Team
+ * @author edsphinx
+ * @custom:company blocketh
  * @notice Mock VRF Coordinator for local development and testing
- * @dev Deploy this alongside Blackjack for local Anvil testing
+ * @dev Deploy this alongside RiseJack for local Anvil testing
  * 
  * Usage:
  * 1. Deploy MockVRFCoordinator

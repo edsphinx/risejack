@@ -1,4 +1,6 @@
 import { useState } from 'preact/hooks';
+import { useBalance } from 'wagmi';
+import { formatEther } from 'viem';
 import type { TimeRemaining } from '@risejack/shared';
 
 interface WalletConnectProps {
@@ -25,6 +27,9 @@ export function WalletConnect({
   onCreateSession,
 }: WalletConnectProps) {
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+
+  // Fetch balance
+  const { data: balanceData } = useBalance({ address: account ?? undefined });
 
   const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
@@ -89,6 +94,15 @@ export function WalletConnect({
         >
           {isCreatingSession ? '⏳ Creating...' : '🔑 Enable Fast Mode'}
         </button>
+      )}
+
+      {/* Balance Badge */}
+      {balanceData && (
+        <div className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600">
+          <span className="text-yellow-400 font-mono text-sm font-medium">
+            {Number(formatEther(balanceData.value)).toFixed(5)} ETH
+          </span>
+        </div>
       )}
 
       {/* Address Badge */}

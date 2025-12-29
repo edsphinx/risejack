@@ -13,7 +13,7 @@ contract DeployScript is Script {
      * @dev Run: forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast
      */
     function run() public {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         bool isLocal = vm.envOr("LOCAL", false);
 
         vm.startBroadcast(deployerPrivateKey);
@@ -50,7 +50,7 @@ contract DeployScript is Script {
  */
 contract DeployLocal is Script {
     function run() public {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -76,7 +76,7 @@ contract DeployLocal is Script {
  */
 contract DeployTestnet is Script {
     function run() public {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 

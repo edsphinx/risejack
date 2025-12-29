@@ -1,10 +1,10 @@
 import { Chains } from 'rise-wallet';
-import { risewallet } from 'rise-wallet/wagmi';
+import { riseWallet } from 'rise-wallet/wagmi';
 import { createClient, http } from 'viem';
 import { createConfig } from 'wagmi';
 
 // Export the Rise Wallet connector instance for session key access
-export const riseWalletConnector = risewallet();
+export const riseWalletConnector = riseWallet();
 
 // Rise Testnet chain config from rise-wallet
 export const riseTestnet = Chains.riseTestnet;

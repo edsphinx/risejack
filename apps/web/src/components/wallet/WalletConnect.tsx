@@ -13,6 +13,7 @@ export function WalletConnect({
   onConnect,
   onDisconnect,
   onCreateSession,
+  onRevokeSession,
 }: WalletConnectProps) {
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -71,9 +72,18 @@ export function WalletConnect({
     <div className="flex items-center gap-3">
       {/* Session Key Badge */}
       {hasSessionKey ? (
-        <div className="px-3 py-1.5 rounded-lg bg-green-900/50 border border-green-500/30 flex items-center gap-2">
-          <span className="text-green-400 text-sm">🔑</span>
-          <span className="text-green-400 text-xs font-medium">{formatTime(sessionExpiry)}</span>
+        <div className="flex items-center gap-1">
+          <div className="px-2.5 py-1.5 rounded-l-lg bg-green-900/50 border border-green-500/30 flex items-center gap-1.5">
+            <span className="text-green-400 text-sm">🔑</span>
+            <span className="text-green-400 text-xs font-medium">{formatTime(sessionExpiry)}</span>
+          </div>
+          <button
+            onClick={onRevokeSession}
+            className="px-2 py-1.5 rounded-r-lg bg-red-900/30 border border-red-500/30 text-red-400 text-xs hover:bg-red-900/50 transition-colors"
+            title="Revoke session key"
+          >
+            ✕
+          </button>
         </div>
       ) : (
         <button

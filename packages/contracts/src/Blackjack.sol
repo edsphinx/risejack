@@ -99,6 +99,13 @@ contract Blackjack is IVRFConsumer {
     event HandValue(address indexed player, uint8 value, bool isSoft, bool isDealer);
     event PayoutFailed(address indexed player, uint256 amount);
     event Withdrawal(address indexed player, uint256 amount);
+    
+    // House protection events
+    event ContractPaused(string reason);
+    event ContractUnpaused();
+    event DailyLimitReached(address indexed player, uint256 profit);
+    event CircuitBreakerTriggered(uint256 lossAmount, uint256 timeWindow);
+    event ReserveLow(uint256 currentBalance, uint256 minRequired);
 
     // ==================== STATE ====================
 
@@ -124,6 +131,28 @@ contract Blackjack is IVRFConsumer {
     /// @notice Player nonces for VRF seed uniqueness
     mapping(address => uint256) public playerNonces;
 
+    // ==================== HOUSE PROTECTION STATE ====================
+
+    /// @notice Emergency pause flag
+    bool public paused;
+
+    /// @notice Daily profit tracking per player
+    mapping(address => uint256) public dailyProfit;
+    mapping(address => uint256) public lastProfitReset;
+
+    /// @notice Configurable daily profit limit (default from constant)
+    uint256 public dailyProfitLimit = DEFAULT_DAILY_PROFIT_LIMIT;
+
+    /// @notice Minimum reserve before auto-pause
+    uint256 public minReserve = DEFAULT_MIN_RESERVE;
+
+    /// @notice Circuit breaker tracking
+    uint256 public windowStartTime;
+    uint256 public windowLosses;
+
+    /// @notice Total active bets (exposure)
+    uint256 public totalExposure;
+
     // ==================== MODIFIERS ====================
 
     modifier onlyVRFCoordinator() {
@@ -143,6 +172,31 @@ contract Blackjack is IVRFConsumer {
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner");
+        _;
+    }
+
+    modifier whenNotPaused() {
+        require(!paused, "Contract is paused");
+        _;
+    }
+
+    modifier checkReserve() {
+        _;
+        // After the function, check if we need to auto-pause
+        if (address(this).balance < minReserve) {
+            paused = true;
+            emit ContractPaused("Reserve below minimum");
+            emit ReserveLow(address(this).balance, minReserve);
+        }
+    }
+
+    modifier checkDailyLimit(address player) {
+        // Reset daily tracking if new day
+        if (block.timestamp - lastProfitReset[player] >= 1 days) {
+            dailyProfit[player] = 0;
+            lastProfitReset[player] = block.timestamp;
+        }
+        require(dailyProfit[player] < dailyProfitLimit, "Daily profit limit reached");
         _;
     }
 
@@ -168,7 +222,17 @@ contract Blackjack is IVRFConsumer {
      * @notice Place a bet and start a new game
      * @dev Requests 4 random numbers for initial deal (2 player + 2 dealer)
      */
-    function placeBet() external payable validBet gameInState(msg.sender, GameState.Idle) {
+    function placeBet() 
+        external 
+        payable 
+        whenNotPaused 
+        validBet 
+        gameInState(msg.sender, GameState.Idle) 
+        checkDailyLimit(msg.sender) 
+    {
+        // Track exposure (max possible payout)
+        totalExposure += (msg.value * BLACKJACK_PAYOUT) / 100 + msg.value;
+
         // Initialize game
         games[msg.sender] = Game({
             player: msg.sender,
@@ -480,22 +544,23 @@ contract Blackjack is IVRFConsumer {
         return false;
     }
 
-    function _resolveGame(address player) internal {
+    function _resolveGame(address player) internal checkReserve {
         Game storage game = games[player];
 
         (uint8 playerValue,) = calculateHandValue(game.playerCards);
         (uint8 dealerValue,) = calculateHandValue(game.dealerCards);
 
         uint256 payout = 0;
+        uint256 bet = game.bet;
 
         if (dealerValue > 21) {
             // Dealer busted
             game.state = GameState.PlayerWin;
-            payout = game.bet * 2;
+            payout = bet * 2;
         } else if (playerValue > dealerValue) {
             // Player wins
             game.state = GameState.PlayerWin;
-            payout = game.bet * 2;
+            payout = bet * 2;
         } else if (dealerValue > playerValue) {
             // Dealer wins
             game.state = GameState.DealerWin;
@@ -503,7 +568,29 @@ contract Blackjack is IVRFConsumer {
         } else {
             // Push
             game.state = GameState.Push;
-            payout = game.bet;
+            payout = bet;
+        }
+
+        // Update exposure
+        uint256 maxPayout = (bet * BLACKJACK_PAYOUT) / 100 + bet;
+        if (totalExposure >= maxPayout) {
+            totalExposure -= maxPayout;
+        } else {
+            totalExposure = 0;
+        }
+
+        // Track player profit and house loss for circuit breaker
+        if (payout > bet) {
+            uint256 profit = payout - bet;
+            dailyProfit[player] += profit;
+            
+            // Check daily limit
+            if (dailyProfit[player] >= dailyProfitLimit) {
+                emit DailyLimitReached(player, dailyProfit[player]);
+            }
+
+            // Circuit breaker: track house losses
+            _trackHouseLoss(profit);
         }
 
         emit GameEnded(player, game.state, payout);
@@ -530,6 +617,27 @@ contract Blackjack is IVRFConsumer {
             // If transfer fails, store for manual withdrawal
             pendingWithdrawals[to] += amount;
             emit PayoutFailed(to, amount);
+        }
+    }
+
+    /**
+     * @notice Track house losses for circuit breaker
+     * @param lossAmount Amount the house lost this game
+     */
+    function _trackHouseLoss(uint256 lossAmount) internal {
+        // Reset window if expired
+        if (block.timestamp - windowStartTime >= CIRCUIT_BREAKER_WINDOW) {
+            windowStartTime = block.timestamp;
+            windowLosses = 0;
+        }
+
+        windowLosses += lossAmount;
+
+        // Trigger circuit breaker if threshold exceeded
+        if (windowLosses >= CIRCUIT_BREAKER_THRESHOLD) {
+            paused = true;
+            emit CircuitBreakerTriggered(windowLosses, CIRCUIT_BREAKER_WINDOW);
+            emit ContractPaused("Circuit breaker triggered");
         }
     }
 
@@ -650,6 +758,7 @@ contract Blackjack is IVRFConsumer {
 
     function withdrawHouseFunds(uint256 amount) external onlyOwner {
         require(amount <= address(this).balance, "Insufficient balance");
+        require(address(this).balance - amount >= minReserve, "Would breach min reserve");
         (bool success,) = owner.call{value: amount}("");
         require(success, "Withdraw failed");
     }
@@ -657,6 +766,63 @@ contract Blackjack is IVRFConsumer {
     function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0), "Invalid owner");
         owner = newOwner;
+    }
+
+    // ==================== HOUSE PROTECTION ADMIN ====================
+
+    /**
+     * @notice Pause the contract (emergency stop)
+     */
+    function pause() external onlyOwner {
+        paused = true;
+        emit ContractPaused("Manual pause by owner");
+    }
+
+    /**
+     * @notice Unpause the contract
+     * @dev Only works if reserve is healthy
+     */
+    function unpause() external onlyOwner {
+        require(address(this).balance >= minReserve, "Reserve too low to unpause");
+        paused = false;
+        // Reset circuit breaker
+        windowLosses = 0;
+        windowStartTime = block.timestamp;
+        emit ContractUnpaused();
+    }
+
+    /**
+     * @notice Set daily profit limit per player
+     */
+    function setDailyProfitLimit(uint256 _limit) external onlyOwner {
+        require(_limit > 0, "Limit must be positive");
+        dailyProfitLimit = _limit;
+    }
+
+    /**
+     * @notice Set minimum house reserve
+     */
+    function setMinReserve(uint256 _reserve) external onlyOwner {
+        minReserve = _reserve;
+    }
+
+    /**
+     * @notice Get current house stats
+     */
+    function getHouseStats() external view returns (
+        uint256 balance,
+        uint256 exposure,
+        uint256 reserve,
+        uint256 recentLosses,
+        bool isPaused
+    ) {
+        return (
+            address(this).balance,
+            totalExposure,
+            minReserve,
+            windowLosses,
+            paused
+        );
     }
 
     receive() external payable {}

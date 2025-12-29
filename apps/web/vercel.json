@@ -1,0 +1,6 @@
+{
+    "buildCommand": "cd ../.. && bun run build --filter=@risejack/web",
+    "outputDirectory": "dist",
+    "installCommand": "cd ../.. && bun install",
+    "framework": "vite"
+}

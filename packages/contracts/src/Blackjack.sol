@@ -71,6 +71,8 @@ contract Blackjack is IVRFConsumer {
     event PlayerAction(address indexed player, string action);
     event GameEnded(address indexed player, GameState result, uint256 payout);
     event HandValue(address indexed player, uint8 value, bool isSoft, bool isDealer);
+    event PayoutFailed(address indexed player, uint256 amount);
+    event Withdrawal(address indexed player, uint256 amount);
 
     // ==================== STATE ====================
 
@@ -89,6 +91,12 @@ contract Blackjack is IVRFConsumer {
 
     /// @notice Contract owner
     address public owner;
+
+    /// @notice Pending withdrawals for failed payouts (Pull Payment pattern)
+    mapping(address => uint256) public pendingWithdrawals;
+
+    /// @notice Player nonces for VRF seed uniqueness
+    mapping(address => uint256) public playerNonces;
 
     // ==================== MODIFIERS ====================
 
@@ -137,8 +145,9 @@ contract Blackjack is IVRFConsumer {
             isDoubled: false
         });
 
-        // Request 4 random numbers for initial deal
-        uint256 seed = uint256(keccak256(abi.encode(msg.sender, block.timestamp, block.prevrandao)));
+        // Request 4 random numbers for initial deal with improved seed
+        uint256 nonce = playerNonces[msg.sender]++;
+        uint256 seed = uint256(keccak256(abi.encode(msg.sender, block.timestamp, block.prevrandao, nonce)));
         uint256 requestId = coordinator.requestRandomNumbers(4, seed);
 
         vrfRequests[requestId] = VRFRequest({
@@ -157,7 +166,8 @@ contract Blackjack is IVRFConsumer {
     function hit() external gameInState(msg.sender, GameState.PlayerTurn) {
         games[msg.sender].state = GameState.WaitingForHit;
 
-        uint256 seed = uint256(keccak256(abi.encode(msg.sender, block.timestamp, games[msg.sender].playerCards.length)));
+        uint256 nonce = playerNonces[msg.sender]++;
+        uint256 seed = uint256(keccak256(abi.encode(msg.sender, block.timestamp, games[msg.sender].playerCards.length, nonce)));
         uint256 requestId = coordinator.requestRandomNumbers(1, seed);
 
         vrfRequests[requestId] = VRFRequest({
@@ -189,7 +199,8 @@ contract Blackjack is IVRFConsumer {
         games[msg.sender].isDoubled = true;
         games[msg.sender].state = GameState.WaitingForHit;
 
-        uint256 seed = uint256(keccak256(abi.encode(msg.sender, block.timestamp, "double")));
+        uint256 nonce = playerNonces[msg.sender]++;
+        uint256 seed = uint256(keccak256(abi.encode(msg.sender, block.timestamp, "double", nonce)));
         uint256 requestId = coordinator.requestRandomNumbers(1, seed);
 
         vrfRequests[requestId] = VRFRequest({
@@ -214,12 +225,11 @@ contract Blackjack is IVRFConsumer {
         emit PlayerAction(msg.sender, "surrender");
         emit GameEnded(msg.sender, GameState.DealerWin, refund);
 
-        // Reset game
+        // Reset game first (Checks-Effects-Interactions)
         _resetGame(msg.sender);
 
-        // Send refund
-        (bool success,) = msg.sender.call{value: refund}("");
-        require(success, "Refund failed");
+        // Send refund with Pull Payment fallback
+        _safePayout(msg.sender, refund);
     }
 
     // ==================== VRF CALLBACK ====================
@@ -285,16 +295,14 @@ contract Blackjack is IVRFConsumer {
             uint256 payout = game.bet;
             emit GameEnded(player, GameState.Push, payout);
             _resetGame(player);
-            (bool success,) = player.call{value: payout}("");
-            require(success, "Payout failed");
+            _safePayout(player, payout);
         } else if (playerValue == 21) {
             // Player blackjack
             game.state = GameState.PlayerBlackjack;
             uint256 payout = (game.bet * BLACKJACK_PAYOUT) / 100 + game.bet;
             emit GameEnded(player, GameState.PlayerBlackjack, payout);
             _resetGame(player);
-            (bool success,) = player.call{value: payout}("");
-            require(success, "Payout failed");
+            _safePayout(player, payout);
         } else if (dealerValue == 21) {
             // Dealer blackjack
             game.state = GameState.DealerWin;
@@ -387,8 +395,9 @@ contract Blackjack is IVRFConsumer {
         }
 
         if (cardsNeeded > 0) {
-            // Request cards for dealer
-            uint256 seed = uint256(keccak256(abi.encode(player, block.timestamp, "dealer")));
+            // Request cards for dealer with improved seed
+            uint256 nonce = playerNonces[player]++;
+            uint256 seed = uint256(keccak256(abi.encode(player, block.timestamp, "dealer", nonce)));
             uint256 requestId = coordinator.requestRandomNumbers(cardsNeeded, seed);
 
             vrfRequests[requestId] = VRFRequest({
@@ -412,8 +421,9 @@ contract Blackjack is IVRFConsumer {
 
         // Check if dealer needs more cards
         if (_shouldDealerHit(dealerValue, isSoft) && game.dealerCards.length < 10) {
-            // Need more cards - request one more
-            uint256 seed = uint256(keccak256(abi.encode(player, block.timestamp, game.dealerCards.length)));
+            // Need more cards - request one more with improved seed
+            uint256 nonce = playerNonces[player]++;
+            uint256 seed = uint256(keccak256(abi.encode(player, block.timestamp, game.dealerCards.length, nonce)));
             uint256 requestId = coordinator.requestRandomNumbers(1, seed);
 
             vrfRequests[requestId] = VRFRequest({
@@ -465,13 +475,27 @@ contract Blackjack is IVRFConsumer {
         _resetGame(player);
 
         if (payout > 0) {
-            (bool success,) = player.call{value: payout}("");
-            require(success, "Payout failed");
+            _safePayout(player, payout);
         }
     }
 
     function _resetGame(address player) internal {
         delete games[player];
+    }
+
+    /**
+     * @notice Safe payout with Pull Payment fallback
+     * @dev If direct transfer fails, stores in pendingWithdrawals
+     * @param to Recipient address
+     * @param amount Amount to pay
+     */
+    function _safePayout(address to, uint256 amount) internal {
+        (bool success,) = to.call{value: amount}("");
+        if (!success) {
+            // If transfer fails, store for manual withdrawal
+            pendingWithdrawals[to] += amount;
+            emit PayoutFailed(to, amount);
+        }
     }
 
     // ==================== UTILITY FUNCTIONS ====================
@@ -561,6 +585,23 @@ contract Blackjack is IVRFConsumer {
         } else {
             (value,) = calculateHandValue(game.dealerCards);
         }
+    }
+
+    // ==================== PLAYER FUNCTIONS ====================
+
+    /**
+     * @notice Withdraw pending payouts
+     * @dev Used when automatic payout fails (Pull Payment pattern)
+     */
+    function withdraw() external {
+        uint256 amount = pendingWithdrawals[msg.sender];
+        require(amount > 0, "No pending withdrawal");
+
+        pendingWithdrawals[msg.sender] = 0;
+        emit Withdrawal(msg.sender, amount);
+
+        (bool success,) = msg.sender.call{value: amount}("");
+        require(success, "Withdrawal failed");
     }
 
     // ==================== ADMIN FUNCTIONS ====================

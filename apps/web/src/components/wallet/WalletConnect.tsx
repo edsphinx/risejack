@@ -27,6 +27,7 @@ export function WalletConnect({
   onCreateSession,
 }: WalletConnectProps) {
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Fetch balance
   const { data: balanceData } = useBalance({ address: account ?? undefined });
@@ -107,19 +108,17 @@ export function WalletConnect({
 
       {/* Address Badge - Click to copy */}
       <button
-        onClick={() => {
-          navigator.clipboard.writeText(account!);
-          // Optional: show copied feedback
-          const btn = document.activeElement as HTMLElement;
-          btn.setAttribute('data-copied', 'true');
-          setTimeout(() => btn.removeAttribute('data-copied'), 1500);
+        onClick={async () => {
+          await navigator.clipboard.writeText(account!);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
         }}
-        className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 flex items-center gap-2 hover:bg-slate-700 transition-colors cursor-pointer group"
-        title={`Click to copy: ${account}`}
+        className="px-2.5 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/50 flex items-center gap-1.5 hover:border-purple-500/50 hover:bg-slate-700/80 transition-all cursor-pointer"
+        title="Click to copy address"
       >
-        <div className="w-2 h-2 bg-green-500 rounded-full" />
-        <span className="text-white font-mono text-sm">{shortenAddress(account!)}</span>
-        <span className="text-slate-500 group-hover:text-slate-300 text-xs">📋</span>
+        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+        <span className="text-slate-300 font-mono text-xs">{shortenAddress(account!)}</span>
+        <span className="text-slate-500 text-[10px] transition-colors">{copied ? '✓' : '⧉'}</span>
       </button>
 
       {/* Disconnect */}

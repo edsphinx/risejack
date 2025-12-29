@@ -774,6 +774,88 @@ contract RiseJackTest is Test {
         assertEq(visibleValue, 6);
     }
 
+    // ==================== FUZZ TESTS ====================
+
+    function testFuzz_PlaceBet(uint256 amount) public {
+        // Bound to valid bet range
+        amount = bound(amount, risejack.minBet(), risejack.maxBet());
+        
+        vm.prank(player);
+        risejack.placeBet{value: amount}();
+        
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(game.bet, amount);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.WaitingForDeal));
+    }
+
+    function testFuzz_PlaceBetRevertsOutOfRange(uint256 amount) public {
+        // Test amounts outside valid range
+        vm.assume(amount < risejack.minBet() || amount > risejack.maxBet());
+        vm.assume(amount <= 10 ether); // Cap to avoid overflow
+        
+        vm.deal(player, amount + 1 ether);
+        vm.prank(player);
+        vm.expectRevert("Invalid bet amount");
+        risejack.placeBet{value: amount}();
+    }
+
+    function testFuzz_CalculateHandValue(uint8 card1, uint8 card2) public view {
+        // Bound cards to valid range (0-51)
+        card1 = uint8(bound(card1, 0, 51));
+        card2 = uint8(bound(card2, 0, 51));
+        
+        uint8[] memory cards = new uint8[](2);
+        cards[0] = card1;
+        cards[1] = card2;
+        
+        (uint8 value, bool isSoft) = risejack.calculateHandValue(cards);
+        
+        // Value should always be between 2 and 21 (or bust up to 30)
+        assertTrue(value >= 2 && value <= 30, "Invalid hand value");
+        
+        // Soft hands must have an ace counted as 11
+        if (isSoft) {
+            assertTrue(value <= 21, "Soft hand cannot be over 21");
+        }
+    }
+
+    function testFuzz_FullGameWithRandomCards(
+        uint256 card1,
+        uint256 card2,
+        uint256 card3,
+        uint256 card4
+    ) public {
+        vm.prank(player);
+        risejack.placeBet{value: 0.01 ether}();
+        
+        uint256 playerBalanceBefore = player.balance;
+        uint256 contractBalanceBefore = address(risejack).balance;
+        
+        // Deal random cards
+        uint256[] memory randomNumbers = new uint256[](4);
+        randomNumbers[0] = card1;
+        randomNumbers[1] = card2;
+        randomNumbers[2] = card3;
+        randomNumbers[3] = card4;
+        
+        vm.prank(vrfCoordinator);
+        risejack.rawFulfillRandomNumbers(1, randomNumbers);
+        
+        RiseJack.Game memory game = risejack.getGameState(player);
+        
+        // Game should either be in PlayerTurn or resolved (Idle means resolved)
+        bool validState = game.state == RiseJack.GameState.PlayerTurn ||
+                          game.state == RiseJack.GameState.Idle;
+        assertTrue(validState, "Invalid game state after deal");
+        
+        // If resolved, funds should be conserved
+        if (game.state == RiseJack.GameState.Idle) {
+            uint256 totalAfter = player.balance + address(risejack).balance;
+            uint256 totalBefore = playerBalanceBefore + contractBalanceBefore;
+            assertEq(totalAfter, totalBefore, "Funds not conserved");
+        }
+    }
+
     // Receive function for contract to receive ETH from withdrawHouseFunds
     receive() external payable {}
 }

@@ -1,40 +1,24 @@
 import { useState } from 'preact/hooks';
-import { useBlackjack, type WalletMode } from '../../hooks/useBlackjack';
+import { useRiseWallet } from '../../hooks/useRiseWallet';
+import { useGameState } from '../../hooks/useGameState';
 import { WalletConnect } from '../wallet/WalletConnect';
 import { Hand } from './Hand';
 import { ActionButtons } from './ActionButtons';
 import { GameState, type GameResult } from '@risejack/shared';
 
 export function GameBoard() {
-  const [walletMode, setWalletMode] = useState<WalletMode>('rise');
-  const [betAmount, setBetAmount] = useState('0.001');
+  const [betAmount, setBetAmount] = useState('0.00001');
 
-  const {
-    account,
-    isConnected,
-    gameData,
-    playerValue,
-    dealerValue,
-    betLimits,
-    isLoading,
-    error,
-    hasSessionKey,
-    sessionExpiry,
-    createSessionKey,
-    connect,
-    disconnect,
-    placeBet,
-    hit,
-    stand,
-    double,
-    surrender,
-    formatEther,
-  } = useBlackjack({ walletMode });
+  // Wallet connection
+  const wallet = useRiseWallet();
+
+  // Game state (only active when connected)
+  const game = useGameState(wallet.address);
 
   // Determine game result
   const getGameResult = (): GameResult => {
-    if (!gameData) return null;
-    switch (gameData.state) {
+    if (!game.gameData) return null;
+    switch (game.gameData.state) {
       case GameState.PlayerWin:
         return 'win';
       case GameState.DealerWin:
@@ -49,14 +33,17 @@ export function GameBoard() {
   };
 
   // Check if player can take actions
-  const canPlay = gameData?.state === GameState.PlayerTurn;
-  const isIdle = !gameData || gameData.state === GameState.Idle;
+  const canPlay = game.gameData?.state === GameState.PlayerTurn;
+  const isIdle = !game.gameData || game.gameData.state === GameState.Idle;
   const gameResult = getGameResult();
 
   // Can double only on first action (2 cards)
-  const canDouble = canPlay && gameData?.playerCards.length === 2 && !gameData.isDoubled;
+  const canDouble = canPlay && game.gameData?.playerCards.length === 2 && !game.gameData.isDoubled;
   // Can surrender only on first action
-  const canSurrender = canPlay && gameData?.playerCards.length === 2;
+  const canSurrender = canPlay && game.gameData?.playerCards.length === 2;
+
+  // Combined error
+  const error = wallet.error || game.error;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
@@ -67,15 +54,15 @@ export function GameBoard() {
             ♠️ RiseJack
           </h1>
           <WalletConnect
-            account={account}
-            isConnected={isConnected}
-            walletMode={walletMode}
-            hasSessionKey={hasSessionKey}
-            sessionExpiry={sessionExpiry}
-            onConnect={connect}
-            onDisconnect={disconnect}
-            onCreateSession={createSessionKey}
-            onModeChange={setWalletMode}
+            account={wallet.address}
+            isConnected={wallet.isConnected}
+            isConnecting={wallet.isConnecting}
+            hasSessionKey={wallet.hasSessionKey}
+            sessionExpiry={wallet.sessionExpiry}
+            error={wallet.error}
+            onConnect={wallet.connect}
+            onDisconnect={wallet.disconnect}
+            onCreateSession={wallet.createSessionKey}
           />
         </div>
       </header>
@@ -83,20 +70,49 @@ export function GameBoard() {
       <main className="max-w-4xl mx-auto p-4 py-8">
         {/* Error Display */}
         {error && (
-          <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200">
-            {error}
+          <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200 flex items-start gap-3">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <p className="font-medium">Error</p>
+              <p className="text-sm opacity-80">{error}</p>
+            </div>
           </div>
         )}
 
-        {!isConnected ? (
-          /* Not Connected */
+        {!wallet.isConnected ? (
+          /* Not Connected - Welcome Screen */
           <div className="text-center py-20">
-            <div className="text-6xl mb-6">🎰</div>
-            <h2 className="text-3xl font-bold text-white mb-4">Welcome to RiseJack</h2>
-            <p className="text-slate-400 mb-8 max-w-md mx-auto">
-              Connect your wallet to play on-chain Blackjack with instant, gasless transactions
-              powered by Rise session keys.
+            <div className="text-8xl mb-8 opacity-80">🃏</div>
+            <h2 className="text-4xl font-bold text-white mb-4">Welcome to RiseJack</h2>
+            <p className="text-slate-400 mb-8 max-w-lg mx-auto text-lg">
+              On-chain Blackjack with instant transactions. Connect your Rise Wallet to start
+              playing.
             </p>
+
+            {/* Features */}
+            <div className="flex justify-center gap-6 mt-12">
+              <div className="text-center">
+                <div className="text-3xl mb-2">⚡</div>
+                <div className="text-sm text-slate-400">10ms Blocks</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl mb-2">🔑</div>
+                <div className="text-sm text-slate-400">Session Keys</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl mb-2">🚀</div>
+                <div className="text-sm text-slate-400">No Popups</div>
+              </div>
+            </div>
+
+            {/* Big Connect Button */}
+            <button
+              onClick={wallet.connect}
+              disabled={wallet.isConnecting}
+              className="mt-12 px-10 py-4 rounded-2xl font-bold text-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all disabled:opacity-50 shadow-2xl shadow-purple-500/30"
+            >
+              {wallet.isConnecting ? '⏳ Connecting...' : '⚡ Connect Rise Wallet'}
+            </button>
           </div>
         ) : (
           /* Game Area */
@@ -105,10 +121,10 @@ export function GameBoard() {
             <div className="bg-gradient-to-b from-green-800 to-green-900 rounded-2xl p-8 border-8 border-amber-900 shadow-2xl">
               {/* Dealer Hand */}
               <div className="mb-12">
-                {gameData && gameData.dealerCards.length > 0 ? (
+                {game.gameData && game.gameData.dealerCards.length > 0 ? (
                   <Hand
-                    cards={gameData.dealerCards}
-                    value={dealerValue ?? undefined}
+                    cards={game.gameData.dealerCards}
+                    value={game.dealerValue ?? undefined}
                     isDealer
                     hideSecond={canPlay}
                     result={gameResult === 'lose' ? 'win' : null}
@@ -123,11 +139,11 @@ export function GameBoard() {
 
               {/* Player Hand */}
               <div className="mb-8">
-                {gameData && gameData.playerCards.length > 0 ? (
+                {game.gameData && game.gameData.playerCards.length > 0 ? (
                   <Hand
-                    cards={gameData.playerCards}
-                    value={playerValue?.value}
-                    isSoft={playerValue?.isSoft}
+                    cards={game.gameData.playerCards}
+                    value={game.playerValue?.value}
+                    isSoft={game.playerValue?.isSoft}
                     result={gameResult}
                   />
                 ) : (
@@ -140,9 +156,9 @@ export function GameBoard() {
                 <div
                   className={`text-center py-4 rounded-lg mb-6 font-bold text-xl ${
                     gameResult === 'win' || gameResult === 'blackjack'
-                      ? 'bg-green-500/20 text-green-400 winner'
+                      ? 'bg-green-500/20 text-green-400'
                       : gameResult === 'lose'
-                        ? 'bg-red-500/20 text-red-400 loser'
+                        ? 'bg-red-500/20 text-red-400'
                         : 'bg-yellow-500/20 text-yellow-400'
                   }`}
                 >
@@ -154,11 +170,15 @@ export function GameBoard() {
               )}
 
               {/* Bet Info */}
-              {gameData && gameData.bet > 0n && (
+              {game.gameData && game.gameData.bet > 0n && (
                 <div className="text-center text-white/60 mb-4">
                   Current Bet:{' '}
-                  <span className="text-white font-bold">{formatEther(gameData.bet)} ETH</span>
-                  {gameData.isDoubled && <span className="text-yellow-400 ml-2">(Doubled)</span>}
+                  <span className="text-white font-bold">
+                    {game.formatBet(game.gameData.bet)} ETH
+                  </span>
+                  {game.gameData.isDoubled && (
+                    <span className="text-yellow-400 ml-2">(Doubled)</span>
+                  )}
                 </div>
               )}
             </div>
@@ -173,9 +193,9 @@ export function GameBoard() {
                       type="number"
                       value={betAmount}
                       onChange={(e) => setBetAmount((e.target as HTMLInputElement).value)}
-                      min={formatEther(betLimits.min)}
-                      max={formatEther(betLimits.max)}
-                      step="0.001"
+                      min={game.formatBet(game.betLimits.min)}
+                      max={game.formatBet(game.betLimits.max)}
+                      step="0.00001"
                       className="flex-1 px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white text-lg font-mono focus:border-purple-500 focus:outline-none"
                       placeholder="Bet amount"
                     />
@@ -184,7 +204,7 @@ export function GameBoard() {
 
                   {/* Quick bet buttons */}
                   <div className="flex gap-2">
-                    {['0.001', '0.005', '0.01', '0.05'].map((amount) => (
+                    {['0.00001', '0.00005', '0.0001', '0.0005'].map((amount) => (
                       <button
                         key={amount}
                         onClick={() => setBetAmount(amount)}
@@ -200,35 +220,36 @@ export function GameBoard() {
                   </div>
 
                   <button
-                    onClick={() => placeBet(betAmount)}
-                    disabled={isLoading}
+                    onClick={() => game.placeBet(betAmount)}
+                    disabled={game.isLoading}
                     className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white transition-all disabled:opacity-50 shadow-lg shadow-purple-500/25"
                   >
-                    {isLoading ? 'Placing Bet...' : `Deal Cards - ${betAmount} ETH`}
+                    {game.isLoading ? '⏳ Placing Bet...' : `Deal Cards - ${betAmount} ETH`}
                   </button>
 
                   <p className="text-xs text-slate-500 text-center">
-                    Min: {formatEther(betLimits.min)} ETH • Max: {formatEther(betLimits.max)} ETH
+                    Min: {game.formatBet(game.betLimits.min)} ETH • Max:{' '}
+                    {game.formatBet(game.betLimits.max)} ETH
                   </p>
                 </div>
               ) : (
                 /* Action Buttons */
                 <ActionButtons
-                  onHit={hit}
-                  onStand={stand}
-                  onDouble={double}
-                  onSurrender={surrender}
+                  onHit={game.hit}
+                  onStand={game.stand}
+                  onDouble={game.double}
+                  onSurrender={game.surrender}
                   canDouble={canDouble}
                   canSurrender={canSurrender}
-                  isLoading={isLoading}
+                  isLoading={game.isLoading}
                 />
               )}
             </div>
 
             {/* Session Key Hint */}
-            {walletMode === 'rise' && !hasSessionKey && isConnected && (
-              <div className="text-center text-sm text-slate-500">
-                💡 Create a session key above for instant, popup-free gameplay!
+            {!wallet.hasSessionKey && wallet.isConnected && (
+              <div className="text-center text-sm text-purple-400 bg-purple-900/20 rounded-lg py-3 border border-purple-500/20">
+                💡 Enable <strong>Fast Mode</strong> above for instant, popup-free gameplay!
               </div>
             )}
           </div>

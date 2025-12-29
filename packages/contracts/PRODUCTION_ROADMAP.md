@@ -154,10 +154,10 @@ Comparison against standard casino blackjack rules:
   - [ ] 2:1 payout logic
   - [ ] Integration with game flow
 
-- [ ] **4.3 Rate Limiting**
-  - [ ] Limit VRF requests per player per block
-  - [ ] Prevent spam attacks
-  - [ ] Cooldown between games
+- [x] **4.3 Rate Limiting**
+  - [x] Limit bets per player with `GAME_COOLDOWN` (30 seconds)
+  - [x] Prevent spam attacks with `checkCooldown` modifier
+  - [x] Track cooldown via `lastGameTimestamp` mapping
 
 - [ ] **4.4 Gas Optimization**
   - [ ] Optimize storage patterns

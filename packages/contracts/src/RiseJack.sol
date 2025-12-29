@@ -69,6 +69,9 @@ contract RiseJack is IVRFConsumer {
     /// @notice VRF request timeout - after this, request can be retried
     uint256 public constant VRF_TIMEOUT = 5 minutes;
 
+    /// @notice Cooldown between games per player (rate limiting)
+    uint256 public constant GAME_COOLDOWN = 30 seconds;
+
     // ==================== STRUCTS ====================
 
     struct Game {
@@ -161,6 +164,9 @@ contract RiseJack is IVRFConsumer {
     /// @notice Player nonces for VRF seed uniqueness
     mapping(address => uint256) public playerNonces;
 
+    /// @notice Last game timestamp per player (for cooldown)
+    mapping(address => uint256) public lastGameTimestamp;
+
     // ==================== HOUSE PROTECTION STATE ====================
 
     /// @notice Emergency pause flag
@@ -230,6 +236,14 @@ contract RiseJack is IVRFConsumer {
         _;
     }
 
+    modifier checkCooldown() {
+        require(
+            block.timestamp >= lastGameTimestamp[msg.sender] + GAME_COOLDOWN,
+            "Cooldown active"
+        );
+        _;
+    }
+
     // ==================== CONSTRUCTOR ====================
 
     /**
@@ -258,8 +272,12 @@ contract RiseJack is IVRFConsumer {
         whenNotPaused 
         validBet 
         gameInState(msg.sender, GameState.Idle) 
-        checkDailyLimit(msg.sender) 
+        checkDailyLimit(msg.sender)
+        checkCooldown
     {
+        // Track cooldown
+        lastGameTimestamp[msg.sender] = block.timestamp;
+        
         // Track exposure (max possible payout)
         totalExposure += (msg.value * BLACKJACK_PAYOUT) / 100 + msg.value;
 

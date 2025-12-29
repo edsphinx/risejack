@@ -33,29 +33,35 @@ Comparison against standard casino blackjack rules:
 | Stand | End turn | `stand()` | DONE |
 | Double Down | Double bet, one card only | `double()` | DONE |
 | Surrender | Forfeit half bet | `surrender()` | DONE |
-| Split | Split pairs into 2 hands | - | PENDING |
-| Insurance | Side bet when dealer shows Ace | - | PENDING |
+| Split | Split pairs into 2 hands | - | FUTURE |
+| Insurance | Side bet when dealer shows Ace | - | FUTURE |
 | **Payouts** | | | |
 | Blackjack | 3:2 (150% profit) | `BLACKJACK_PAYOUT = 150` | DONE |
 | Win | 1:1 (100% profit) | `bet * 2` returned | DONE |
 | Push | Return bet | `bet` returned | DONE |
-| Insurance | 2:1 | - | PENDING |
+| Insurance | 2:1 | - | FUTURE |
 | **Dealer Rules** | | | |
 | Hit on 16 or less | Automatic | `_shouldDealerHit` | DONE |
 | Stand on 17+ | Automatic | `_shouldDealerHit` | DONE |
 | Hit on Soft 17 | Varies by casino | Implemented (hits) | DONE |
 | **Card Handling** | | | |
-| Single deck | 52 cards, no replacement | Infinite deck (% 52) | PENDING |
-| Multi-deck shoe | 6-8 decks, reshuffle at cut | - | PENDING |
-| Card counting possible | Cards tracked | Not possible (infinite) | DESIGN CHOICE |
-| **Time/Limits** | | | |
-| Bet limits | Min/Max per table | `minBet`/`maxBet` | DONE |
-| Game timeout | Dealer wins on inactivity | - | PENDING |
-| Session timeout | VRF request expires | - | PENDING |
+| Infinite Deck | N/A | `random % 52` | DONE (BY DESIGN) |
+| **House Protection** | | | |
+| Daily profit limit | Per player cap | `dailyProfitLimit` | DONE |
+| Min reserve auto-pause | Liquidity protection | `minReserve` | DONE |
+| Circuit breaker | Anomaly detection | `CIRCUIT_BREAKER_*` | DONE |
+| Exposure tracking | Total risk | `totalExposure` | DONE |
+| Emergency pause | Manual stop | `pause()` / `unpause()` | DONE |
+| House stats | Monitoring | `getHouseStats()` | DONE |
 | **Security** | | | |
 | Provably fair | Verifiable randomness | Rise VRF | DONE |
 | Anti-reentrancy | CEI pattern | Implemented | DONE |
 | Failed payout handling | Pull Payment | `pendingWithdrawals` | DONE |
+
+> [!IMPORTANT]
+> **Infinite Deck is Intentional**: We use `random % 52` (infinite deck) instead of real card tracking.
+> This is a SECURITY FEATURE that prevents card counting with bots/AI.
+> Each card is statistically independent, making the game unpredictable.
 
 ---
 

@@ -28,9 +28,6 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
-    labels:
-      - 'dependencies'
-      - 'automated'
 
   # GitHub Actions
   - package-ecosystem: 'github-actions'
@@ -39,7 +36,3 @@ updates:
       interval: 'weekly'
       day: 'monday'
     open-pull-requests-limit: 3
-    labels:
-      - 'dependencies'
-      - 'ci'
-      - 'automated'

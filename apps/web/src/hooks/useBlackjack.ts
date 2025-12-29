@@ -9,9 +9,24 @@ import {
 import { useState, useEffect, useCallback, useMemo } from 'preact/hooks';
 import { RISEJACK_ABI, getRiseJackAddress, riseTestnet } from '../lib/contract';
 import type { GameData, GameState, HandValue, BetLimits } from '@risejack/shared';
+import { useRiseWallet } from './useRiseWallet';
 
-export function useBlackjack() {
-  const [account, setAccount] = useState<`0x${string}` | null>(null);
+export type WalletMode = 'metamask' | 'rise';
+
+export interface UseBlackjackOptions {
+  walletMode?: WalletMode;
+}
+
+export function useBlackjack(options: UseBlackjackOptions = {}) {
+  const { walletMode = 'rise' } = options;
+
+  // Rise Wallet hook
+  const riseWallet = useRiseWallet();
+
+  // MetaMask state
+  const [metamaskAccount, setMetamaskAccount] = useState<`0x${string}` | null>(null);
+
+  // Shared state
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [playerValue, setPlayerValue] = useState<HandValue | null>(null);
   const [dealerValue, setDealerValue] = useState<number | null>(null);
@@ -20,7 +35,15 @@ export function useBlackjack() {
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get contract address from env or fallback to default
+  // Current account based on mode
+  const account = useMemo(() => {
+    return walletMode === 'rise' ? riseWallet.address : metamaskAccount;
+  }, [walletMode, riseWallet.address, metamaskAccount]);
+
+  const isConnected = useMemo(() => {
+    return walletMode === 'rise' ? riseWallet.isConnected : !!metamaskAccount;
+  }, [walletMode, riseWallet.isConnected, metamaskAccount]);
+
   const contractAddress = useMemo(() => getRiseJackAddress(), []);
 
   const publicClient = useMemo(
@@ -32,7 +55,14 @@ export function useBlackjack() {
     []
   );
 
+  // Connect wallet based on mode
   const connect = useCallback(async () => {
+    if (walletMode === 'rise') {
+      await riseWallet.connect();
+      return;
+    }
+
+    // MetaMask connect
     if (typeof window.ethereum === 'undefined') {
       setError('Please install MetaMask');
       return;
@@ -46,7 +76,7 @@ export function useBlackjack() {
         setError('No accounts found');
         return;
       }
-      setAccount(accounts[0] as `0x${string}`);
+      setMetamaskAccount(accounts[0] as `0x${string}`);
 
       try {
         await window.ethereum.request({
@@ -75,8 +105,21 @@ export function useBlackjack() {
     } catch (err: unknown) {
       setError((err as Error).message || 'Failed to connect wallet');
     }
-  }, []);
+  }, [walletMode, riseWallet]);
 
+  // Disconnect
+  const disconnect = useCallback(() => {
+    if (walletMode === 'rise') {
+      riseWallet.disconnect();
+    } else {
+      setMetamaskAccount(null);
+    }
+    setGameData(null);
+    setPlayerValue(null);
+    setDealerValue(null);
+  }, [walletMode, riseWallet]);
+
+  // Fetch bet limits
   const fetchBetLimits = useCallback(async () => {
     try {
       const [min, max] = await Promise.all([
@@ -94,10 +137,10 @@ export function useBlackjack() {
       setBetLimits({ min, max });
     } catch (err: unknown) {
       console.error('Failed to fetch bet limits:', err);
-      // Don't set error state for background fetches, just log
     }
   }, [publicClient, contractAddress]);
 
+  // Fetch game state
   const fetchGameState = useCallback(async () => {
     if (!account) return;
 
@@ -137,12 +180,12 @@ export function useBlackjack() {
       setDealerValue(dealerVal);
     } catch (err: unknown) {
       console.error('Failed to fetch game state:', err);
-      // Don't set error state for background polling, just log
     } finally {
       setIsFetching(false);
     }
   }, [account, publicClient, contractAddress]);
 
+  // Execute action - uses Rise Wallet session or MetaMask
   const executeAction = useCallback(
     async (
       functionName: 'placeBet' | 'hit' | 'stand' | 'double' | 'surrender',
@@ -153,42 +196,52 @@ export function useBlackjack() {
         return false;
       }
 
-      if (!window.ethereum) {
-        setError('Wallet not available');
-        return false;
-      }
-
       setIsLoading(true);
       setError(null);
 
       try {
-        const walletClient = createWalletClient({
-          chain: riseTestnet,
-          transport: custom(window.ethereum),
-        });
+        let hash: `0x${string}` | null = null;
 
-        let hash: `0x${string}`;
-
-        if (value) {
-          hash = await walletClient.writeContract({
-            address: contractAddress,
-            abi: RISEJACK_ABI,
-            functionName: functionName as 'placeBet' | 'double',
-            account,
-            value,
-          });
+        if (walletMode === 'rise') {
+          // Use Rise Wallet (with session key if available)
+          hash = await riseWallet.sendTransaction(functionName, value);
         } else {
-          hash = await walletClient.writeContract({
-            address: contractAddress,
-            abi: RISEJACK_ABI,
-            functionName: functionName as 'hit' | 'stand' | 'surrender',
-            account,
+          // Use MetaMask
+          if (!window.ethereum) {
+            setError('Wallet not available');
+            return false;
+          }
+
+          const walletClient = createWalletClient({
+            chain: riseTestnet,
+            transport: custom(window.ethereum),
           });
+
+          if (value) {
+            hash = await walletClient.writeContract({
+              address: contractAddress,
+              abi: RISEJACK_ABI,
+              functionName: functionName as 'placeBet' | 'double',
+              account,
+              value,
+            });
+          } else {
+            hash = await walletClient.writeContract({
+              address: contractAddress,
+              abi: RISEJACK_ABI,
+              functionName: functionName as 'hit' | 'stand' | 'surrender',
+              account,
+            });
+          }
         }
 
-        await publicClient.waitForTransactionReceipt({ hash });
-        await fetchGameState();
-        return true;
+        if (hash) {
+          await publicClient.waitForTransactionReceipt({ hash });
+          await fetchGameState();
+          return true;
+        }
+
+        return false;
       } catch (err: unknown) {
         const errorMessage = (err as Error).message || 'Transaction failed';
         setError(errorMessage);
@@ -197,9 +250,10 @@ export function useBlackjack() {
         setIsLoading(false);
       }
     },
-    [account, publicClient, contractAddress, fetchGameState]
+    [account, walletMode, riseWallet, publicClient, contractAddress, fetchGameState]
   );
 
+  // Game actions
   const placeBet = useCallback(
     (betAmount: string): Promise<boolean> => {
       if (!betAmount || isNaN(parseFloat(betAmount)) || parseFloat(betAmount) <= 0) {
@@ -224,10 +278,12 @@ export function useBlackjack() {
 
   const surrender = useCallback(() => executeAction('surrender'), [executeAction]);
 
+  // Initialize
   useEffect(() => {
     fetchBetLimits();
   }, [fetchBetLimits]);
 
+  // Poll game state when connected
   useEffect(() => {
     if (!account) return;
 
@@ -239,17 +295,25 @@ export function useBlackjack() {
   return {
     // State
     account,
+    isConnected,
     gameData,
     playerValue,
     dealerValue,
     betLimits,
     isLoading,
     isFetching,
-    error,
+    error: error || riseWallet.error,
     contractAddress,
+    walletMode,
+
+    // Rise Wallet specific
+    hasSessionKey: riseWallet.hasSessionKey,
+    sessionExpiry: riseWallet.sessionExpiry,
+    createSessionKey: riseWallet.createSessionKey,
 
     // Actions
     connect,
+    disconnect,
     placeBet,
     hit,
     stand,

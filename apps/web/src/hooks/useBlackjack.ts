@@ -24,7 +24,7 @@ export function useBlackjack() {
         }
 
         try {
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }) as string[];
             setAccount(accounts[0] as `0x${string}`);
 
             try {
@@ -92,16 +92,19 @@ export function useBlackjack() {
         try {
             const walletClient = createWalletClient({
                 chain: riseTestnet,
-                transport: custom(window.ethereum),
+                transport: custom(window.ethereum!),
             });
 
-            const hash = await walletClient.writeContract({
+            const params = {
                 address: RISEJACK_ADDRESS,
                 abi: RISEJACK_ABI,
                 functionName,
                 account,
-                ...(value && { value }),
-            });
+            } as const;
+
+            const hash = await walletClient.writeContract(
+                value ? { ...params, value } : params
+            );
 
             await publicClient.waitForTransactionReceipt({ hash });
             await fetchGameState();

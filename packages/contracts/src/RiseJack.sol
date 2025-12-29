@@ -7,6 +7,7 @@ import {IVRFCoordinator} from "./interfaces/IVRFCoordinator.sol";
 /**
  * @title RiseJack
  * @author edsphinx
+ * @custom:company blocketh
  * @notice On-chain Blackjack game with provably fair randomness via Rise VRF
  * @dev Uses Rise Chain VRF for card dealing with async callback pattern
  *

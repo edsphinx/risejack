@@ -3,6 +3,8 @@ pragma solidity ^0.8.28;
 
 /**
  * @title IVRFCoordinator
+ * @author edsphinx
+ * @custom:company blocketh
  * @notice Interface for Rise Chain VRF Coordinator
  */
 interface IVRFCoordinator {

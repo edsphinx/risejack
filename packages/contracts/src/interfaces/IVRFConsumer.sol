@@ -3,6 +3,8 @@ pragma solidity ^0.8.28;
 
 /**
  * @title IVRFConsumer
+ * @author edsphinx
+ * @custom:company blocketh
  * @notice Interface that contracts must implement to receive VRF callbacks
  */
 interface IVRFConsumer {

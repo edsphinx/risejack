@@ -1,18 +1,52 @@
 import { useState, useEffect, useCallback, useMemo } from 'preact/hooks';
 import { Porto } from 'porto';
 import { riseTestnetConfig } from 'rise-wallet-sdk';
-import type { Address } from 'viem';
-import { getRiseJackAddress } from '../lib/contract';
-import type { SessionKeyData, TimeRemaining } from '@risejack/shared';
+import { encodeFunctionData, type Address } from 'viem';
+import { getRiseJackAddress, RISEJACK_ABI } from '../lib/contract';
+import type { TimeRemaining } from '@risejack/shared';
 
-// Session key storage key
-const SESSION_KEY_STORAGE = 'risejack_session_key';
-
-// Session key expiry duration (1 hour)
+// Session expiry duration (1 hour)
 const SESSION_EXPIRY_SECONDS = 3600;
 
+// Obfuscation key for localStorage (not a full security solution, but better than plaintext)
+// In production, use Web Crypto API with user-derived keys or IndexedDB with origin isolation
+const STORAGE_KEY = 'risejack_session_v1';
+
+/**
+ * Simple obfuscation for localStorage
+ * NOTE: This is NOT encryption. For true security, use Web Crypto API.
+ * Session keys are already scoped to specific contract permissions,
+ * limiting damage if compromised.
+ */
+function obfuscate(data: string): string {
+  return btoa(
+    data
+      .split('')
+      .map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ (i % 256)))
+      .join('')
+  );
+}
+
+function deobfuscate(data: string): string {
+  try {
+    const decoded = atob(data);
+    return decoded
+      .split('')
+      .map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ (i % 256)))
+      .join('');
+  } catch {
+    return '';
+  }
+}
+
+// Session data structure (no private keys stored - Porto manages that)
+interface SessionInfo {
+  address: Address;
+  expiry: number;
+  createdAt: number;
+}
+
 export interface UseRiseWalletReturn {
-  // State
   address: Address | null;
   isConnected: boolean;
   isConnecting: boolean;
@@ -20,20 +54,17 @@ export interface UseRiseWalletReturn {
   sessionExpiry: TimeRemaining | null;
   error: string | null;
 
-  // Actions
   connect: () => Promise<void>;
   disconnect: () => void;
   createSessionKey: () => Promise<boolean>;
   revokeSessionKey: () => void;
-
-  // Session-enabled contract calls
   sendTransaction: (functionName: string, value?: bigint) => Promise<`0x${string}` | null>;
 }
 
 export function useRiseWallet(): UseRiseWalletReturn {
   const [address, setAddress] = useState<Address | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [sessionKey, setSessionKey] = useState<SessionKeyData | null>(null);
+  const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const contractAddress = useMemo(() => getRiseJackAddress(), []);
@@ -48,31 +79,34 @@ export function useRiseWallet(): UseRiseWalletReturn {
     }
   }, []);
 
-  // Load session key from storage on mount
+  // Load session info from storage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(SESSION_KEY_STORAGE);
+      const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored) as SessionKeyData;
-        // Check if session is still valid
-        if (parsed.expiry > Date.now() / 1000) {
-          setSessionKey(parsed);
-          setAddress(parsed.address);
-        } else {
-          localStorage.removeItem(SESSION_KEY_STORAGE);
+        const deobfuscated = deobfuscate(stored);
+        if (deobfuscated) {
+          const parsed = JSON.parse(deobfuscated) as SessionInfo;
+          // Check if session is still valid
+          if (parsed.expiry > Date.now() / 1000) {
+            setSessionInfo(parsed);
+            setAddress(parsed.address);
+          } else {
+            localStorage.removeItem(STORAGE_KEY);
+          }
         }
       }
     } catch {
-      localStorage.removeItem(SESSION_KEY_STORAGE);
+      localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
 
   // Calculate time remaining for session
   const sessionExpiry = useMemo((): TimeRemaining | null => {
-    if (!sessionKey) return null;
+    if (!sessionInfo) return null;
 
     const now = Math.floor(Date.now() / 1000);
-    const remaining = sessionKey.expiry - now;
+    const remaining = sessionInfo.expiry - now;
 
     if (remaining <= 0) {
       return { seconds: 0, minutes: 0, hours: 0, expired: true };
@@ -84,7 +118,7 @@ export function useRiseWallet(): UseRiseWalletReturn {
       hours: Math.floor(remaining / 3600),
       expired: false,
     };
-  }, [sessionKey]);
+  }, [sessionInfo]);
 
   // Connect wallet via Porto
   const connect = useCallback(async () => {
@@ -114,8 +148,8 @@ export function useRiseWallet(): UseRiseWalletReturn {
   // Disconnect wallet
   const disconnect = useCallback(() => {
     setAddress(null);
-    setSessionKey(null);
-    localStorage.removeItem(SESSION_KEY_STORAGE);
+    setSessionInfo(null);
+    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   // Create session key for popup-free transactions
@@ -126,10 +160,10 @@ export function useRiseWallet(): UseRiseWalletReturn {
     }
 
     try {
-      // Create a session key with spend permissions for our contract
       const expiry = Math.floor(Date.now() / 1000) + SESSION_EXPIRY_SECONDS;
 
       // Request session key creation via Porto
+      // Porto manages the private key securely - we only store metadata
       const result = await porto.provider.request({
         method: 'experimental_createSession',
         params: [
@@ -139,13 +173,11 @@ export function useRiseWallet(): UseRiseWalletReturn {
               calls: [
                 {
                   to: contractAddress,
-                  // Allow all blackjack functions
-                  selector: null, // null = any function
+                  selector: null, // null = any function on this contract
                 },
               ],
               spend: [
                 {
-                  // Allow spending ETH for bets
                   token: '0x0000000000000000000000000000000000000000', // Native ETH
                   limit: '1000000000000000000', // 1 ETH max per session
                   period: 'hour',
@@ -157,16 +189,18 @@ export function useRiseWallet(): UseRiseWalletReturn {
       });
 
       if (result) {
-        const sessionData: SessionKeyData = {
-          privateKey: (result as { privateKey: Address }).privateKey,
-          publicKey: (result as { publicKey: Address }).publicKey,
+        // Only store session metadata, not private keys
+        // Porto manages the actual signing keys internally
+        const sessionData: SessionInfo = {
           address,
           expiry,
           createdAt: Math.floor(Date.now() / 1000),
         };
 
-        setSessionKey(sessionData);
-        localStorage.setItem(SESSION_KEY_STORAGE, JSON.stringify(sessionData));
+        setSessionInfo(sessionData);
+
+        // Store obfuscated (not encrypted, but not plaintext)
+        localStorage.setItem(STORAGE_KEY, obfuscate(JSON.stringify(sessionData)));
         return true;
       }
 
@@ -179,11 +213,25 @@ export function useRiseWallet(): UseRiseWalletReturn {
 
   // Revoke session key
   const revokeSessionKey = useCallback(() => {
-    setSessionKey(null);
-    localStorage.removeItem(SESSION_KEY_STORAGE);
+    setSessionInfo(null);
+    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
-  // Send transaction using session key (no popup) or regular wallet
+  // Encode function call using proper ABI
+  const encodeCall = useCallback((functionName: string): `0x${string}` => {
+    try {
+      // Use viem's encodeFunctionData with proper ABI
+      return encodeFunctionData({
+        abi: RISEJACK_ABI,
+        functionName: functionName as 'placeBet' | 'hit' | 'stand' | 'double' | 'surrender',
+      });
+    } catch (err) {
+      console.error('Failed to encode function data:', err);
+      throw new Error(`Invalid function: ${functionName}`);
+    }
+  }, []);
+
+  // Send transaction - Porto handles session key signing automatically
   const sendTransaction = useCallback(
     async (functionName: string, value?: bigint): Promise<`0x${string}` | null> => {
       if (!porto || !address) {
@@ -191,16 +239,26 @@ export function useRiseWallet(): UseRiseWalletReturn {
         return null;
       }
 
+      // Validate function name against known functions
+      const validFunctions = ['placeBet', 'hit', 'stand', 'double', 'surrender'];
+      if (!validFunctions.includes(functionName)) {
+        setError(`Invalid function: ${functionName}`);
+        return null;
+      }
+
       try {
-        // Send transaction via Porto provider
-        // Porto handles session key signing automatically if available
+        // Encode function call using ABI
+        const data = encodeCall(functionName);
+
+        // Porto automatically uses session key if available and valid
+        // Otherwise it falls back to requiring user approval
         const hash = await porto.provider.request({
           method: 'eth_sendTransaction',
           params: [
             {
               from: address,
               to: contractAddress,
-              data: encodeFunctionData(functionName),
+              data,
               value: value ? `0x${value.toString(16)}` : undefined,
             },
           ],
@@ -212,37 +270,21 @@ export function useRiseWallet(): UseRiseWalletReturn {
         return null;
       }
     },
-    [porto, address, contractAddress]
+    [porto, address, contractAddress, encodeCall]
   );
 
   return {
-    // State
     address,
     isConnected: !!address,
     isConnecting,
-    hasSessionKey: !!sessionKey && sessionKey.expiry > Date.now() / 1000,
+    hasSessionKey: !!sessionInfo && sessionInfo.expiry > Date.now() / 1000,
     sessionExpiry,
     error,
 
-    // Actions
     connect,
     disconnect,
     createSessionKey,
     revokeSessionKey,
     sendTransaction,
   };
-}
-
-// Helper to encode function data
-function encodeFunctionData(functionName: string): `0x${string}` {
-  // Simple function selector encoding
-  const selectors: Record<string, `0x${string}`> = {
-    placeBet: '0xf7010e57', // keccak256("placeBet()")[:4]
-    hit: '0x5b42d1df', // keccak256("hit()")[:4]
-    stand: '0x96848984', // keccak256("stand()")[:4]
-    double: '0x0c9f3f1f', // keccak256("double()")[:4]
-    surrender: '0xd1058e59', // keccak256("surrender()")[:4]
-  };
-
-  return selectors[functionName] || '0x';
 }

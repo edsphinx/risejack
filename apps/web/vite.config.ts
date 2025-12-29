@@ -36,12 +36,18 @@ export default defineConfig({
       output: {
         manualChunks: {
           viem: ['viem'],
+          porto: ['porto', 'rise-wallet-sdk'],
         },
       },
     },
   },
 
   optimizeDeps: {
-    include: ['preact', 'viem'],
+    include: ['preact', 'viem', 'porto', 'rise-wallet-sdk'],
+  },
+
+  // Handle porto and related packages that might have resolution issues
+  ssr: {
+    noExternal: ['porto', 'rise-wallet-sdk'],
   },
 });

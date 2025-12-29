@@ -13,8 +13,8 @@ import {IVRFCoordinator} from "./interfaces/IVRFCoordinator.sol";
 contract Blackjack is IVRFConsumer {
     // ==================== CONSTANTS ====================
 
-    /// @notice Rise Chain Testnet VRF Coordinator
-    address public constant VRF_COORDINATOR = 0x9d57aB4517ba97349551C876a01a7580B1338909;
+    /// @notice Rise Chain Testnet VRF Coordinator (default)
+    address public constant DEFAULT_VRF_COORDINATOR = 0x9d57aB4517ba97349551C876a01a7580B1338909;
 
     /// @notice Cards per deck
     uint8 public constant CARDS_PER_DECK = 52;
@@ -122,8 +122,17 @@ contract Blackjack is IVRFConsumer {
 
     // ==================== CONSTRUCTOR ====================
 
-    constructor() {
-        coordinator = IVRFCoordinator(VRF_COORDINATOR);
+    /**
+     * @notice Deploy Blackjack contract
+     * @param _vrfCoordinator Address of VRF Coordinator (use address(0) for default Rise testnet)
+     */
+    constructor(address _vrfCoordinator) {
+        // Dependency injection: use provided coordinator or default to Rise testnet
+        if (_vrfCoordinator == address(0)) {
+            coordinator = IVRFCoordinator(DEFAULT_VRF_COORDINATOR);
+        } else {
+            coordinator = IVRFCoordinator(_vrfCoordinator);
+        }
         owner = msg.sender;
     }
 

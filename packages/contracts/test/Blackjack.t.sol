@@ -31,23 +31,6 @@ contract MockVRFCoordinator is IVRFCoordinator {
 }
 
 /**
- * @title TestableBlackjack
- * @notice Blackjack that allows setting custom VRF coordinator for testing
- */
-contract TestableBlackjack is Blackjack {
-    address private testCoordinator;
-
-    function setTestCoordinator(address _coordinator) external {
-        testCoordinator = _coordinator;
-    }
-
-    // Override the modifier to use test coordinator
-    function _getCoordinator() internal view returns (address) {
-        return testCoordinator != address(0) ? testCoordinator : address(coordinator);
-    }
-}
-
-/**
  * @title BlackjackTest
  * @notice Test suite for Blackjack contract with VRF
  */
@@ -63,23 +46,12 @@ contract BlackjackTest is Test {
         mockVRF = new MockVRFCoordinator();
         vrfCoordinator = address(mockVRF);
         
-        // Deploy Blackjack but we need to mock the coordinator call
-        // Use vm.etch to place mock at the hardcoded address
-        address hardcodedVRF = 0x9d57aB4517ba97349551C876a01a7580B1338909;
-        vm.etch(hardcodedVRF, address(mockVRF).code);
-        
-        // Copy storage from mock to hardcoded address
-        // This is complex, so instead let's use a different approach:
-        // We'll test with the mock by calling directly
-        
-        blackjack = new Blackjack();
+        // Deploy Blackjack with mock VRF coordinator (dependency injection)
+        blackjack = new Blackjack(vrfCoordinator);
         
         // Fund accounts
         vm.deal(player, 10 ether);
         vm.deal(address(blackjack), 100 ether);
-        
-        // Update vrfCoordinator to the hardcoded one
-        vrfCoordinator = hardcodedVRF;
     }
 
     // ==================== PLACE BET TESTS ====================

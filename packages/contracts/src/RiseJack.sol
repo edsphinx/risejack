@@ -353,6 +353,14 @@ contract RiseJack is IVRFConsumer {
         request.fulfilled = true;
         address player = request.player;
         Game storage game = games[player];
+        
+        // Validate game is in a valid state for this callback
+        require(
+            game.state == GameState.WaitingForDeal ||
+            game.state == GameState.WaitingForHit ||
+            game.state == GameState.DealerTurn,
+            "Invalid game state for VRF callback"
+        );
 
         if (request.requestType == RequestType.InitialDeal) {
             _handleInitialDeal(player, randomNumbers);

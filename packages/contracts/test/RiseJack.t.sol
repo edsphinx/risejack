@@ -631,10 +631,46 @@ contract RiseJackTest is Test {
     // ==================== PLAYER WITHDRAW TEST ====================
 
     function test_WithdrawPendingPayout() public {
-        // First set pending withdrawal manually (simulating failed payout)
-        // This is tested implicitly through the pull payment pattern
-        uint256 pending = risejack.pendingWithdrawals(player);
-        assertEq(pending, 0);
+        // Deploy a contract that rejects ETH to simulate failed payout
+        RejectingReceiver rejecter = new RejectingReceiver();
+        address rejecterAddr = address(rejecter);
+        vm.deal(rejecterAddr, 1 ether);
+        
+        // Place bet from rejecting contract
+        vm.prank(rejecterAddr);
+        risejack.placeBet{value: 0.01 ether}();
+        
+        // Give player blackjack so they win
+        uint256[] memory randomNumbers = new uint256[](4);
+        randomNumbers[0] = 0;   // Player: Ace
+        randomNumbers[1] = 9;   // Dealer: 10
+        randomNumbers[2] = 12;  // Player: King (Blackjack!)
+        randomNumbers[3] = 7;   // Dealer: 8
+        
+        vm.prank(vrfCoordinator);
+        risejack.rawFulfillRandomNumbers(1, randomNumbers);
+        
+        // Payout should have failed, check pending withdrawal
+        uint256 expectedPayout = (0.01 ether * 150) / 100 + 0.01 ether; // 0.025 ether
+        uint256 pending = risejack.pendingWithdrawals(rejecterAddr);
+        assertEq(pending, expectedPayout, "Pending withdrawal should equal failed payout");
+        
+        // Now enable receiving and withdraw
+        rejecter.enableReceiving();
+        uint256 balanceBefore = rejecterAddr.balance;
+        
+        vm.prank(rejecterAddr);
+        risejack.withdraw();
+        
+        // Verify withdrawal succeeded
+        assertEq(rejecterAddr.balance, balanceBefore + expectedPayout, "Balance should increase by payout");
+        assertEq(risejack.pendingWithdrawals(rejecterAddr), 0, "Pending should be zero after withdraw");
+    }
+    
+    function test_WithdrawRevertsIfNoPending() public {
+        vm.prank(player);
+        vm.expectRevert("No pending withdrawal");
+        risejack.withdraw();
     }
 
     // ==================== GAME TIMEOUT TESTS ====================
@@ -740,4 +776,20 @@ contract RiseJackTest is Test {
 
     // Receive function for contract to receive ETH from withdrawHouseFunds
     receive() external payable {}
+}
+
+/**
+ * @title RejectingReceiver
+ * @notice Helper contract that rejects ETH unless enabled, for testing pull payment pattern
+ */
+contract RejectingReceiver {
+    bool public canReceive;
+    
+    function enableReceiving() external {
+        canReceive = true;
+    }
+    
+    receive() external payable {
+        require(canReceive, "Rejecting ETH");
+    }
 }

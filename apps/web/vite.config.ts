@@ -18,15 +18,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      // React compat for any libraries that need it
+      // React compat for wagmi and react-query
       react: 'preact/compat',
       'react-dom': 'preact/compat',
       'react/jsx-runtime': 'preact/jsx-runtime',
-      // Porto namespace compatibility (rise-wallet-sdk uses old import paths)
-      'porto/Porto': 'porto',
-      'porto/Chains': 'porto',
-      'porto/Key': 'porto',
-      'porto/Account': 'porto',
     },
   },
 
@@ -41,13 +36,13 @@ export default defineConfig({
       output: {
         manualChunks: {
           viem: ['viem'],
-          porto: ['porto', 'rise-wallet-sdk'],
+          'rise-wallet': ['rise-wallet', 'wagmi', '@tanstack/react-query'],
         },
       },
     },
   },
 
   optimizeDeps: {
-    include: ['preact', 'viem', 'porto', 'rise-wallet-sdk'],
+    include: ['preact', 'viem', 'rise-wallet', 'wagmi', '@tanstack/react-query', 'ox', 'shreds'],
   },
 });

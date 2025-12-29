@@ -59,4 +59,5 @@ export interface WalletConnectProps {
   onConnect: () => void;
   onDisconnect: () => void;
   onCreateSession: () => Promise<boolean>;
+  onRevokeSession: () => void;
 }

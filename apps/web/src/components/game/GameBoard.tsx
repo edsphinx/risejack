@@ -63,6 +63,7 @@ export function GameBoard() {
             onConnect={wallet.connect}
             onDisconnect={wallet.disconnect}
             onCreateSession={wallet.createSessionKey}
+            onRevokeSession={wallet.revokeSessionKey}
           />
         </div>
       </header>

@@ -51,6 +51,9 @@ contract RiseJack is IVRFConsumer {
     uint256 public constant CIRCUIT_BREAKER_THRESHOLD = 20 ether;
     uint256 public constant CIRCUIT_BREAKER_WINDOW = 1 hours;
 
+    /// @notice Game timeout - after this time, game can be cancelled
+    uint256 public constant GAME_TIMEOUT = 1 hours;
+
     // ==================== STRUCTS ====================
 
     struct Game {
@@ -106,6 +109,7 @@ contract RiseJack is IVRFConsumer {
     event DailyLimitReached(address indexed player, uint256 profit);
     event CircuitBreakerTriggered(uint256 lossAmount, uint256 timeWindow);
     event ReserveLow(uint256 currentBalance, uint256 minRequired);
+    event GameTimedOut(address indexed player, uint256 refund);
 
     // ==================== STATE ====================
 
@@ -745,6 +749,35 @@ contract RiseJack is IVRFConsumer {
 
         (bool success,) = msg.sender.call{value: amount}("");
         require(success, "Withdrawal failed");
+    }
+
+    /**
+     * @notice Cancel a timed out game and refund the player
+     * @dev Can be called by anyone for any player's timed out game
+     * @param player Address of the player with timed out game
+     */
+    function cancelTimedOutGame(address player) external {
+        Game storage game = games[player];
+        require(game.state != GameState.Idle, "No active game");
+        require(block.timestamp >= game.timestamp + GAME_TIMEOUT, "Game not timed out");
+
+        uint256 refund = game.bet;
+        
+        // Update exposure
+        uint256 maxPayout = (refund * BLACKJACK_PAYOUT) / 100 + refund;
+        if (totalExposure >= maxPayout) {
+            totalExposure -= maxPayout;
+        } else {
+            totalExposure = 0;
+        }
+
+        emit GameTimedOut(player, refund);
+        _resetGame(player);
+
+        // Refund full bet using safe payout
+        if (refund > 0) {
+            _safePayout(player, refund);
+        }
     }
 
     // ==================== ADMIN FUNCTIONS ====================

@@ -51,6 +51,9 @@ contract RiseJackTest is Test {
         // Fund accounts
         vm.deal(player, 10 ether);
         vm.deal(address(risejack), 100 ether);
+        
+        // Set initial timestamp to allow first bet (cooldown is 30s, lastGameTimestamp defaults to 0)
+        vm.warp(31);
     }
 
     // ==================== PLACE BET TESTS ====================
@@ -939,6 +942,53 @@ contract RiseJackTest is Test {
         // Game should be reset
         RiseJack.Game memory game = risejack.getGameState(player);
         assertEq(uint256(game.state), uint256(RiseJack.GameState.Idle), "Game should be idle");
+    }
+
+    // ==================== PHASE 4.3: RATE LIMITING TESTS ====================
+
+    function test_CooldownPreventsRapidBets() public {
+        // First bet succeeds
+        vm.prank(player);
+        risejack.placeBet{value: 0.01 ether}();
+        
+        // Complete the game quickly
+        uint256[] memory blackjackNumbers = new uint256[](4);
+        blackjackNumbers[0] = 0;   // Ace
+        blackjackNumbers[1] = 5;   // 6 (dealer)
+        blackjackNumbers[2] = 9;   // 10
+        blackjackNumbers[3] = 6;   // 7 (dealer)
+        vm.prank(vrfCoordinator);
+        risejack.rawFulfillRandomNumbers(1, blackjackNumbers);
+        
+        // Try to bet again immediately - should fail
+        vm.prank(player);
+        vm.expectRevert("Cooldown active");
+        risejack.placeBet{value: 0.01 ether}();
+    }
+
+    function test_CooldownAllowsAfterTimeout() public {
+        // First bet succeeds
+        vm.prank(player);
+        risejack.placeBet{value: 0.01 ether}();
+        
+        // Complete the game
+        uint256[] memory blackjackNumbers = new uint256[](4);
+        blackjackNumbers[0] = 0;
+        blackjackNumbers[1] = 5;
+        blackjackNumbers[2] = 9;
+        blackjackNumbers[3] = 6;
+        vm.prank(vrfCoordinator);
+        risejack.rawFulfillRandomNumbers(1, blackjackNumbers);
+        
+        // Warp past cooldown
+        vm.warp(block.timestamp + 31 seconds);
+        
+        // Second bet should succeed
+        vm.prank(player);
+        risejack.placeBet{value: 0.01 ether}();
+        
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.WaitingForDeal));
     }
 
     // Receive function for contract to receive ETH from withdrawHouseFunds

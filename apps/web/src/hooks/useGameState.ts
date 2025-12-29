@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'preact/hooks';
 import { createPublicClient, http, parseEther, formatEther } from 'viem';
 import { RISEJACK_ABI, getRiseJackAddress, riseTestnet } from '../lib/contract';
-import { useRiseWallet } from './useRiseWallet';
+import type { UseRiseWalletReturn } from './useRiseWallet';
 import type { GameData, GameState, HandValue, BetLimits } from '@risejack/shared';
 
 // Polling interval - reduced for better performance (5 seconds instead of 2)
@@ -34,8 +34,8 @@ function getSafeErrorMessage(error: unknown): string {
   return 'Transaction failed. Please try again.';
 }
 
-export function useGameState(address: `0x${string}` | null) {
-  const wallet = useRiseWallet();
+export function useGameState(wallet: UseRiseWalletReturn) {
+  const { address } = wallet;
 
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [playerValue, setPlayerValue] = useState<HandValue | null>(null);

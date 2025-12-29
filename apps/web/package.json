@@ -33,6 +33,6 @@
     "rollup-plugin-visualizer": "^5.14.0"
   },
   "overrides": {
-    "ox": "0.6.7"
+    "ox": "^0.6.7"
   }
 }

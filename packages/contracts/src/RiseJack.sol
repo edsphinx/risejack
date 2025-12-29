@@ -103,14 +103,12 @@ contract RiseJack is IVRFConsumer {
         DealerWin, // Dealer won
         Push, // Tie
         PlayerBlackjack // Player got 21 on initial deal
-
     }
 
     enum RequestType {
         InitialDeal, // Request for 4 cards (2 player + 2 dealer)
         PlayerHit, // Request for 1 card (player hit)
         DealerDraw // Request for dealer cards
-
     }
 
     // ==================== EVENTS ====================
@@ -198,7 +196,10 @@ contract RiseJack is IVRFConsumer {
         _;
     }
 
-    modifier gameInState(address player, GameState state) {
+    modifier gameInState(
+        address player,
+        GameState state
+    ) {
         require(games[player].state == state, "Invalid game state");
         _;
     }
@@ -432,7 +433,10 @@ contract RiseJack is IVRFConsumer {
 
     // ==================== INTERNAL - DEAL HANDLING ====================
 
-    function _handleInitialDeal(address player, uint256[] memory randomNumbers) internal {
+    function _handleInitialDeal(
+        address player,
+        uint256[] memory randomNumbers
+    ) internal {
         require(randomNumbers.length >= 4, "Need 4 random numbers");
 
         Game storage game = games[player];
@@ -486,7 +490,10 @@ contract RiseJack is IVRFConsumer {
         }
     }
 
-    function _handlePlayerHit(address player, uint256[] memory randomNumbers) internal {
+    function _handlePlayerHit(
+        address player,
+        uint256[] memory randomNumbers
+    ) internal {
         require(randomNumbers.length >= 1, "Need 1 random number");
 
         Game storage game = games[player];
@@ -517,7 +524,10 @@ contract RiseJack is IVRFConsumer {
         }
     }
 
-    function _handleDealerDraw(address player, uint256[] memory randomNumbers) internal {
+    function _handleDealerDraw(
+        address player,
+        uint256[] memory randomNumbers
+    ) internal {
         Game storage game = games[player];
 
         // Add dealer cards
@@ -616,7 +626,10 @@ contract RiseJack is IVRFConsumer {
         }
     }
 
-    function _shouldDealerHit(uint8 value, bool isSoft) internal pure returns (bool) {
+    function _shouldDealerHit(
+        uint8 value,
+        bool isSoft
+    ) internal pure returns (bool) {
         // Dealer hits on 16 or less, and hits on soft 17
         if (value < 17) return true;
         if (value == 17 && isSoft) return true;
@@ -694,7 +707,10 @@ contract RiseJack is IVRFConsumer {
      * @param to Recipient address
      * @param amount Amount to pay
      */
-    function _safePayout(address to, uint256 amount) internal {
+    function _safePayout(
+        address to,
+        uint256 amount
+    ) internal {
         (bool success,) = to.call{ value: amount }("");
         if (!success) {
             // If transfer fails, store for manual withdrawal
@@ -920,10 +936,7 @@ contract RiseJack is IVRFConsumer {
         uint256 newRequestId = coordinator.requestRandomNumbers(uint32(numNumbers), seed);
 
         vrfRequests[newRequestId] = VRFRequest({
-            player: player,
-            requestType: requestType,
-            fulfilled: false,
-            timestamp: block.timestamp
+            player: player, requestType: requestType, fulfilled: false, timestamp: block.timestamp
         });
 
         emit VRFRequestRetried(player, requestId, newRequestId);
@@ -965,7 +978,10 @@ contract RiseJack is IVRFConsumer {
 
     // ==================== ADMIN FUNCTIONS ====================
 
-    function setBetLimits(uint256 _minBet, uint256 _maxBet) external onlyOwner {
+    function setBetLimits(
+        uint256 _minBet,
+        uint256 _maxBet
+    ) external onlyOwner {
         require(_minBet > 0, "Min bet must be positive");
         require(_maxBet > _minBet, "Max must exceed min");
         minBet = _minBet;

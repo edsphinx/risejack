@@ -16,7 +16,11 @@
         "lint": "eslint src --ext .ts",
         "clean": "rm -rf dist"
     },
+    "peerDependencies": {
+        "viem": "^2.0.0"
+    },
     "devDependencies": {
-        "typescript": "^5.7.2"
+        "typescript": "^5.7.2",
+        "viem": "^2.43.3"
     }
 }

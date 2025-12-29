@@ -22,6 +22,11 @@ export default defineConfig({
       react: 'preact/compat',
       'react-dom': 'preact/compat',
       'react/jsx-runtime': 'preact/jsx-runtime',
+      // Porto namespace compatibility (rise-wallet-sdk uses old import paths)
+      'porto/Porto': 'porto',
+      'porto/Chains': 'porto',
+      'porto/Key': 'porto',
+      'porto/Account': 'porto',
     },
   },
 
@@ -44,10 +49,5 @@ export default defineConfig({
 
   optimizeDeps: {
     include: ['preact', 'viem', 'porto', 'rise-wallet-sdk'],
-  },
-
-  // Handle porto and related packages that might have resolution issues
-  ssr: {
-    noExternal: ['porto', 'rise-wallet-sdk'],
   },
 });

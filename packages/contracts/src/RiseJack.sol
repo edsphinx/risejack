@@ -722,30 +722,34 @@ contract RiseJack is IVRFConsumer {
     function calculateHandValue(uint8[] memory cards) public pure returns (uint8 value, bool isSoft) {
         uint8 total = 0;
         uint8 aces = 0;
+        uint256 len = cards.length; // Cache length
 
-        for (uint256 i = 0; i < cards.length; i++) {
-            uint8 cardRank = cards[i] % 13; // 0=A, 1=2, ..., 12=K
+        for (uint256 i = 0; i < len;) {
+            uint8 cardRank = cards[i] % RANKS_PER_SUIT; // 0=A, 1=2, ..., 12=K
 
             if (cardRank == 0) {
                 // Ace
-                aces++;
-                total += 11;
+                unchecked { aces++; }
+                total += ACE_HIGH_VALUE;
             } else if (cardRank >= 10) {
                 // Face cards (J, Q, K)
-                total += 10;
+                total += FACE_CARD_VALUE;
             } else {
                 // Number cards (2-10)
-                total += cardRank + 1;
+                unchecked { total += cardRank + 1; }
             }
+            unchecked { i++; }
         }
 
         // Adjust for aces if over 21
-        while (total > 21 && aces > 0) {
-            total -= 10;
-            aces--;
+        while (total > BLACKJACK_VALUE && aces > 0) {
+            unchecked {
+                total -= 10;
+                aces--;
+            }
         }
 
-        return (total, aces > 0 && total <= 21);
+        return (total, aces > 0 && total <= BLACKJACK_VALUE);
     }
 
     /**

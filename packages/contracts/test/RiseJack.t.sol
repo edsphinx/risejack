@@ -637,6 +637,69 @@ contract RiseJackTest is Test {
         assertEq(pending, 0);
     }
 
+    // ==================== GAME TIMEOUT TESTS ====================
+
+    function test_CancelTimedOutGame() public {
+        vm.prank(player);
+        risejack.placeBet{value: 0.1 ether}();
+        
+        uint256 playerBalanceBefore = player.balance;
+        
+        // Fast forward 1 hour + 1 second
+        vm.warp(block.timestamp + 1 hours + 1);
+        
+        // Anyone can cancel timed out game
+        risejack.cancelTimedOutGame(player);
+        
+        // Player gets full refund
+        assertEq(player.balance, playerBalanceBefore + 0.1 ether);
+        
+        // Game reset
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.Idle));
+    }
+
+    function test_CannotCancelActiveGame() public {
+        vm.prank(player);
+        risejack.placeBet{value: 0.1 ether}();
+        
+        // Try to cancel immediately (not timed out)
+        vm.expectRevert("Game not timed out");
+        risejack.cancelTimedOutGame(player);
+    }
+
+    function test_CannotCancelIdleGame() public {
+        vm.expectRevert("No active game");
+        risejack.cancelTimedOutGame(player);
+    }
+
+    function test_TimeoutDuringPlayerTurn() public {
+        vm.prank(player);
+        risejack.placeBet{value: 0.1 ether}();
+        
+        uint256[] memory initialCards = new uint256[](4);
+        initialCards[0] = 5;
+        initialCards[1] = 9;
+        initialCards[2] = 6;
+        initialCards[3] = 7;
+        
+        vm.prank(vrfCoordinator);
+        risejack.rawFulfillRandomNumbers(1, initialCards);
+        
+        // Now in PlayerTurn state
+        RiseJack.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(RiseJack.GameState.PlayerTurn));
+        
+        // Fast forward past timeout
+        vm.warp(block.timestamp + 1 hours + 1);
+        
+        uint256 playerBalanceBefore = player.balance;
+        risejack.cancelTimedOutGame(player);
+        
+        // Player gets refund even in PlayerTurn
+        assertEq(player.balance, playerBalanceBefore + 0.1 ether);
+    }
+
     // ==================== VIEW FUNCTION TESTS ====================
 
     function test_GetPlayerHandValue() public {

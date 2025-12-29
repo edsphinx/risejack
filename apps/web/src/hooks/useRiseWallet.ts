@@ -232,60 +232,97 @@ export function useRiseWallet(): UseRiseWalletReturn {
           functionName: functionName as 'placeBet' | 'hit' | 'stand' | 'double' | 'surrender',
         });
 
-        // If we have a session key, use fast path
-        if (hasSessionKey && keyPair && connector) {
-          const provider = await connector.getProvider();
+        const provider = await connector?.getProvider();
+        if (!provider) {
+          setError('No provider available');
+          return null;
+        }
+
+        const providerRequest = provider as {
+          request: (args: { method: string; params: unknown[] }) => Promise<unknown>;
+        };
+
+        // If we have a session key, use fast path (matching wallet-demo)
+        if (hasSessionKey && keyPair) {
+          console.log('[RiseJack] Using session key for fast transaction...');
+
+          // Chain ID for Rise Testnet
+          const chainIdHex = `0x${(11155931).toString(16)}`; // Rise Testnet
+
+          // Prepare calls params matching wallet-demo exactly
+          const intentParams = [
+            {
+              calls: [
+                {
+                  to: contractAddress,
+                  data,
+                  value: value ?? 0n,
+                },
+              ],
+              chainId: chainIdHex,
+              from: address,
+              atomicRequired: true,
+              key: {
+                publicKey: keyPair.publicKey,
+                type: 'p256',
+              },
+            },
+          ];
 
           // 1. Prepare calls
-          const prepared = (await (
-            provider as {
-              request: (args: { method: string; params: unknown[] }) => Promise<unknown>;
-            }
-          ).request({
+          const prepared = (await providerRequest.request({
             method: 'wallet_prepareCalls',
-            params: [
-              {
-                calls: [
-                  {
-                    to: contractAddress,
-                    value: value ? `0x${value.toString(16)}` : '0x0',
-                    data,
-                  },
-                ],
-                key: { type: 'p256', publicKey: keyPair.publicKey },
-              },
-            ],
-          })) as { digest: `0x${string}` };
+            params: intentParams,
+          })) as { digest: `0x${string}`; capabilities?: unknown };
+
+          const { digest, capabilities, ...request } = prepared;
 
           // 2. Sign locally with P256
-          const { digest, ...requestParams } = prepared;
           const signature = signWithSessionKey(digest, keyPair.privateKey);
 
           // 3. Send prepared calls
-          const response = (await (
-            provider as {
-              request: (args: { method: string; params: unknown[] }) => Promise<unknown>;
-            }
-          ).request({
+          const result = (await providerRequest.request({
             method: 'wallet_sendPreparedCalls',
-            params: [{ ...requestParams, signature }],
-          })) as [{ id: `0x${string}` }] | `0x${string}`;
+            params: [
+              {
+                ...request,
+                ...(capabilities ? { capabilities } : {}),
+                signature,
+              },
+            ],
+          })) as Array<{ id: `0x${string}` }>;
 
-          const callId = Array.isArray(response) ? response[0]?.id : response;
-          return callId as `0x${string}`;
-        } else {
-          // Fallback: regular transaction (requires popup)
-          const provider = await connector?.getProvider();
-          if (!provider) {
-            setError('No provider available');
+          if (!result || result.length === 0) {
+            setError('Transaction failed to submit');
             return null;
           }
 
-          const hash = await (
-            provider as {
-              request: (args: { method: string; params: unknown[] }) => Promise<unknown>;
-            }
-          ).request({
+          const callId = result[0]?.id;
+          if (!callId) {
+            setError('No transaction ID returned');
+            return null;
+          }
+
+          // 4. Wait for transaction status
+          console.log('[RiseJack] Waiting for transaction status...', callId);
+          const status = (await providerRequest.request({
+            method: 'wallet_getCallsStatus',
+            params: [callId],
+          })) as { status: number; receipts?: Array<{ transactionHash: `0x${string}` }> };
+
+          if (status.status === 500) {
+            setError('Transaction failed on-chain');
+            return null;
+          }
+
+          const txHash = status.receipts?.[0]?.transactionHash ?? callId;
+          console.log('[RiseJack] Transaction confirmed:', txHash);
+          return txHash;
+        } else {
+          // Fallback: regular transaction (requires popup)
+          console.log('[RiseJack] Using passkey for transaction...');
+
+          const hash = await providerRequest.request({
             method: 'eth_sendTransaction',
             params: [
               {
@@ -300,6 +337,7 @@ export function useRiseWallet(): UseRiseWalletReturn {
           return hash as `0x${string}`;
         }
       } catch (err: unknown) {
+        console.error('[RiseJack] Transaction error:', err);
         // Safe error message - don't expose internal details
         const message = err instanceof Error ? err.message : '';
         if (

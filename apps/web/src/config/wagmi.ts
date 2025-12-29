@@ -1,24 +1,27 @@
 import { Chains } from 'rise-wallet';
-import { riseWallet } from 'rise-wallet/wagmi';
+import { risewallet } from 'rise-wallet/wagmi';
 import { createClient, http } from 'viem';
 import { createConfig } from 'wagmi';
 
 // Export the Rise Wallet connector instance for session key access
-export const riseWalletConnector = riseWallet();
+export const riseWalletConnector = risewallet();
 
 // Rise Testnet chain config from rise-wallet
 export const riseTestnet = Chains.riseTestnet;
 
-// Wagmi config
+// Wagmi config - matching wallet-demo structure
 export const wagmiConfig = createConfig({
   chains: [riseTestnet],
   connectors: [riseWalletConnector],
-  client({ chain }) {
-    return createClient({
-      chain,
-      transport: http(chain.rpcUrls.default.http[0]),
-    });
+  transports: {
+    [riseTestnet.id]: http('https://testnet.riselabs.xyz'),
   },
+});
+
+// Public client for read operations
+export const publicClient = createClient({
+  chain: riseTestnet,
+  transport: http('https://testnet.riselabs.xyz'),
 });
 
 // Declare wagmi module augmentation for type safety

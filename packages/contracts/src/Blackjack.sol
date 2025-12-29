@@ -9,6 +9,22 @@ import {IVRFCoordinator} from "./interfaces/IVRFCoordinator.sol";
  * @author Rise Blackjack Team
  * @notice On-chain Blackjack game with provably fair randomness via Rise VRF
  * @dev Uses Rise Chain VRF for card dealing with async callback pattern
+ *
+ * SECURITY MODEL:
+ * - Infinite Deck: Each card is dealt from a fresh virtual deck (random % 52).
+ *   This is an INTENTIONAL DESIGN CHOICE to prevent card counting attacks.
+ *   Unlike physical casinos, on-chain card counting with AI/bots is trivial.
+ *   Infinite deck ensures each card is statistically independent.
+ *
+ * - House Edge: Standard blackjack rules give the house ~0.5% edge.
+ *   Combined with the protections below, the house is mathematically favored.
+ *
+ * - Risk Management:
+ *   1. Per-game limits: maxBet caps individual exposure
+ *   2. Daily profit limits: Prevents lucky streaks from draining the house
+ *   3. Reserve requirements: Auto-pause if house balance drops too low
+ *   4. Circuit breaker: Emergency pause on anomalous losses
+ *   5. Rate limiting: Prevents rapid-fire betting attacks
  */
 contract Blackjack is IVRFConsumer {
     // ==================== CONSTANTS ====================
@@ -16,7 +32,7 @@ contract Blackjack is IVRFConsumer {
     /// @notice Rise Chain Testnet VRF Coordinator (default)
     address public constant DEFAULT_VRF_COORDINATOR = 0x9d57aB4517ba97349551C876a01a7580B1338909;
 
-    /// @notice Cards per deck
+    /// @notice Cards per deck (infinite deck model - see security notes above)
     uint8 public constant CARDS_PER_DECK = 52;
 
     /// @notice Blackjack payout multiplier (3:2 = 150%)
@@ -24,6 +40,16 @@ contract Blackjack is IVRFConsumer {
 
     /// @notice Standard win payout (1:1 = 200% of bet returned)
     uint256 public constant STANDARD_PAYOUT = 200;
+
+    /// @notice Daily profit limit per player (prevents whale drain)
+    uint256 public constant DEFAULT_DAILY_PROFIT_LIMIT = 10 ether;
+
+    /// @notice Minimum house reserve before auto-pause
+    uint256 public constant DEFAULT_MIN_RESERVE = 50 ether;
+
+    /// @notice Circuit breaker: max loss in time window before pause
+    uint256 public constant CIRCUIT_BREAKER_THRESHOLD = 20 ether;
+    uint256 public constant CIRCUIT_BREAKER_WINDOW = 1 hours;
 
     // ==================== STRUCTS ====================
 

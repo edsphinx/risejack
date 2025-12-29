@@ -159,10 +159,10 @@ Comparison against standard casino blackjack rules:
   - [x] Prevent spam attacks with `checkCooldown` modifier
   - [x] Track cooldown via `lastGameTimestamp` mapping
 
-- [ ] **4.4 Gas Optimization**
-  - [ ] Optimize storage patterns
-  - [ ] Reduce SLOAD/SSTORE operations
-  - [ ] Benchmark against target gas costs
+- [x] **4.4 Gas Optimization**
+  - [x] Cache array length in loops
+  - [x] Use `unchecked` for safe math operations
+  - [x] Use constants instead of magic numbers
 
 ---
 

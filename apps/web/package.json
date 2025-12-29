@@ -31,5 +31,8 @@
     "autoprefixer": "^10.4.20",
     "@types/node": "^22.10.2",
     "rollup-plugin-visualizer": "^5.14.0"
+  },
+  "overrides": {
+    "ox": "0.6.7"
   }
 }

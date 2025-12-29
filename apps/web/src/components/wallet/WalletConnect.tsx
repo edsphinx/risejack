@@ -1,19 +1,7 @@
 import { useState } from 'preact/hooks';
 import { useBalance } from 'wagmi';
 import { formatEther } from 'viem';
-import type { TimeRemaining } from '@risejack/shared';
-
-interface WalletConnectProps {
-  account: `0x${string}` | null;
-  isConnected: boolean;
-  isConnecting: boolean;
-  hasSessionKey: boolean;
-  sessionExpiry: TimeRemaining | null;
-  error: string | null;
-  onConnect: () => void;
-  onDisconnect: () => void;
-  onCreateSession: () => Promise<boolean>;
-}
+import type { WalletConnectProps, TimeRemaining } from '@risejack/shared';
 
 export function WalletConnect({
   account,

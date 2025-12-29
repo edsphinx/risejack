@@ -182,35 +182,41 @@ export function useGameState(address: `0x${string}` | null) {
 
   // Game actions with proper validation
   const placeBet = useCallback(
-    (betAmount: string): Promise<boolean> => {
-      // Validate input
+    async (betAmount: string): Promise<boolean> => {
+      // Validate input - empty check
       if (!betAmount || betAmount.trim() === '') {
         setError('Please enter a bet amount');
-        return Promise.resolve(false);
+        return false;
       }
 
+      // Validate input - numeric check
       const amount = parseFloat(betAmount);
       if (isNaN(amount) || amount <= 0) {
         setError('Bet amount must be a positive number');
-        return Promise.resolve(false);
+        return false;
       }
 
-      // Validate against bet limits if available
+      // Parse to wei - handle format errors
+      let betWei: bigint;
       try {
-        const betWei = parseEther(betAmount);
-        if (betLimits.min > 0n && betWei < betLimits.min) {
-          setError(`Minimum bet is ${formatEther(betLimits.min)} ETH`);
-          return Promise.resolve(false);
-        }
-        if (betLimits.max > 0n && betWei > betLimits.max) {
-          setError(`Maximum bet is ${formatEther(betLimits.max)} ETH`);
-          return Promise.resolve(false);
-        }
-        return executeAction('placeBet', betWei);
+        betWei = parseEther(betAmount);
       } catch {
         setError('Invalid bet amount format');
-        return Promise.resolve(false);
+        return false;
       }
+
+      // Validate against bet limits
+      if (betLimits.min > 0n && betWei < betLimits.min) {
+        setError(`Minimum bet is ${formatEther(betLimits.min)} ETH`);
+        return false;
+      }
+      if (betLimits.max > 0n && betWei > betLimits.max) {
+        setError(`Maximum bet is ${formatEther(betLimits.max)} ETH`);
+        return false;
+      }
+
+      // Execute the bet action
+      return executeAction('placeBet', betWei);
     },
     [executeAction, betLimits]
   );

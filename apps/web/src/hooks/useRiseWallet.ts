@@ -144,9 +144,25 @@ export function useRiseWallet(): UseRiseWalletReturn {
   // Connect wallet
   const connect = useCallback(async () => {
     try {
+      console.log('[RiseJack] Initiating wallet connection...');
       setError(null);
-      wagmiConnect({ connector: riseWalletConnector });
+
+      // wagmiConnect returns a promise, but we need to handle it differently
+      // The connection result will be reflected in isConnected state
+      wagmiConnect(
+        { connector: riseWalletConnector },
+        {
+          onSuccess: (data) => {
+            console.log('[RiseJack] Connection successful:', data);
+          },
+          onError: (error) => {
+            console.error('[RiseJack] Connection failed:', error);
+            setError(error.message || 'Failed to connect');
+          },
+        }
+      );
     } catch (err: unknown) {
+      console.error('[RiseJack] Connect error:', err);
       setError((err as Error).message || 'Failed to connect');
     }
   }, [wagmiConnect]);

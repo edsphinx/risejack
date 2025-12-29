@@ -300,7 +300,16 @@ export function useRiseWallet(): UseRiseWalletReturn {
           return hash as `0x${string}`;
         }
       } catch (err: unknown) {
-        setError((err as Error).message || 'Transaction failed');
+        // Safe error message - don't expose internal details
+        const message = err instanceof Error ? err.message : '';
+        if (
+          message.toLowerCase().includes('user rejected') ||
+          message.toLowerCase().includes('cancelled')
+        ) {
+          setError('Transaction was cancelled');
+        } else {
+          setError('Transaction failed. Please try again.');
+        }
         return null;
       }
     },

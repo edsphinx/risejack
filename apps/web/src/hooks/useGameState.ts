@@ -4,6 +4,36 @@ import { RISEJACK_ABI, getRiseJackAddress, riseTestnet } from '../lib/contract';
 import { useRiseWallet } from './useRiseWallet';
 import type { GameData, GameState, HandValue, BetLimits } from '@risejack/shared';
 
+// Polling interval - reduced for better performance (5 seconds instead of 2)
+const GAME_STATE_POLL_INTERVAL = 5000;
+
+// Max retries for transaction confirmation
+const MAX_TX_RETRIES = 10;
+const TX_RETRY_DELAY = 1000;
+
+// Safe error messages (prevent info leakage)
+const SAFE_ERROR_MESSAGES: Record<string, string> = {
+  'Invalid bet amount': 'Invalid bet amount',
+  'Insufficient balance': 'Insufficient balance',
+  'Game not in correct state': 'Cannot perform this action now',
+  'user rejected': 'Transaction was cancelled',
+  'User rejected': 'Transaction was cancelled',
+};
+
+function getSafeErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+
+  // Check for known safe messages
+  for (const [key, safeMessage] of Object.entries(SAFE_ERROR_MESSAGES)) {
+    if (message.toLowerCase().includes(key.toLowerCase())) {
+      return safeMessage;
+    }
+  }
+
+  // Generic fallback - don't expose internal details
+  return 'Transaction failed. Please try again.';
+}
+
 export function useGameState(address: `0x${string}` | null) {
   const wallet = useRiseWallet();
 
@@ -88,54 +118,114 @@ export function useGameState(address: `0x${string}` | null) {
     }
   }, [address, publicClient, contractAddress]);
 
+  // Wait for transaction confirmation with retries
+  const waitForTransaction = useCallback(
+    async (hash: `0x${string}`): Promise<boolean> => {
+      for (let i = 0; i < MAX_TX_RETRIES; i++) {
+        try {
+          const receipt = await publicClient.getTransactionReceipt({ hash });
+          if (receipt) {
+            return receipt.status === 'success';
+          }
+        } catch {
+          // Transaction not yet mined, continue waiting
+        }
+        await new Promise((resolve) => setTimeout(resolve, TX_RETRY_DELAY));
+      }
+      return false;
+    },
+    [publicClient]
+  );
+
   // Execute game action
   const executeAction = useCallback(
     async (
       functionName: 'placeBet' | 'hit' | 'stand' | 'double' | 'surrender',
       value?: bigint
     ): Promise<boolean> => {
+      // Validate wallet is connected
+      if (!wallet.isConnected || !wallet.address) {
+        setError('Please connect your wallet first');
+        return false;
+      }
+
       setIsLoading(true);
       setError(null);
 
       try {
         const hash = await wallet.sendTransaction(functionName, value);
 
-        if (hash) {
-          // Wait a bit for chain to update, then refresh state
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          await fetchGameState();
-          return true;
+        if (!hash) {
+          setError('Transaction failed to submit');
+          return false;
         }
 
-        return false;
+        // Wait for actual transaction confirmation
+        const success = await waitForTransaction(hash);
+
+        if (success) {
+          await fetchGameState();
+          return true;
+        } else {
+          setError('Transaction failed on-chain');
+          return false;
+        }
       } catch (err: unknown) {
-        const errorMessage = (err as Error).message || 'Transaction failed';
-        setError(errorMessage);
+        setError(getSafeErrorMessage(err));
         return false;
       } finally {
         setIsLoading(false);
       }
     },
-    [wallet, fetchGameState]
+    [wallet, fetchGameState, waitForTransaction]
   );
 
-  // Game actions
+  // Game actions with proper validation
   const placeBet = useCallback(
-    (betAmount: string): Promise<boolean> => {
-      if (!betAmount || isNaN(parseFloat(betAmount)) || parseFloat(betAmount) <= 0) {
-        setError('Invalid bet amount');
-        return Promise.resolve(false);
+    async (betAmount: string): Promise<boolean> => {
+      // Validate input - empty check
+      if (!betAmount || betAmount.trim() === '') {
+        setError('Please enter a bet amount');
+        return false;
       }
-      return executeAction('placeBet', parseEther(betAmount));
+
+      // Validate input - numeric check
+      const amount = parseFloat(betAmount);
+      if (isNaN(amount) || amount <= 0) {
+        setError('Bet amount must be a positive number');
+        return false;
+      }
+
+      // Parse to wei - handle format errors
+      let betWei: bigint;
+      try {
+        betWei = parseEther(betAmount);
+      } catch {
+        setError('Invalid bet amount format');
+        return false;
+      }
+
+      // Validate against bet limits
+      if (betLimits.min > 0n && betWei < betLimits.min) {
+        setError(`Minimum bet is ${formatEther(betLimits.min)} ETH`);
+        return false;
+      }
+      if (betLimits.max > 0n && betWei > betLimits.max) {
+        setError(`Maximum bet is ${formatEther(betLimits.max)} ETH`);
+        return false;
+      }
+
+      // Execute the bet action
+      return executeAction('placeBet', betWei);
     },
-    [executeAction]
+    [executeAction, betLimits]
   );
 
   const hit = useCallback(() => executeAction('hit'), [executeAction]);
   const stand = useCallback(() => executeAction('stand'), [executeAction]);
 
   const double = useCallback((): Promise<boolean> => {
-    if (!gameData) {
+    if (!gameData || !gameData.bet) {
       setError('No active game');
       return Promise.resolve(false);
     }
@@ -149,17 +239,17 @@ export function useGameState(address: `0x${string}` | null) {
     return formatEther(value);
   }, []);
 
-  // Initialize
+  // Initialize - fetch bet limits once
   useEffect(() => {
     fetchBetLimits();
   }, [fetchBetLimits]);
 
-  // Poll game state when connected
+  // Poll game state when connected (with reduced frequency)
   useEffect(() => {
     if (!address) return;
 
     fetchGameState();
-    const interval = setInterval(fetchGameState, 2000);
+    const interval = setInterval(fetchGameState, GAME_STATE_POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [address, fetchGameState]);
 

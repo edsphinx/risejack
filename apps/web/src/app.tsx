@@ -1,5 +1,10 @@
+import { WalletProvider } from './providers/WalletProvider';
 import { GameBoard } from './components/game/GameBoard';
 
 export function App() {
-  return <GameBoard />;
+  return (
+    <WalletProvider>
+      <GameBoard />
+    </WalletProvider>
+  );
 }

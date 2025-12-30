@@ -30,6 +30,52 @@
 
 ---
 
+## DeFi Contracts - 2024-12-30
+
+### CHIPToken
+
+**Contract:** CHIPToken (ERC20)  
+**Address:** [`0x2D97Ba366119e55B1a98D9349ce35868920C7Ae8`](https://explorer.testnet.riselabs.xyz/address/0x2d97ba366119e55b1a98d9349ce35868920c7ae8)  
+**Symbol:** CHIP  
+**Initial Supply:** 1,000,000,000 CHIP  
+**Verified:** ✅ Blockscout
+
+### UniswapV2Factory (risecasinoswap)
+
+**Contract:** UniswapV2Factory  
+**Address:** [`0xB3c8D76d227A8937898BE6c3e1C99ed22CcB5040`](https://explorer.testnet.riselabs.xyz/address/0xb3c8d76d227a8937898be6c3e1c99ed22ccb5040)  
+**Source:** Original Uniswap V2 Core (Audited by dApp.org)  
+**Solidity:** 0.5.16  
+**Verified:** ✅ Blockscout
+
+### UniswapV2Router02 (risecasinorouter)
+
+**Contract:** UniswapV2Router02  
+**Address:** [`0x67b3925D7b2b2d9BD316DAC8bCF888A60B9F24F0`](https://explorer.testnet.riselabs.xyz/address/0x67b3925d7b2b2d9bd316dac8bcf888a60b9f24f0)  
+**Source:** Original Uniswap V2 Periphery (Audited by dApp.org)  
+**Solidity:** 0.6.6  
+**WETH:** `0x4200000000000000000000000000000000000006`  
+**Verified:** ✅ Blockscout
+
+### CHIP/ETH Liquidity Pool
+
+**Contract:** UniswapV2Pair  
+**Address:** [`0x5A36854D9a48957BF78790E974BFC01fbF123a84`](https://explorer.testnet.riselabs.xyz/address/0x5a36854d9a48957bf78790e974bfc01fbf123a84)  
+**Initial Liquidity:** 0.0001 ETH + 1000 CHIP  
+**Created by:** Factory
+
+### StakingRewards (risecasinosimplestaking)
+
+**Contract:** StakingRewards  
+**Address:** [`0x9eEE56e0907AA69f023b29a93Ae5ea54CA8DD8c3`](https://explorer.testnet.riselabs.xyz/address/0x9eee56e0907aa69f023b29a93ae5ea54ca8dd8c3)  
+**Source:** Original Synthetix StakingRewards (Audited by Synthetix)  
+**Solidity:** 0.5.16  
+**Rewards Token:** CHIP (`0x2D97Ba366119e55B1a98D9349ce35868920C7Ae8`)  
+**Staking Token:** CHIP/ETH LP (`0x5A36854D9a48957BF78790E974BFC01fbF123a84`)  
+**Verified:** ✅ Blockscout
+
+---
+
 ### v1.0.0 - 2024-12-29 (Deprecated)
 
 **Contract:** RiseJack  

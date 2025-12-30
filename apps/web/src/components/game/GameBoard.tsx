@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
-import { useRiseWallet } from '@/hooks/useRiseWallet';
+import { useWallet } from '@/context/WalletContext';
 import { useGameState } from '@/hooks/useGameState';
 import { Hand, HandValue } from './Hand';
 import { ActionButtons } from './ActionButtons';
@@ -26,7 +26,7 @@ export function GameBoard() {
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
   // Wallet connection
-  const wallet = useRiseWallet();
+  const wallet = useWallet();
 
   // Game state (pass wallet to avoid duplicate hook instances)
   // Note: lastGameResult now includes final hand values from CardDealt WebSocket tracking
@@ -179,7 +179,7 @@ export function GameBoard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-      <main className="max-w-4xl mx-auto p-2 sm:p-4 py-4 sm:py-8">
+      <main className="max-w-6xl mx-auto p-2 sm:p-4 py-4 sm:py-8">
         {/* Error Display */}
         {error && (
           <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200 flex items-start gap-3">

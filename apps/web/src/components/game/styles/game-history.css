@@ -116,8 +116,8 @@
 .history-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.5rem;
+  gap: 1rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.75rem;
   border-radius: 8px;
   background: rgba(30, 41, 59, 0.5);
   transition: all 0.15s;
@@ -149,20 +149,21 @@
 }
 
 .item-result {
-  width: 28px;
-  min-width: 28px;
+  width: 24px;
+  min-width: 24px;
   text-align: center;
   flex-shrink: 0;
 }
 
 .result-emoji {
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .item-details {
   flex: 1;
   min-width: 0;
-  margin-left: 0.25rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid rgba(139, 92, 246, 0.15);
 }
 
 .item-values {

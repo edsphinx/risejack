@@ -244,10 +244,11 @@ export function GameBoard() {
                     {/* Spacer to balance the value on right */}
                     <div className="zone-spacer" />
                     <div className="play-zone">
-                      {game.gameData?.dealerCards?.length || lastHand?.dealerCards?.length ? (
+                      {/* Prefer lastHand cards when game ended, otherwise use live gameData */}
+                      {lastHand?.dealerCards?.length || game.gameData?.dealerCards?.length ? (
                         <Hand
-                          cards={game.gameData?.dealerCards || lastHand?.dealerCards || []}
-                          value={game.dealerValue ?? lastHand?.dealerValue ?? undefined}
+                          cards={lastHand?.dealerCards || game.gameData?.dealerCards || []}
+                          value={lastHand?.dealerValue ?? game.dealerValue ?? undefined}
                           isDealer
                           hideSecond={canPlay && !gameResult}
                           result={gameResult === 'lose' ? 'win' : null}
@@ -260,11 +261,11 @@ export function GameBoard() {
                     {/* Value display */}
                     <HandValue
                       value={
-                        game.gameData?.dealerCards?.length || lastHand?.dealerCards?.length
-                          ? (game.dealerValue ?? lastHand?.dealerValue ?? undefined)
+                        lastHand?.dealerCards?.length || game.gameData?.dealerCards?.length
+                          ? (lastHand?.dealerValue ?? game.dealerValue ?? undefined)
                           : undefined
                       }
-                      cardCount={(game.gameData?.dealerCards || lastHand?.dealerCards || []).length}
+                      cardCount={(lastHand?.dealerCards || game.gameData?.dealerCards || []).length}
                     />
                   </div>
                 </div>
@@ -275,10 +276,11 @@ export function GameBoard() {
                     {/* Spacer to balance the value on right */}
                     <div className="zone-spacer" />
                     <div className="play-zone">
-                      {game.gameData?.playerCards?.length || lastHand?.playerCards?.length ? (
+                      {/* Prefer lastHand cards when game ended, otherwise use live gameData */}
+                      {lastHand?.playerCards?.length || game.gameData?.playerCards?.length ? (
                         <Hand
-                          cards={game.gameData?.playerCards || lastHand?.playerCards || []}
-                          value={game.playerValue?.value ?? lastHand?.playerValue}
+                          cards={lastHand?.playerCards || game.gameData?.playerCards || []}
+                          value={lastHand?.playerValue ?? game.playerValue?.value}
                           isSoft={game.playerValue?.isSoft}
                           result={gameResult}
                           hideValue
@@ -290,12 +292,12 @@ export function GameBoard() {
                     {/* Value display */}
                     <HandValue
                       value={
-                        game.gameData?.playerCards?.length || lastHand?.playerCards?.length
-                          ? (game.playerValue?.value ?? lastHand?.playerValue)
+                        lastHand?.playerCards?.length || game.gameData?.playerCards?.length
+                          ? (lastHand?.playerValue ?? game.playerValue?.value)
                           : undefined
                       }
                       isSoft={game.playerValue?.isSoft}
-                      cardCount={(game.gameData?.playerCards || lastHand?.playerCards || []).length}
+                      cardCount={(lastHand?.playerCards || game.gameData?.playerCards || []).length}
                     />
                   </div>
                   <div className="zone-label">Your Hand</div>

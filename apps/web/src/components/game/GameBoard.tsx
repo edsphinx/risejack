@@ -58,7 +58,8 @@ export function GameBoard() {
   // When game ends, store the final cards for display AND save to history
   useEffect(() => {
     if (game.lastGameResult) {
-      const resultId = `${game.lastGameResult.playerFinalValue}-${game.lastGameResult.dealerFinalValue}-${Date.now()}`;
+      // Create stable ID based on game data (not Date.now which changes)
+      const resultId = `${game.lastGameResult.playerFinalValue}-${game.lastGameResult.dealerFinalValue}-${game.lastGameResult.result}-${game.lastGameResult.playerCards?.join(',')}`;
 
       // Get cards: prefer lastGameResult, but fall back to gameData if WebSocket race condition
       const playerCards =

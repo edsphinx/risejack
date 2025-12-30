@@ -9,12 +9,19 @@ import './styles/brand.css';
 
 interface LogoProps {
   size?: 'full' | 'compact' | 'icon';
+  variant?: 'risejack' | 'risecasino';
   animated?: boolean;
   className?: string;
 }
 
-export function Logo({ size = 'full', animated = true, className = '' }: LogoProps) {
+export function Logo({
+  size = 'full',
+  variant = 'risejack',
+  animated = true,
+  className = '',
+}: LogoProps) {
   const animatedClass = animated ? 'logo-animated' : '';
+  const text = variant === 'risecasino' ? 'RISECASINO' : 'RISEJACK';
 
   if (size === 'icon') {
     return (
@@ -30,7 +37,7 @@ export function Logo({ size = 'full', animated = true, className = '' }: LogoPro
       <div className={`logo-compact ${animatedClass} ${className}`}>
         <SpadeIcon />
         <div className="logo-text-wrapper">
-          <span className="logo-text">RISEJACK</span>
+          <span className="logo-text">{text}</span>
         </div>
       </div>
     );
@@ -41,7 +48,7 @@ export function Logo({ size = 'full', animated = true, className = '' }: LogoPro
     <div className={`logo-full ${animatedClass} ${className}`}>
       <SpadeIcon />
       <div className="logo-text-wrapper">
-        <span className="logo-text">RISEJACK</span>
+        <span className="logo-text">{text}</span>
       </div>
     </div>
   );

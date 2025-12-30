@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { Script, console } from "forge-std/Script.sol";
-import { CHIPToken } from "../src/defi/CHIPToken.sol";
+import {Script, console} from "forge-std/Script.sol";
+import {CHIPToken} from "../src/defi/CHIPToken.sol";
 
 contract DeployCHIP is Script {
     function run() public {
-        // Validate environment variable exists
-        // Note: vm.envUint will revert if not set, but we add explicit check for clarity
+        // vm.envUint reverts if DEPLOYER_PRIVATE_KEY is not set
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        require(deployerPrivateKey != 0, "DEPLOYER_PRIVATE_KEY not set or invalid");
-
         address deployer = vm.addr(deployerPrivateKey);
 
         console.log("=== DeployCHIP Script ===");

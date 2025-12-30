@@ -134,16 +134,15 @@ Session keys are restricted to the following functions only:
 - `hit()` - Request another card
 - `stand()` - End player turn
 - `double()` - Double down
-- `split()` - Split pairs (when applicable)
 - `surrender()` - Forfeit half the bet
 
 ### Randomness Guarantees
 
-The commit-reveal scheme ensures:
+The Rise VRF (Verifiable Random Function) ensures:
 
-1. **Unpredictability**: House commits to randomness before player acts
-2. **Unbiasability**: Neither party can influence the outcome after commitment
-3. **Verifiability**: All randomness inputs are on-chain and auditable
+1. **Unpredictability**: Randomness generated after player commits to action
+2. **Unbiasability**: Neither party can influence the outcome
+3. **Verifiability**: All randomness proofs are on-chain and auditable
 
 ### Security Testing
 

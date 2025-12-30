@@ -98,6 +98,275 @@
   height: 70px;
 }
 
+/* ==================== RESULT BANNER ==================== */
+/* Inline result display with elastic bounce animation (UX Psychology) */
+.result-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  border-radius: 16px;
+  margin: 1rem auto;
+  max-width: 90%;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 20px currentColor;
+  animation: result-bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.result-emoji {
+  font-size: 2.5rem;
+}
+
+.result-message {
+  font-size: 1.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.result-values {
+  font-size: 1rem;
+  opacity: 0.9;
+  font-weight: 600;
+}
+
+/* Mobile responsive result banner */
+@media (max-width: 640px) {
+  .result-banner {
+    padding: 0.75rem 1.25rem;
+    gap: 0.5rem;
+    margin: 0.75rem auto;
+    flex-wrap: wrap;
+  }
+
+  .result-emoji {
+    font-size: 2rem;
+  }
+
+  .result-message {
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+  }
+
+  .result-values {
+    font-size: 0.85rem;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Elastic bounce animation - optimized for dopamine response (400-600ms) */
+@keyframes result-bounce {
+  0% {
+    transform: scale(0) translateY(-50px);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.15) translateY(0);
+    opacity: 1;
+  }
+
+  70% {
+    transform: scale(0.95) translateY(0);
+  }
+
+  85% {
+    transform: scale(1.05) translateY(0);
+  }
+
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ==================== WIN CELEBRATION OVERLAY ==================== */
+/* ULTRA DEGEN style - maximum dopamine with neon particles */
+.win-celebration {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 100;
+}
+
+/* Neon confetti particles - DEGEN colors */
+.win-celebration::before,
+.win-celebration::after {
+  content: '';
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  left: -50%;
+  top: -100%;
+  background-image:
+    radial-gradient(circle, #00ff88 3px, transparent 3px),
+    radial-gradient(circle, #ff00ff 3px, transparent 3px),
+    radial-gradient(circle, #00ffff 3px, transparent 3px),
+    radial-gradient(circle, #ffd700 3px, transparent 3px),
+    radial-gradient(circle, #ff6b6b 2px, transparent 2px),
+    radial-gradient(circle, #4dabf7 2px, transparent 2px);
+  background-size:
+    60px 60px,
+    50px 50px,
+    70px 70px,
+    40px 40px,
+    55px 55px,
+    65px 65px;
+  animation: degen-confetti-fall 1.5s ease-out forwards;
+}
+
+.win-celebration::after {
+  animation-delay: 0.1s;
+  background-position:
+    20px 20px,
+    40px 40px,
+    15px 30px,
+    35px 15px,
+    25px 45px,
+    50px 25px;
+}
+
+@keyframes degen-confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(100%) rotate(20deg);
+    opacity: 0;
+  }
+}
+
+/* DEGEN screen flash - neon green */
+.win-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  animation: degen-flash 0.3s ease-out;
+}
+
+@keyframes degen-flash {
+  0% {
+    background: rgba(0, 255, 136, 0.5);
+  }
+
+  50% {
+    background: rgba(255, 215, 0, 0.3);
+  }
+
+  100% {
+    background: transparent;
+  }
+}
+
+/* BLACKJACK - maximum celebration with glow pulse */
+.blackjack-glow {
+  animation: ultra-blackjack-pulse 0.8s ease-in-out 2;
+}
+
+@keyframes ultra-blackjack-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.5),
+      inset 0 0 100px rgba(0, 0, 0, 0.3);
+  }
+
+  50% {
+    box-shadow:
+      0 20px 100px rgba(0, 255, 136, 0.6),
+      inset 0 0 100px rgba(0, 255, 136, 0.15),
+      0 0 80px rgba(255, 0, 255, 0.4),
+      0 0 120px rgba(0, 255, 255, 0.3);
+  }
+}
+
+/* ==================== LOSS ANIMATION ==================== */
+/* Subtle shake + red flash - loss aversion psychology */
+.lose-shake {
+  animation: lose-shake 0.4s ease-out;
+}
+
+@keyframes lose-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-6px);
+  }
+
+  40% {
+    transform: translateX(6px);
+  }
+
+  60% {
+    transform: translateX(-4px);
+  }
+
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+/* Red flash overlay for losses */
+.lose-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  animation: lose-flash 0.5s ease-out;
+}
+
+@keyframes lose-flash {
+  0% {
+    background: rgba(255, 0, 68, 0.4);
+  }
+
+  100% {
+    background: transparent;
+  }
+}
+
+/* Bust shake - stronger for bust */
+.casino-table.bust {
+  animation: bust-shake 0.5s ease-out;
+}
+
+@keyframes bust-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  10% {
+    transform: translateX(-8px) rotate(-0.5deg);
+  }
+
+  30% {
+    transform: translateX(8px) rotate(0.5deg);
+  }
+
+  50% {
+    transform: translateX(-6px) rotate(-0.3deg);
+  }
+
+  70% {
+    transform: translateX(6px) rotate(0.3deg);
+  }
+
+  90% {
+    transform: translateX(-3px);
+  }
+}
+
 /* Center bet display - premium DEGEN style */
 .bet-circle {
   position: absolute;

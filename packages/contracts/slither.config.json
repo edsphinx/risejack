@@ -1,0 +1,16 @@
+{
+  "filter_paths": ["lib/", "test/", "script/", "node_modules/"],
+  "detectors_to_exclude": [
+    "naming-convention",
+    "solc-version",
+    "pragma",
+    "low-level-calls",
+    "assembly"
+  ],
+  "exclude_informational": true,
+  "exclude_low": false,
+  "exclude_medium": false,
+  "exclude_high": false,
+  "solc_remaps": ["@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"],
+  "compile_force_framework": "foundry"
+}

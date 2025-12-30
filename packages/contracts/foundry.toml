@@ -5,7 +5,7 @@ libs = ["lib"]
 solc = "0.8.28"
 optimizer = true
 optimizer_runs = 200
-via_ir = false
+via_ir = true
 ffi = false
 fs_permissions = [{ access = "read", path = "./"}]
 
@@ -17,14 +17,28 @@ libs = ["lib"]
 solc = "0.8.28"
 optimizer = true
 optimizer_runs = 200
-via_ir = false
+via_ir = true
 ffi = false
 fs_permissions = [{ access = "read", path = "./"}]
 
 # Rise Chain (testnet)
 [rpc_endpoints]
 rise = "${RISE_RPC_URL}"
+rise_testnet = "https://testnet.riselabs.xyz"
 local = "http://localhost:8545"
+
+# Fork profile - runs tests with Rise testnet state
+[profile.fork]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.28"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+ffi = false
+fs_permissions = [{ access = "read", path = "./"}]
+eth_rpc_url = "https://testnet.riselabs.xyz"
 
 [etherscan]
 rise = { key = "${ETHERSCAN_API_KEY}" }

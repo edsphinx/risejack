@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Script, console} from "forge-std/Script.sol";
-import {CHIPToken} from "../src/defi/CHIPToken.sol";
+import { Script, console } from "forge-std/Script.sol";
+import { CHIPToken } from "../src/defi/CHIPToken.sol";
 
 interface IUniswapV2Router02 {
     function addLiquidityETH(
@@ -18,7 +18,10 @@ interface IUniswapV2Router02 {
 }
 
 interface IUniswapV2Factory {
-    function getPair(address tokenA, address tokenB) external view returns (address pair);
+    function getPair(
+        address tokenA,
+        address tokenB
+    ) external view returns (address pair);
 }
 
 contract AddLiquidity is Script {
@@ -42,8 +45,8 @@ contract AddLiquidity is Script {
         uint256 chipAmount = 1000 * 1e18;
 
         // Calculate minimum amounts with slippage tolerance
-        uint256 minChipAmount = (chipAmount * (10000 - SLIPPAGE_BPS)) / 10000;
-        uint256 minEthAmount = (ethAmount * (10000 - SLIPPAGE_BPS)) / 10000;
+        uint256 minChipAmount = (chipAmount * (10_000 - SLIPPAGE_BPS)) / 10_000;
+        uint256 minEthAmount = (ethAmount * (10_000 - SLIPPAGE_BPS)) / 10_000;
 
         console.log("=== AddLiquidity Script ===");
         console.log("Deployer:", deployer);
@@ -68,7 +71,9 @@ contract AddLiquidity is Script {
 
         // Add liquidity with slippage tolerance and short deadline
         IUniswapV2Router02 router = IUniswapV2Router02(ROUTER);
-        (uint256 amountToken, uint256 amountETH, uint256 liquidity) = router.addLiquidityETH{value: ethAmount}(
+        (uint256 amountToken, uint256 amountETH, uint256 liquidity) = router.addLiquidityETH{
+            value: ethAmount
+        }(
             CHIP,
             chipAmount,
             minChipAmount, // Allow 5% slippage

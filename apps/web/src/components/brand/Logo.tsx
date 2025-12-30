@@ -44,8 +44,14 @@ export function Logo({ size = 'full', animated = true, className = '' }: LogoPro
 
 /**
  * Spade Icon - SVG with DEGEN gradient
+ * Uses unique IDs to prevent collision when multiple instances exist
  */
 function SpadeIcon() {
+  // Generate unique ID to prevent SVG gradient collision
+  const uniqueId = Math.random().toString(36).substring(2, 8);
+  const gradientId = `spadeGrad-${uniqueId}`;
+  const glowId = `spadeGlow-${uniqueId}`;
+
   return (
     <svg
       className="logo-spade"
@@ -55,12 +61,12 @@ function SpadeIcon() {
       aria-label="RiseJack Spade"
     >
       <defs>
-        <linearGradient id="spadeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#a855f7" />
           <stop offset="50%" stopColor="#ec4899" />
           <stop offset="100%" stopColor="#8b5cf6" />
         </linearGradient>
-        <filter id="spadeGlow" x="-50%" y="-50%" width="200%" height="200%">
+        <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="2" result="glow" />
           <feMerge>
             <feMergeNode in="glow" />
@@ -71,8 +77,8 @@ function SpadeIcon() {
       {/* Spade body */}
       <path
         d="M50 5 C50 5 15 40 15 55 C15 70 30 75 42 68 C40 78 35 85 30 90 L70 90 C65 85 60 78 58 68 C70 75 85 70 85 55 C85 40 50 5 50 5 Z"
-        fill="url(#spadeGradient)"
-        filter="url(#spadeGlow)"
+        fill={`url(#${gradientId})`}
+        filter={`url(#${glowId})`}
       />
     </svg>
   );

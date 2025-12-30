@@ -13,7 +13,8 @@ contract RiseCasinoERC20 {
     mapping(address => mapping(address => uint256)) public allowance;
 
     bytes32 public DOMAIN_SEPARATOR;
-    bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+    bytes32 public constant PERMIT_TYPEHASH =
+        0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint256) public nonces;
 
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -26,7 +27,9 @@ contract RiseCasinoERC20 {
         }
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
                 keccak256(bytes(name)),
                 keccak256(bytes("1")),
                 chainId,
@@ -35,33 +38,58 @@ contract RiseCasinoERC20 {
         );
     }
 
-    function _mint(address to, uint256 value) internal {
+    function _mint(
+        address to,
+        uint256 value
+    ) internal {
         totalSupply += value;
         balanceOf[to] += value;
         emit Transfer(address(0), to, value);
     }
 
-    function _burn(address from, uint256 value) internal {
+    function _burn(
+        address from,
+        uint256 value
+    ) internal {
         balanceOf[from] -= value;
         totalSupply -= value;
         emit Transfer(from, address(0), value);
     }
 
-    function _approve(address owner, address spender, uint256 value) private {
+    function _approve(
+        address owner,
+        address spender,
+        uint256 value
+    ) private {
         allowance[owner][spender] = value;
         emit Approval(owner, spender, value);
     }
 
-    function transfer(address to, uint256 value) external returns (bool) {
+    function transfer(
+        address to,
+        uint256 value
+    ) external returns (bool) {
         _transfer(msg.sender, to, value);
         return true;
     }
 
-    function transferFrom(address from, address to, uint256 value) external returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 value
+    ) external returns (bool) {
         if (allowance[from][msg.sender] != type(uint256).max) {
             allowance[from][msg.sender] -= value;
         }
         _transfer(from, to, value);
+        return true;
+    }
+
+    function approve(
+        address spender,
+        uint256 value
+    ) external returns (bool) {
+        _approve(msg.sender, spender, value);
         return true;
     }
 
@@ -79,15 +107,24 @@ contract RiseCasinoERC20 {
             abi.encodePacked(
                 "\x19\x01",
                 DOMAIN_SEPARATOR,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
+                keccak256(
+                    abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline)
+                )
             )
         );
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, "RiseCasino: INVALID_SIGNATURE");
+        require(
+            recoveredAddress != address(0) && recoveredAddress == owner,
+            "RiseCasino: INVALID_SIGNATURE"
+        );
         _approve(owner, spender, value);
     }
 
-    function _transfer(address from, address to, uint256 value) private {
+    function _transfer(
+        address from,
+        address to,
+        uint256 value
+    ) private {
         balanceOf[from] -= value;
         balanceOf[to] += value;
         emit Transfer(from, to, value);
@@ -99,13 +136,18 @@ interface IRiseCasinoFactory {
 }
 
 interface IRiseCasinoCallee {
-    function riseCasinoCall(address sender, uint256 amount0, uint256 amount1, bytes calldata data) external;
+    function riseCasinoCall(
+        address sender,
+        uint256 amount0,
+        uint256 amount1,
+        bytes calldata data
+    ) external;
 }
 
 contract RiseCasinoPair is RiseCasinoERC20 {
     using Math for uint256;
 
-    uint256 public constant MINIMUM_LIQUIDITY = 10**3;
+    uint256 public constant MINIMUM_LIQUIDITY = 10 ** 3;
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes("transfer(address,uint256)")));
 
     address public factory;
@@ -128,15 +170,25 @@ contract RiseCasinoPair is RiseCasinoERC20 {
         unlocked = 1;
     }
 
-    function getReserves() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
+    function getReserves()
+        public
+        view
+        returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast)
+    {
         _reserve0 = reserve0;
         _reserve1 = reserve1;
         _blockTimestampLast = blockTimestampLast;
     }
 
-    function _safeTransfer(address token, address to, uint256 value) private {
+    function _safeTransfer(
+        address token,
+        address to,
+        uint256 value
+    ) private {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), "RiseCasino: TRANSFER_FAILED");
+        require(
+            success && (data.length == 0 || abi.decode(data, (bool))), "RiseCasino: TRANSFER_FAILED"
+        );
     }
 
     event Mint(address indexed sender, uint256 amount0, uint256 amount1);
@@ -155,15 +207,25 @@ contract RiseCasinoPair is RiseCasinoERC20 {
         factory = msg.sender;
     }
 
-    function initialize(address _token0, address _token1) external {
+    function initialize(
+        address _token0,
+        address _token1
+    ) external {
         require(msg.sender == factory, "RiseCasino: FORBIDDEN");
         token0 = _token0;
         token1 = _token1;
     }
 
-    function _update(uint256 balance0, uint256 balance1, uint112 _reserve0, uint112 _reserve1) private {
-        require(balance0 <= type(uint112).max && balance1 <= type(uint112).max, "RiseCasino: OVERFLOW");
-        uint32 blockTimestamp = uint32(block.timestamp % 2**32);
+    function _update(
+        uint256 balance0,
+        uint256 balance1,
+        uint112 _reserve0,
+        uint112 _reserve1
+    ) private {
+        require(
+            balance0 <= type(uint112).max && balance1 <= type(uint112).max, "RiseCasino: OVERFLOW"
+        );
+        uint32 blockTimestamp = uint32(block.timestamp % 2 ** 32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast;
         if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {
             price0CumulativeLast += uint256(uqdiv(encode(_reserve1), _reserve0)) * timeElapsed;
@@ -175,7 +237,10 @@ contract RiseCasinoPair is RiseCasinoERC20 {
         emit Sync(reserve0, reserve1);
     }
 
-    function _mintFee(uint112 _reserve0, uint112 _reserve1) private returns (bool feeOn) {
+    function _mintFee(
+        uint112 _reserve0,
+        uint112 _reserve1
+    ) private returns (bool feeOn) {
         address feeTo = IRiseCasinoFactory(factory).feeTo();
         feeOn = feeTo != address(0);
         uint256 _kLast = kLast;
@@ -195,8 +260,10 @@ contract RiseCasinoPair is RiseCasinoERC20 {
         }
     }
 
-    function mint(address to) external lock returns (uint256 liquidity) {
-        (uint112 _reserve0, uint112 _reserve1, ) = getReserves();
+    function mint(
+        address to
+    ) external lock returns (uint256 liquidity) {
+        (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
         uint256 amount0 = balance0 - _reserve0;
@@ -208,7 +275,9 @@ contract RiseCasinoPair is RiseCasinoERC20 {
             liquidity = Math.sqrt(amount0 * amount1) - MINIMUM_LIQUIDITY;
             _mint(address(0), MINIMUM_LIQUIDITY);
         } else {
-            liquidity = Math.min((amount0 * _totalSupply) / _reserve0, (amount1 * _totalSupply) / _reserve1);
+            liquidity = Math.min(
+                (amount0 * _totalSupply) / _reserve0, (amount1 * _totalSupply) / _reserve1
+            );
         }
         require(liquidity > 0, "RiseCasino: INSUFFICIENT_LIQUIDITY_MINTED");
         _mint(to, liquidity);
@@ -218,8 +287,10 @@ contract RiseCasinoPair is RiseCasinoERC20 {
         emit Mint(msg.sender, amount0, amount1);
     }
 
-    function burn(address to) external lock returns (uint256 amount0, uint256 amount1) {
-        (uint112 _reserve0, uint112 _reserve1, ) = getReserves();
+    function burn(
+        address to
+    ) external lock returns (uint256 amount0, uint256 amount1) {
+        (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         address _token0 = token0;
         address _token1 = token1;
         uint256 balance0 = IERC20(_token0).balanceOf(address(this));
@@ -242,10 +313,17 @@ contract RiseCasinoPair is RiseCasinoERC20 {
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
-    function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external lock {
+    function swap(
+        uint256 amount0Out,
+        uint256 amount1Out,
+        address to,
+        bytes calldata data
+    ) external lock {
         require(amount0Out > 0 || amount1Out > 0, "RiseCasino: INSUFFICIENT_OUTPUT_AMOUNT");
-        (uint112 _reserve0, uint112 _reserve1, ) = getReserves();
-        require(amount0Out < _reserve0 && amount1Out < _reserve1, "RiseCasino: INSUFFICIENT_LIQUIDITY");
+        (uint112 _reserve0, uint112 _reserve1,) = getReserves();
+        require(
+            amount0Out < _reserve0 && amount1Out < _reserve1, "RiseCasino: INSUFFICIENT_LIQUIDITY"
+        );
 
         uint256 balance0;
         uint256 balance1;
@@ -255,18 +333,22 @@ contract RiseCasinoPair is RiseCasinoERC20 {
             require(to != _token0 && to != _token1, "RiseCasino: INVALID_TO");
             if (amount0Out > 0) _safeTransfer(_token0, to, amount0Out);
             if (amount1Out > 0) _safeTransfer(_token1, to, amount1Out);
-            if (data.length > 0) IRiseCasinoCallee(to).riseCasinoCall(msg.sender, amount0Out, amount1Out, data);
+            if (data.length > 0) {
+                IRiseCasinoCallee(to).riseCasinoCall(msg.sender, amount0Out, amount1Out, data);
+            }
             balance0 = IERC20(_token0).balanceOf(address(this));
             balance1 = IERC20(_token1).balanceOf(address(this));
         }
-        uint256 amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
-        uint256 amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
+        uint256 amount0In =
+            balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
+        uint256 amount1In =
+            balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
         require(amount0In > 0 || amount1In > 0, "RiseCasino: INSUFFICIENT_INPUT_AMOUNT");
         {
             uint256 balance0Adjusted = (balance0 * 1000) - (amount0In * 3);
             uint256 balance1Adjusted = (balance1 * 1000) - (amount1In * 3);
             require(
-                balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * 1000**2,
+                balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * 1000 ** 2,
                 "RiseCasino: K"
             );
         }
@@ -275,7 +357,9 @@ contract RiseCasinoPair is RiseCasinoERC20 {
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
     }
 
-    function skim(address to) external lock {
+    function skim(
+        address to
+    ) external lock {
         address _token0 = token0;
         address _token1 = token1;
         _safeTransfer(_token0, to, IERC20(_token0).balanceOf(address(this)) - reserve0);
@@ -283,20 +367,32 @@ contract RiseCasinoPair is RiseCasinoERC20 {
     }
 
     function sync() external lock {
-        _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), reserve0, reserve1);
+        _update(
+            IERC20(token0).balanceOf(address(this)),
+            IERC20(token1).balanceOf(address(this)),
+            reserve0,
+            reserve1
+        );
     }
 
-    function encode(uint112 y) internal pure returns (uint224 z) {
-        z = uint224(y) * 2**112; 
+    function encode(
+        uint112 y
+    ) internal pure returns (uint224 z) {
+        z = uint224(y) * 2 ** 112;
     }
-    function uqdiv(uint224 x, uint112 y) internal pure returns (uint224 z) {
+
+    function uqdiv(
+        uint224 x,
+        uint112 y
+    ) internal pure returns (uint224 z) {
         z = x / uint224(y);
     }
 }
 
 contract RiseCasinoFactory {
     // Replaced with dynamic hash fetch if possible or pre-calc, but here we expose it
-    bytes32 public constant INIT_CODE_HASH = keccak256(abi.encodePacked(type(RiseCasinoPair).creationCode));
+    bytes32 public constant INIT_CODE_HASH =
+        keccak256(abi.encodePacked(type(RiseCasinoPair).creationCode));
 
     address public feeTo;
     address public feeToSetter;
@@ -306,7 +402,9 @@ contract RiseCasinoFactory {
 
     event PairCreated(address indexed token0, address indexed token1, address pair, uint256);
 
-    constructor(address _feeToSetter) {
+    constructor(
+        address _feeToSetter
+    ) {
         feeToSetter = _feeToSetter;
     }
 
@@ -314,12 +412,15 @@ contract RiseCasinoFactory {
         return allPairs.length;
     }
 
-    function createPair(address tokenA, address tokenB) external returns (address pair) {
+    function createPair(
+        address tokenA,
+        address tokenB
+    ) external returns (address pair) {
         require(tokenA != tokenB, "RiseCasino: IDENTICAL_ADDRESSES");
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         require(token0 != address(0), "RiseCasino: ZERO_ADDRESS");
         require(getPair[token0][token1] == address(0), "RiseCasino: PAIR_EXISTS");
-        
+
         bytes memory bytecode = type(RiseCasinoPair).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
         assembly {
@@ -332,12 +433,16 @@ contract RiseCasinoFactory {
         emit PairCreated(token0, token1, pair, allPairs.length);
     }
 
-    function setFeeTo(address _feeTo) external {
+    function setFeeTo(
+        address _feeTo
+    ) external {
         require(msg.sender == feeToSetter, "RiseCasino: FORBIDDEN");
         feeTo = _feeTo;
     }
 
-    function setFeeToSetter(address _feeToSetter) external {
+    function setFeeToSetter(
+        address _feeToSetter
+    ) external {
         require(msg.sender == feeToSetter, "RiseCasino: FORBIDDEN");
         feeToSetter = _feeToSetter;
     }

@@ -16,11 +16,9 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
  * - Owner minting (controlled by MasterChef/Game contracts initially, then DAO)
  */
 contract CHIPToken is ERC20, ERC20Burnable, ERC20Permit, Ownable {
-    constructor(address initialOwner)
-        ERC20("RiseCasino Chip", "CHIP")
-        ERC20Permit("RiseCasino Chip")
-        Ownable(initialOwner)
-    {
+    constructor(
+        address initialOwner
+    ) ERC20("RiseCasino Chip", "CHIP") ERC20Permit("RiseCasino Chip") Ownable(initialOwner) {
         // Initial supply to owner for liquidity pools
         _mint(initialOwner, 1_000_000_000 * 10 ** decimals()); // 1 Billion start
     }
@@ -29,7 +27,10 @@ contract CHIPToken is ERC20, ERC20Burnable, ERC20Permit, Ownable {
      * @dev Mint new tokens. Only callable by owner (initially).
      * In future, ownership will be transferred to the Staking/Game ecosystem.
      */
-    function mint(address to, uint256 amount) public onlyOwner {
+    function mint(
+        address to,
+        uint256 amount
+    ) public onlyOwner {
         _mint(to, amount);
     }
 }

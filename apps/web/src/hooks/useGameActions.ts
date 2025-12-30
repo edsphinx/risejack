@@ -199,19 +199,28 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
         let gameEndData: GameEndData | null = null;
 
         if (hasSessionKey && keyPair) {
-          console.log('[GameActions] Using session key...');
+          console.log('[GameActions] 🔑 Using session key...', {
+            hasSessionKey,
+            publicKey: keyPair.publicKey?.slice(0, 20) + '...',
+          });
           try {
             const result = await sendSessionTransaction(contractAddress, value ?? 0n, data);
             txHash = result.txHash;
             gameEndData = result.gameEndData;
           } catch (sessionErr) {
             // Session key failed - fallback to passkey
-            console.warn('[GameActions] Session key failed, falling back to passkey:', sessionErr);
-            console.log('[GameActions] Falling back to passkey...');
+            console.warn(
+              '[GameActions] ⚠️ Session key FAILED, falling back to passkey:',
+              sessionErr
+            );
+            console.log('[GameActions] 🔐 Falling back to passkey...');
             txHash = await sendPasskeyTransaction(contractAddress, value ?? 0n, data);
           }
         } else {
-          console.log('[GameActions] Using passkey...');
+          console.log('[GameActions] 🔐 Using passkey (no session key)...', {
+            hasSessionKey,
+            hasKeyPair: !!keyPair,
+          });
           txHash = await sendPasskeyTransaction(contractAddress, value ?? 0n, data);
         }
 

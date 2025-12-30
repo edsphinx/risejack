@@ -144,6 +144,21 @@ export function GameBoard() {
   // Can surrender only on first action
   const canSurrender = canPlay && game.gameData?.playerCards.length === 2;
 
+  // Debug: Log rendering decision
+  console.log('[GameBoard] 🎮 Render decision:', {
+    isConnected: wallet.isConnected,
+    gameState: game.gameData?.state,
+    isIdle,
+    canBet,
+    canPlay,
+    gameResult,
+    willShow: !wallet.isConnected
+      ? 'Connect Wallet'
+      : isIdle || gameResult
+        ? 'Betting UI'
+        : 'ActionButtons',
+  });
+
   // Combined error
   const error = wallet.error || game.error;
 

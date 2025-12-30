@@ -74,10 +74,7 @@ contract MockVRFCoordinator is IVRFCoordinator {
      * @param requestId The request ID to fulfill
      * @param randomNumbers Array of random numbers to send to consumer
      */
-    function fulfillRequest(
-        uint256 requestId,
-        uint256[] calldata randomNumbers
-    ) external {
+    function fulfillRequest(uint256 requestId, uint256[] calldata randomNumbers) external {
         address consumer = requestToConsumer[requestId];
         require(consumer != address(0), "Request ID not found");
         require(!requestFulfilled[requestId], "Already fulfilled");
@@ -97,10 +94,7 @@ contract MockVRFCoordinator is IVRFCoordinator {
      * @param requestId The request ID to fulfill
      * @param seed Seed to generate random numbers from
      */
-    function fulfillRequestWithSeed(
-        uint256 requestId,
-        uint256 seed
-    ) external {
+    function fulfillRequestWithSeed(uint256 requestId, uint256 seed) external {
         address consumer = requestToConsumer[requestId];
         require(consumer != address(0), "Request ID not found");
         require(!requestFulfilled[requestId], "Already fulfilled");

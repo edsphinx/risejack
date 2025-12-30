@@ -58,19 +58,23 @@
   <!-- Geometric dot pattern -->
   <rect x="-105" y="-153" width="210" height="306" rx="8" ry="8" fill="url(#RBpattern)"/>
   
-  <!-- Center spade symbol - larger, with glow -->
-  <g transform="translate(0, -25)" filter="url(#spadeGlow)">
+  <!-- Center spade symbol - clean classic design -->
+  <g transform="translate(0, -15)" filter="url(#spadeGlow)">
+    <!-- Spade body - classic shape -->
     <path 
-      d="M0 -45 C-18 -20, -45 5, -45 30 C-45 55, -20 65, 0 45 C20 65, 45 55, 45 30 C45 5, 18 -20, 0 -45 Z"
+      d="M0 -50 
+         C0 -50 -40 -10 -40 20 
+         C-40 40 -25 50 -10 45 
+         C-10 45 -15 65 -20 70 
+         L20 70 
+         C15 65 10 45 10 45 
+         C25 50 40 40 40 20 
+         C40 -10 0 -50 0 -50 Z"
       fill="url(#spadeGrad)"
-      stroke="rgba(255,255,255,0.3)"
-      stroke-width="1"
-      opacity="0.8"
+      stroke="rgba(255,255,255,0.2)"
+      stroke-width="0.5"
+      opacity="0.85"
     />
-    <!-- Stem -->
-    <rect x="-4" y="40" width="8" height="20" fill="url(#spadeGrad)" opacity="0.6"/>
-    <!-- Base -->
-    <rect x="-15" y="55" width="30" height="6" rx="3" fill="url(#spadeGrad)" opacity="0.5"/>
   </g>
   
   <!-- RISEJACK text - full brand name with arc effect -->

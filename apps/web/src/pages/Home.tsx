@@ -11,7 +11,7 @@ export function Home() {
         {/* Background gradient/glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-4xl bg-gradient-to-b from-purple-900/40 to-transparent blur-3xl pointer-events-none" />
 
-        <div className="container mx-auto text-center relative z-10">
+        <div className="max-w-6xl mx-auto text-center relative z-10">
           <div className="mb-6 flex justify-center">
             <Logo className="w-64 h-auto" />
           </div>
@@ -46,7 +46,7 @@ export function Home() {
       </section>
 
       {/* Featured Game */}
-      <section className="container mx-auto px-4 py-8">
+      <section className="max-w-6xl mx-auto px-4 py-8">
         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
           <span className="text-2xl">🔥</span> Trending Now
         </h2>
@@ -74,7 +74,7 @@ export function Home() {
       </section>
 
       {/* Other Games */}
-      <section className="container mx-auto px-4 py-8">
+      <section className="max-w-6xl mx-auto px-4 py-8">
         <h2 className="text-2xl font-bold mb-6">All Games</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

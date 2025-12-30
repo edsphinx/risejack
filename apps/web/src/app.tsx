@@ -6,18 +6,18 @@ import { Stake } from './pages/Stake';
 import { WalletConnect } from './components/wallet/WalletConnect';
 import { Logo } from './components/brand/Logo';
 import { useLocation } from 'wouter-preact';
-import { useRiseWallet } from './hooks/useRiseWallet';
+import { WalletProvider, useWallet } from './context/WalletContext';
 
 function Header() {
   const [location, setLocation] = useLocation();
   const isGame = location === '/risejack';
 
-  // Use global wallet hook
-  const wallet = useRiseWallet();
+  // Use global wallet context
+  const wallet = useWallet();
 
   return (
     <header className="p-2 sm:p-4 border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
-      <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
         {/* Left Side: Logo + Nav */}
         <div className="flex items-center gap-6">
           <div className="cursor-pointer" onClick={() => setLocation('/')}>
@@ -53,7 +53,7 @@ function Header() {
           </nav>
         </div>
 
-        {/* Right Side: Logic from RiseJack's WalletConnect */}
+        {/* Right Side: WalletConnect */}
         <WalletConnect
           account={wallet.address}
           isConnected={wallet.isConnected}
@@ -73,21 +73,22 @@ function Header() {
 
 export function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 font-sans selection:bg-purple-500/30 text-white">
-      <Header />
+    <WalletProvider>
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 font-sans selection:bg-purple-500/30 text-white">
+        <Header />
 
-      {/* No padding-top needed as header is sticky but part of flow, or keep flow natural */}
-      <main>
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/risejack" component={RiseJack} />
-          <Route path="/swap" component={Swap} />
-          <Route path="/stake" component={Stake} />
+        <main>
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/risejack" component={RiseJack} />
+            <Route path="/swap" component={Swap} />
+            <Route path="/stake" component={Stake} />
 
-          {/* Fallback to Home */}
-          <Route component={Home} />
-        </Switch>
-      </main>
-    </div>
+            {/* Fallback to Home */}
+            <Route component={Home} />
+          </Switch>
+        </main>
+      </div>
+    </WalletProvider>
   );
 }

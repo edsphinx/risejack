@@ -62,10 +62,7 @@ contract RiseJackHandler is Test {
         }
     }
 
-    function placeBet(
-        uint256 playerSeed,
-        uint256 amount
-    ) external {
+    function placeBet(uint256 playerSeed, uint256 amount) external {
         address player = players[playerSeed % players.length];
         amount = bound(amount, risejack.minBet(), risejack.maxBet());
 

@@ -8,6 +8,7 @@ import { CardDeck } from './CardDeck';
 import { ContractService } from '@/services';
 import { GameState, type GameResult } from '@risejack/shared';
 import './styles/casino-table.css';
+import './styles/action-buttons.css';
 
 // Snapshot of hand when game ends for display during result
 interface HandSnapshot {
@@ -381,23 +382,20 @@ export function GameBoard() {
                     <span className="text-slate-400">ETH</span>
                   </div>
 
-                  {/* Quick bet buttons */}
-                  <div className="flex gap-2">
+                  {/* Quick bet buttons - chip style */}
+                  <div className="quick-bet-container">
                     {['0.00001', '0.00005', '0.0001', '0.0005'].map((amount) => (
                       <button
                         key={amount}
                         onClick={() => setBetAmount(amount)}
-                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          betAmount === amount
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                        }`}
+                        className={`quick-bet-btn ${betAmount === amount ? 'selected' : ''}`}
                       >
                         {amount}
                       </button>
                     ))}
                   </div>
 
+                  {/* Deal Cards - DEGEN FOMO button */}
                   <button
                     onClick={() => {
                       // Clear previous game display before new bet
@@ -406,13 +404,16 @@ export function GameBoard() {
                       game.placeBet(betAmount);
                     }}
                     disabled={game.isLoading || !canBet}
-                    className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/25"
+                    className="deal-btn"
                   >
-                    {game.isLoading
-                      ? '⏳ Placing Bet...'
-                      : cooldownRemaining > 0
-                        ? `⏳ Wait ${cooldownRemaining}s`
-                        : `Deal Cards - ${betAmount} ETH`}
+                    <span className="deal-btn-content">
+                      <span className="deal-btn-emoji">🚀</span>
+                      {game.isLoading
+                        ? 'SENDING...'
+                        : cooldownRemaining > 0
+                          ? `WAIT ${cooldownRemaining}s`
+                          : `LET'S GO! ${betAmount} ETH`}
+                    </span>
                   </button>
 
                   <p className="text-xs text-slate-500 text-center">

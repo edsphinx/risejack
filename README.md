@@ -80,7 +80,7 @@ This project is licensed under the **Business Source License 1.1 (BSL)**.
 
 - **Status**: Source Available.
 - **Commercial Use**: Restricted until 2028-04-01.
-- **Change License**: MIT (after 2 years).
+- **Change License**: Apache 2.0 (after the Change Date).
 - **Permitted Use**: You may view, fork, and test the code for personal, educational, or audit purposes. You may NOT run a competing commercial interface or contract deployment without permission.
 
 See `LICENSE` for details.

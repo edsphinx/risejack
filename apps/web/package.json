@@ -18,7 +18,6 @@
     "rise-wallet": "^0.3.0",
     "shreds": "^0.2.3",
     "viem": "^2.21.54",
-    "wouter": "^3.9.0",
     "wouter-preact": "^3.9.0"
   },
   "devDependencies": {

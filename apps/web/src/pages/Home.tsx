@@ -1,4 +1,4 @@
-import { useLocation } from 'wouter-preact';
+import { Link, useLocation } from 'wouter-preact';
 import { Logo } from '@/components/brand/Logo';
 
 export function Home() {
@@ -51,13 +51,14 @@ export function Home() {
           <span className="text-2xl">🔥</span> Trending Now
         </h2>
 
-        <div
-          onClick={() => setLocation('/risejack')}
-          className="group relative cursor-pointer rounded-2xl overflow-hidden border border-white/10 bg-gray-900 hover:border-purple-500/50 transition-all duration-300"
+        <Link
+          href="/risejack"
+          className="group block relative cursor-pointer rounded-2xl overflow-hidden border border-white/10 bg-gray-900 hover:border-purple-500/50 transition-all duration-300"
         >
-          {/* Game Banner Image (CSS gradient for now) */}
+          {/* Game Banner Image (CSS gradient) */}
           <div className="h-48 bg-gradient-to-br from-slate-800 to-black relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('/assets/cards/AS.svg')] opacity-10 bg-repeat space-x-4 rotate-12 scale-150 transform translate-x-10 translate-y-10"></div>
+            {/* Pattern background using CSS */}
+            <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-purple-500/20 to-transparent"></div>
 
             <div className="absolute bottom-0 left-0 p-6 z-10">
               <h3 className="text-3xl font-black italic tracking-wide text-white group-hover:text-purple-400 transition-colors">
@@ -70,7 +71,7 @@ export function Home() {
               LIVE
             </div>
           </div>
-        </div>
+        </Link>
       </section>
 
       {/* Other Games */}

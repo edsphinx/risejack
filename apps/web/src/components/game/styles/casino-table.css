@@ -1,0 +1,496 @@
+/* Casino Table - Realistic felt design with psychological UX elements */
+
+.casino-table {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    #1a5c35 0%,
+    #166534 30%,
+    #15803d 50%,
+    #166534 70%,
+    #1a5c35 100%
+  );
+  border-radius: 1rem;
+  border: 10px solid;
+  border-image: linear-gradient(
+      180deg,
+      #92400e 0%,
+      #b45309 30%,
+      #d97706 50%,
+      #b45309 70%,
+      #92400e 100%
+    )
+    1;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    inset 0 0 100px rgba(0, 0, 0, 0.3);
+  min-height: 450px;
+  overflow: hidden;
+}
+
+/* Felt texture overlay */
+.casino-table::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Golden edge highlight */
+.casino-table::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 193, 7, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+/* Dealer zone */
+.dealer-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 1.5rem;
+}
+
+.dealer-zone .zone-label {
+  color: rgba(255, 215, 0, 0.5);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 0.75rem;
+}
+
+/* Player zone */
+.player-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1.5rem;
+}
+
+.player-zone .zone-label {
+  color: rgba(255, 215, 0, 0.5);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-top: 0.75rem;
+}
+
+/* Zone row - flex container for play-zone and value */
+.zone-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Invisible spacer to balance HandValue on the right */
+.zone-spacer {
+  width: 70px;
+  height: 70px;
+}
+
+/* Center bet display - premium DEGEN style */
+.bet-circle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.5rem 1.5rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(180, 83, 9, 0.9), rgba(217, 119, 6, 0.9));
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  box-shadow:
+    0 4px 20px rgba(217, 119, 6, 0.4),
+    0 0 30px rgba(255, 215, 0, 0.2);
+}
+
+.bet-circle .bet-amount {
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+}
+
+/* Bet display - positioned to right side */
+.bet-display-side {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(180, 83, 9, 0.9), rgba(217, 119, 6, 0.9));
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3);
+  z-index: 20;
+}
+
+.bet-display-side .bet-label {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.bet-display-side .bet-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Mobile: bet display smaller but still on right */
+@media (max-width: 640px) {
+  .bet-display-side {
+    right: 0;
+    padding: 0.2rem 0.35rem;
+    border-radius: 6px 0 0 6px;
+  }
+
+  .bet-display-side .bet-label {
+    font-size: 0.45rem;
+  }
+
+  .bet-display-side .bet-value {
+    font-size: 0.6rem;
+  }
+}
+
+/* Right column for HandValue + Bet */
+.right-info-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Bet display inline - next to HandValue */
+.bet-display-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(180, 83, 9, 0.9), rgba(217, 119, 6, 0.9));
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  min-width: 50px;
+}
+
+.bet-display-inline .bet-label {
+  font-size: 0.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.bet-display-inline .bet-value {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Blackjack payout text - visible reminder */
+.payout-text {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 215, 0, 0.4);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Insurance arc - casino authenticity */
+.insurance-arc {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 30px;
+  border: 2px solid rgba(255, 215, 0, 0.15);
+  border-bottom: none;
+  border-radius: 100px 100px 0 0;
+}
+
+/* ==================== ANIMATIONS (UX Psychology) ==================== */
+
+/* Win celebration glow - dopamine trigger */
+.casino-table.celebrating {
+  animation: win-glow 0.6s ease-out;
+}
+
+@keyframes win-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.5),
+      inset 0 0 100px rgba(0, 0, 0, 0.3);
+  }
+
+  50% {
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.5),
+      inset 0 0 100px rgba(0, 0, 0, 0.3),
+      0 0 60px rgba(0, 255, 65, 0.4);
+  }
+}
+
+/* Bust shake - immediate feedback */
+.casino-table.bust {
+  animation: table-shake 0.4s ease-out;
+}
+
+@keyframes table-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-8px);
+  }
+
+  40% {
+    transform: translateX(8px);
+  }
+
+  60% {
+    transform: translateX(-5px);
+  }
+
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Blackjack special - maximum celebration */
+.casino-table.blackjack {
+  animation: blackjack-glow 1s ease-out;
+}
+
+@keyframes blackjack-glow {
+  0% {
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.5),
+      inset 0 0 100px rgba(0, 0, 0, 0.3);
+  }
+
+  25% {
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.5),
+      inset 0 0 100px rgba(0, 0, 0, 0.3),
+      0 0 80px rgba(255, 215, 0, 0.5);
+  }
+
+  50% {
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.5),
+      inset 0 0 100px rgba(0, 0, 0, 0.3),
+      0 0 100px rgba(255, 215, 0, 0.6);
+  }
+
+  100% {
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.5),
+      inset 0 0 100px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ==================== CARD PLAY ZONES ==================== */
+
+/* Play zone - FIXED size yellow border (never changes) */
+.play-zone {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Bigger size for larger cards */
+  width: 280px;
+  height: 150px;
+  padding: 12px 18px;
+  border: 3px solid rgba(255, 215, 0, 0.5);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.1);
+  overflow: visible;
+}
+
+/* Empty state placeholder */
+.play-zone-empty {
+  color: rgba(255, 215, 0, 0.35);
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* ==================== MOBILE RESPONSIVE ==================== */
+
+/* Tablet: smaller but similar layout */
+@media (max-width: 768px) {
+  .casino-table {
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    border-width: 6px;
+    min-height: 350px;
+  }
+
+  .relative.z-10 {
+    padding: 0.5rem !important;
+  }
+
+  .dealer-zone,
+  .player-zone {
+    padding: 0.5rem 0;
+  }
+
+  .dealer-zone .zone-label,
+  .player-zone .zone-label {
+    font-size: 0.6rem;
+    letter-spacing: 1.5px;
+    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .zone-row {
+    gap: 0.5rem;
+  }
+
+  /* Smaller spacer */
+  .zone-spacer {
+    width: 55px;
+    height: 55px;
+  }
+
+  .play-zone {
+    width: 160px;
+    height: 100px;
+    padding: 6px;
+    border-width: 2px;
+  }
+
+  .bet-circle {
+    padding: 0.3rem 0.75rem;
+  }
+
+  .bet-circle .bet-amount {
+    font-size: 0.8rem;
+  }
+
+  .payout-text {
+    font-size: 0.5rem;
+    letter-spacing: 1px;
+  }
+}
+
+/* Mobile: simplified layout */
+@media (max-width: 640px) {
+  .casino-table {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border-width: 4px;
+    min-height: 320px;
+  }
+
+  .relative.z-10 {
+    padding: 0.5rem 1rem !important;
+  }
+
+  /* HIDE deck on mobile */
+  .card-deck {
+    display: none !important;
+  }
+
+  /* HIDE spacers on mobile */
+  .zone-spacer {
+    display: none !important;
+  }
+
+  /* Zones - more vertical space */
+  .dealer-zone,
+  .player-zone {
+    padding: 0.5rem 0;
+    width: 100%;
+  }
+
+  /* Zone labels */
+  .dealer-zone .zone-label,
+  .player-zone .zone-label {
+    font-size: 0.65rem;
+    letter-spacing: 1.5px;
+    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  /* Zone row - FULL WIDTH */
+  .zone-row {
+    gap: 0.75rem;
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Play zone - FIXED size on mobile, bigger for larger cards */
+  .play-zone {
+    width: 280px;
+    height: 230px;
+    max-width: none;
+    padding: 8px;
+    border-width: 2px;
+  }
+
+  /* Bet circle hidden on mobile via Tailwind class */
+
+  /* Payout text */
+  .payout-text {
+    position: static;
+    transform: none;
+    text-align: center;
+    font-size: 0.5rem;
+    margin-top: 0.5rem;
+  }
+}
+
+/* Very small mobile */
+@media (max-width: 400px) {
+  .casino-table {
+    padding: 0.25rem;
+    border-width: 3px;
+    min-height: 250px;
+  }
+
+  .play-zone {
+    min-width: 120px;
+    min-height: 60px;
+    padding: 6px;
+  }
+
+  .dealer-zone .zone-label,
+  .player-zone .zone-label {
+    font-size: 0.55rem;
+  }
+
+  .bet-circle .bet-amount {
+    font-size: 0.65rem;
+  }
+}

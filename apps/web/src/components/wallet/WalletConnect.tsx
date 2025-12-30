@@ -93,17 +93,19 @@ export function WalletConnect({
 
   // Connected state - show address and session status
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-3 max-w-[200px] sm:max-w-none justify-end">
       {/* Session Key Badge */}
       {hasSessionKey ? (
         <div className="flex items-center gap-1">
-          <div className="px-2.5 py-1.5 rounded-l-lg bg-green-900/50 border border-green-500/30 flex items-center gap-1.5">
-            <span className="text-green-400 text-sm">🔑</span>
-            <span className="text-green-400 text-xs font-medium">{formatTime(sessionExpiry)}</span>
+          <div className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-l-lg bg-green-900/50 border border-green-500/30 flex items-center gap-1">
+            <span className="text-green-400 text-xs sm:text-sm">🔑</span>
+            <span className="text-green-400 text-[10px] sm:text-xs font-medium">
+              {formatTime(sessionExpiry)}
+            </span>
           </div>
           <button
             onClick={onRevokeSession}
-            className="px-2 py-1.5 rounded-r-lg bg-red-900/30 border border-red-500/30 text-red-400 text-xs hover:bg-red-900/50 transition-colors"
+            className="px-1.5 sm:px-2 py-1 sm:py-1.5 rounded-r-lg bg-red-900/30 border border-red-500/30 text-red-400 text-xs hover:bg-red-900/50 transition-colors"
             title="Revoke session key"
           >
             ✕
@@ -113,17 +115,17 @@ export function WalletConnect({
         <button
           onClick={handleCreateSession}
           disabled={isCreatingSession}
-          className="px-3 py-1.5 rounded-lg bg-purple-900/50 border border-purple-500/30 text-purple-300 text-xs font-medium hover:bg-purple-800/50 transition-colors disabled:opacity-50"
+          className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-purple-900/50 border border-purple-500/30 text-purple-300 text-[10px] sm:text-xs font-medium hover:bg-purple-800/50 transition-colors disabled:opacity-50"
         >
-          {isCreatingSession ? '⏳ Creating...' : '🔑 Enable Fast Mode'}
+          {isCreatingSession ? '⏳...' : '🔑 Fast'}
         </button>
       )}
 
-      {/* Balance Badge */}
+      {/* Balance Badge - hide on very small screens */}
       {balance !== null && (
-        <div className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600">
-          <span className="text-yellow-400 font-mono text-sm font-medium">
-            {Number(formatEther(balance)).toFixed(5)} ETH
+        <div className="hidden sm:block px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-slate-800 border border-slate-600">
+          <span className="text-yellow-400 font-mono text-xs sm:text-sm font-medium">
+            {Number(formatEther(balance)).toFixed(4)} ETH
           </span>
         </div>
       )}
@@ -135,18 +137,20 @@ export function WalletConnect({
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
         }}
-        className="px-2.5 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/50 flex items-center gap-1.5 hover:border-purple-500/50 hover:bg-slate-700/80 transition-all cursor-pointer"
+        className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/50 flex items-center gap-1 hover:border-purple-500/50 hover:bg-slate-700/80 transition-all cursor-pointer"
         title="Click to copy address"
       >
         <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-        <span className="text-slate-300 font-mono text-xs">{shortenAddress(account!)}</span>
+        <span className="text-slate-300 font-mono text-[10px] sm:text-xs">
+          {shortenAddress(account!)}
+        </span>
         <span className="text-slate-500 text-[10px] transition-colors">{copied ? '✓' : '⧉'}</span>
       </button>
 
       {/* Disconnect */}
       <button
         onClick={onDisconnect}
-        className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-900/20 transition-colors"
+        className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-900/20 transition-colors"
         title="Disconnect"
       >
         ✕

@@ -1,0 +1,91 @@
+/* Card Deck Styles - Matches PlayingCard card-back EXACTLY */
+.card-deck {
+  position: absolute;
+  top: 50%;
+  left: 25px;
+  /* LEFT side of table (standard casino position) */
+  transform: translateY(-50%);
+  width: 70px;
+  /* Same as .playing-card */
+  height: 98px;
+  /* Same as .playing-card */
+  z-index: 20;
+}
+
+/* Each deck card - EXACT copy of .playing-card .card-back */
+.deck-card {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  /* EXACT gradient from PlayingCard */
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #172554 100%);
+  border: 1px solid #1e40af;
+
+  /* 3D stack */
+  transform: translateY(calc(var(--card-index, 0) * -2px));
+}
+
+/* Inner pattern - matches .card-back-inner */
+.deck-card::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* EXACT pattern from PlayingCard */
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 3px,
+    rgba(59, 130, 246, 0.1) 3px,
+    rgba(59, 130, 246, 0.1) 6px
+  );
+}
+
+/* Center symbol - matches PlayingCard */
+.deck-card::after {
+  content: '♠';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  color: rgba(147, 197, 253, 0.6);
+  /* text-blue-300/60 */
+}
+
+.deck-label {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Deal animation - card flies out */
+.card-deck.dealing .deck-card:last-child {
+  animation: deal-card 0.4s ease-out forwards;
+}
+
+@keyframes deal-card {
+  0% {
+    opacity: 1;
+    transform: translateY(calc(var(--card-index, 0) * -2px));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) translateX(100px) rotate(10deg);
+  }
+}

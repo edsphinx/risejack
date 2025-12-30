@@ -1,22 +1,44 @@
-# Codecov Configuration
-# https://docs.codecov.com/docs/codecov-yaml
+# Codecov Configuration for RiseJack
+# Documentation: https://docs.codecov.com/docs/codecov-yaml
+# Repository: https://github.com/edsphinx/risejack
 
+# Coverage precision and display settings
 coverage:
   precision: 2
   round: down
   range: '70...100'
 
+  # Status checks - block PRs that don't meet coverage requirements
+  # https://docs.codecov.com/docs/commit-status
   status:
     project:
       default:
         target: 80%
         threshold: 2%
+        if_ci_failed: error
+        informational: false
+
+      # Separate status for DeFi contracts (higher standards)
+      defi:
+        target: 85%
+        threshold: 1%
+        paths:
+          - 'packages/contracts/src/defi/**'
+        if_ci_failed: error
+
     patch:
       default:
         target: 70%
+        threshold: 5%
+        # Don't block PRs on patch coverage, just inform
         informational: true
 
-# Ignore test files and scripts from coverage
+    changes:
+      default:
+        # Notify when coverage decreases on changed files
+        informational: true
+
+# Ignore test files, scripts, and mocks from coverage calculation
 ignore:
   - 'packages/contracts/test/**'
   - 'packages/contracts/script/**'
@@ -25,15 +47,55 @@ ignore:
   - '**/*.s.sol'
   - '**/*.medusa.sol'
 
-# Flag management for different coverage types
+# Flags - group coverage by test type
+# https://docs.codecov.com/docs/flags
 flags:
   contracts:
     paths:
       - packages/contracts/src/
     carryforward: true
+    # After how many uploads to start reporting (helps with parallel CI)
+    after_n_builds: 1
 
-# Comment configuration for PRs
+# Components - virtual path filters for detailed reporting
+# https://docs.codecov.com/docs/components
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+  individual_components:
+    - component_id: core_game
+      name: 'Core Game (RiseJack)'
+      paths:
+        - packages/contracts/src/RiseJack.sol
+    - component_id: defi_amm
+      name: 'DeFi AMM'
+      paths:
+        - packages/contracts/src/defi/RiseCasino*.sol
+    - component_id: defi_token
+      name: 'CHIP Token'
+      paths:
+        - packages/contracts/src/defi/CHIPToken.sol
+    - component_id: defi_staking
+      name: 'Staking'
+      paths:
+        - packages/contracts/src/defi/*Staking*.sol
+
+# PR Comment configuration
+# https://docs.codecov.com/docs/pull-request-comments
 comment:
-  layout: 'header, diff, flags, components'
+  # Layout options: header, diff, flags, components, tree, files, footer
+  layout: 'condensed_header, diff, flags, components, condensed_footer'
   behavior: default
+  # Only comment when coverage changes
   require_changes: true
+  # Don't require base commit (helps with new branches)
+  require_base: false
+  require_head: true
+  # Hide individual file coverage for cleaner comments
+  hide_project_coverage: false
+
+# GitHub Checks integration
+github_checks:
+  annotations: true

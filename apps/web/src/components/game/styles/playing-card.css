@@ -1,0 +1,146 @@
+/* Playing Card - PNG Image Based */
+.playing-card {
+  position: relative;
+  width: 90px;
+  height: 126px;
+  perspective: 1000px;
+  flex-shrink: 0;
+}
+
+.playing-card .card-inner {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  position: relative;
+}
+
+.playing-card .card-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+/* Card Front */
+.playing-card .card-front {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  backface-visibility: hidden;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Card Back */
+.playing-card .card-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  backface-visibility: hidden;
+  transform: rotateY(180deg);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  /* Thin white border to match deck design */
+  border: 0.5px solid rgba(255, 255, 255, 0.6);
+}
+
+/* PNG Image styling */
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ==================== ANIMATIONS ==================== */
+
+.playing-card.deal-animation {
+  animation: deal-slide-in 0.4s ease-out forwards;
+}
+
+@keyframes deal-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateX(30px) scale(0.85);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.playing-card.dealing-from-deck {
+  animation: deal-from-deck 0.5s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+  animation-delay: var(--deal-delay, 0ms);
+  opacity: 0;
+}
+
+@keyframes deal-from-deck {
+  0% {
+    opacity: 0;
+    transform: translateX(-150px) translateY(-50px) rotate(-10deg) scale(0.8);
+  }
+
+  60% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) rotate(0deg) scale(1);
+  }
+}
+
+/* Hover effect */
+.playing-card:hover {
+  transform: translateY(-3px);
+  transition: transform 0.15s ease;
+}
+
+.playing-card:hover .card-front {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+  .playing-card {
+    width: 105px;
+    height: 155px;
+  }
+
+  .playing-card .card-front,
+  .playing-card .card-back,
+  .card-image {
+    border-radius: 6px;
+  }
+}
+
+@media (max-width: 640px) {
+  .playing-card {
+    width: 110px;
+    height: 165px;
+  }
+
+  .playing-card .card-front,
+  .playing-card .card-back,
+  .card-image {
+    border-radius: 6px;
+  }
+
+  .playing-card:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .playing-card {
+    width: 80px;
+    height: 112px;
+  }
+
+  .playing-card .card-front,
+  .playing-card .card-back,
+  .card-image {
+    border-radius: 5px;
+  }
+}

@@ -383,102 +383,102 @@ export function GameBoard() {
               <div className="payout-text">Blackjack Pays 3 to 2</div>
             </div>
 
-            {/* Controls - responsive */}
-            <div className="bg-slate-800/50 backdrop-blur rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 border border-slate-700">
-              {isIdle || gameResult ? (
-                /* Betting UI */
-                <div className="space-y-3 sm:space-y-4">
-                  {/* Cooldown indicator */}
-                  {cooldownRemaining > 0 && (
-                    <div className="text-center py-3 bg-yellow-900/30 border border-yellow-500/30 rounded-lg">
-                      <span className="text-yellow-400">⏳ Cooldown: </span>
-                      <span className="font-mono font-bold text-yellow-300">
-                        {cooldownRemaining}s
-                      </span>
+            {/* Controls Area Layout: Controls + History side by side on desktop */}
+            <div className="controls-area-layout">
+              {/* Controls - betting or action buttons */}
+              <div className="controls-panel">
+                {isIdle || gameResult ? (
+                  /* Betting UI */
+                  <div className="space-y-3 sm:space-y-4">
+                    {/* Cooldown indicator */}
+                    {cooldownRemaining > 0 && (
+                      <div className="text-center py-3 bg-yellow-900/30 border border-yellow-500/30 rounded-lg">
+                        <span className="text-yellow-400">⏳ Cooldown: </span>
+                        <span className="font-mono font-bold text-yellow-300">
+                          {cooldownRemaining}s
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        value={betAmount}
+                        onChange={(e) => setBetAmount((e.target as HTMLInputElement).value)}
+                        min={game.formatBet(game.betLimits.min)}
+                        max={game.formatBet(game.betLimits.max)}
+                        step="0.00001"
+                        className="flex-1 px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white text-lg font-mono focus:border-purple-500 focus:outline-none"
+                        placeholder="Bet amount"
+                      />
+                      <span className="text-slate-400">ETH</span>
                     </div>
-                  )}
 
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="number"
-                      value={betAmount}
-                      onChange={(e) => setBetAmount((e.target as HTMLInputElement).value)}
-                      min={game.formatBet(game.betLimits.min)}
-                      max={game.formatBet(game.betLimits.max)}
-                      step="0.00001"
-                      className="flex-1 px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white text-lg font-mono focus:border-purple-500 focus:outline-none"
-                      placeholder="Bet amount"
-                    />
-                    <span className="text-slate-400">ETH</span>
+                    {/* Quick bet buttons - chip style */}
+                    <div className="quick-bet-container">
+                      {['0.00001', '0.00005', '0.0001', '0.0005'].map((amount) => (
+                        <button
+                          key={amount}
+                          onClick={() => setBetAmount(amount)}
+                          className={`quick-bet-btn ${betAmount === amount ? 'selected' : ''}`}
+                        >
+                          {amount}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Deal Cards - DEGEN FOMO button */}
+                    <button
+                      onClick={() => {
+                        // Clear previous game display before new bet
+                        setLastHand(null);
+                        game.clearLastResult();
+                        game.placeBet(betAmount);
+                      }}
+                      disabled={game.isLoading || !canBet}
+                      className="deal-btn"
+                    >
+                      <span className="deal-btn-content">
+                        <span className="deal-btn-emoji">🚀</span>
+                        {game.isLoading
+                          ? 'SENDING...'
+                          : cooldownRemaining > 0
+                            ? `WAIT ${cooldownRemaining}s`
+                            : `LET'S GO! ${betAmount} ETH`}
+                      </span>
+                    </button>
+
+                    <p className="text-xs text-slate-500 text-center">
+                      Min: {game.formatBet(game.betLimits.min)} ETH • Max:{' '}
+                      {game.formatBet(game.betLimits.max)} ETH
+                    </p>
                   </div>
+                ) : (
+                  /* Action Buttons */
+                  <ActionButtons
+                    onHit={game.hit}
+                    onStand={game.stand}
+                    onDouble={game.double}
+                    onSurrender={game.surrender}
+                    canDouble={canDouble}
+                    canSurrender={canSurrender}
+                    isLoading={game.isLoading}
+                  />
+                )}
+              </div>
 
-                  {/* Quick bet buttons - chip style */}
-                  <div className="quick-bet-container">
-                    {['0.00001', '0.00005', '0.0001', '0.0005'].map((amount) => (
-                      <button
-                        key={amount}
-                        onClick={() => setBetAmount(amount)}
-                        className={`quick-bet-btn ${betAmount === amount ? 'selected' : ''}`}
-                      >
-                        {amount}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Deal Cards - DEGEN FOMO button */}
-                  <button
-                    onClick={() => {
-                      // Clear previous game display before new bet
-                      setLastHand(null);
-                      game.clearLastResult();
-                      game.placeBet(betAmount);
-                    }}
-                    disabled={game.isLoading || !canBet}
-                    className="deal-btn"
-                  >
-                    <span className="deal-btn-content">
-                      <span className="deal-btn-emoji">🚀</span>
-                      {game.isLoading
-                        ? 'SENDING...'
-                        : cooldownRemaining > 0
-                          ? `WAIT ${cooldownRemaining}s`
-                          : `LET'S GO! ${betAmount} ETH`}
-                    </span>
-                  </button>
-
-                  <p className="text-xs text-slate-500 text-center">
-                    Min: {game.formatBet(game.betLimits.min)} ETH • Max:{' '}
-                    {game.formatBet(game.betLimits.max)} ETH
-                  </p>
-                </div>
-              ) : (
-                /* Action Buttons */
-                <ActionButtons
-                  onHit={game.hit}
-                  onStand={game.stand}
-                  onDouble={game.double}
-                  onSurrender={game.surrender}
-                  canDouble={canDouble}
-                  canSurrender={canSurrender}
-                  isLoading={game.isLoading}
-                />
-              )}
-            </div>
-
-            {/* Action Area Layout: Buttons + History side by side on desktop */}
-            <div className="action-area-layout">
-              {/* Session Key Hint - spans full width */}
-              {!wallet.hasSessionKey && wallet.isConnected && (
-                <div className="session-hint text-center text-sm text-purple-400 bg-purple-900/20 rounded-lg py-3 border border-purple-500/20">
-                  💡 Enable <strong>Fast Mode</strong> above for instant, popup-free gameplay!
-                </div>
-              )}
-
-              {/* History Panel */}
+              {/* History Panel - always beside controls */}
               <div className="history-panel">
                 <GameHistory />
               </div>
             </div>
+
+            {/* Session Key Hint */}
+            {!wallet.hasSessionKey && wallet.isConnected && (
+              <div className="text-center text-sm text-purple-400 bg-purple-900/20 rounded-lg py-3 border border-purple-500/20">
+                💡 Enable <strong>Fast Mode</strong> above for instant, popup-free gameplay!
+              </div>
+            )}
           </div>
         )}
       </main>

@@ -1,5 +1,5 @@
 import type { PlayingCardProps } from '@risejack/shared';
-import { getCardDisplay } from '../../lib/cards';
+import { getCardDisplay } from '@/lib/cards';
 
 export function PlayingCard({
   cardIndex,

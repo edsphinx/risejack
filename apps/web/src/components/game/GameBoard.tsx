@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { useRiseWallet } from '@/hooks/useRiseWallet';
 import { useGameState } from '@/hooks/useGameState';
 import { WalletConnect } from '@/components/wallet/WalletConnect';
@@ -22,8 +22,6 @@ export function GameBoard() {
   const [betAmount, setBetAmount] = useState('0.00001');
   const [lastHand, setLastHand] = useState<HandSnapshot | null>(null);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
-  const [showResultOverlay, setShowResultOverlay] = useState(false);
-  const resultTimeoutRef = useRef<number | null>(null);
 
   // Wallet connection
   const wallet = useRiseWallet();
@@ -50,8 +48,8 @@ export function GameBoard() {
     }
   })();
 
-  // Show overlay when we have a result from WebSocket event
-  // lastGameResult now includes cards from CardDealt accumulation
+  // When game ends, store the final cards for display
+  // DON'T auto-clear - keep visible until user starts new game
   useEffect(() => {
     if (game.lastGameResult) {
       // Store the final cards and values for display
@@ -62,24 +60,7 @@ export function GameBoard() {
         dealerValue: game.lastGameResult.dealerFinalValue,
         bet: 0n,
       });
-
-      // Delay showing overlay to let user see the final cards
-      // 2.5 seconds gives time to see dealer's reveal
-      const showDelay = window.setTimeout(() => {
-        setShowResultOverlay(true);
-      }, 2500);
-
-      // Clear overlay after another 4 seconds (total 6.5s from game end)
-      if (resultTimeoutRef.current) {
-        clearTimeout(resultTimeoutRef.current);
-      }
-      resultTimeoutRef.current = window.setTimeout(() => {
-        setShowResultOverlay(false);
-        setLastHand(null);
-        game.clearLastResult();
-      }, 6500);
-
-      return () => clearTimeout(showDelay);
+      // No auto-clear - user will see this until they start a new game
     }
   }, [game.lastGameResult]);
 
@@ -115,8 +96,10 @@ export function GameBoard() {
 
   // Check if player can take actions
   const canPlay = game.gameData?.state === GameState.PlayerTurn;
-  const isIdle = (!game.gameData || game.gameData.state === GameState.Idle) && !game.lastGameResult;
-  const canBet = isIdle && cooldownRemaining === 0 && !showResultOverlay;
+  // Can bet when game is idle (including after showing result)
+  const canBet =
+    (!game.gameData || game.gameData.state === GameState.Idle) && cooldownRemaining === 0;
+  const isIdle = canBet && !game.lastGameResult;
 
   // Can double only on first action (2 cards)
   const canDouble = canPlay && game.gameData?.playerCards.length === 2 && !game.gameData.isDoubled;
@@ -126,28 +109,28 @@ export function GameBoard() {
   // Combined error
   const error = wallet.error || game.error;
 
-  // Result overlay styles
+  // Inline result style - DEGEN UX copy with neon colors
   const getResultStyle = (result: GameResult) => {
     switch (result) {
       case 'win':
       case 'blackjack':
         return {
-          bg: 'from-green-600/95 to-green-800/95',
-          text: 'text-green-100',
-          emoji: result === 'blackjack' ? '🎰' : '🎉',
-          message: result === 'blackjack' ? 'BLACKJACK!' : 'YOU WIN!',
+          bg: 'bg-gradient-to-r from-emerald-400 via-green-400 to-cyan-400',
+          text: 'text-black',
+          emoji: result === 'blackjack' ? '💎🙌' : '🚀',
+          message: result === 'blackjack' ? 'BLACKJACK! WAGMI!' : 'LFG! YOU WIN!',
         };
       case 'lose':
         return {
-          bg: 'from-red-600/95 to-red-800/95',
-          text: 'text-red-100',
-          emoji: '😢',
-          message: 'DEALER WINS',
+          bg: 'bg-gradient-to-r from-red-600 to-rose-600',
+          text: 'text-white',
+          emoji: '💀',
+          message: 'NGMI - DEALER WINS',
         };
       case 'push':
         return {
-          bg: 'from-yellow-600/95 to-yellow-800/95',
-          text: 'text-yellow-100',
+          bg: 'bg-gradient-to-r from-yellow-400 to-amber-400',
+          text: 'text-black',
           emoji: '🤝',
           message: 'PUSH - BET RETURNED',
         };
@@ -158,45 +141,6 @@ export function GameBoard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-      {/* RESULT OVERLAY - Full screen prominent display */}
-      {showResultOverlay && game.lastGameResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div
-            className={`text-center p-12 rounded-3xl bg-gradient-to-b ${getResultStyle(game.lastGameResult.result)?.bg} shadow-2xl transform animate-bounce-once`}
-          >
-            <div className="text-8xl mb-6">{getResultStyle(game.lastGameResult.result)?.emoji}</div>
-            <h2
-              className={`text-5xl font-black mb-4 ${getResultStyle(game.lastGameResult.result)?.text}`}
-            >
-              {getResultStyle(game.lastGameResult.result)?.message}
-            </h2>
-            {lastHand && (
-              <div className="text-xl text-white/80 mb-4">
-                Your Hand: <span className="font-bold text-white">{lastHand.playerValue}</span>
-                {' vs '}
-                Dealer: <span className="font-bold text-white">{lastHand.dealerValue}</span>
-              </div>
-            )}
-            {cooldownRemaining > 0 && (
-              <div className="mt-6 text-lg text-white/60">
-                Next game in:{' '}
-                <span className="font-mono font-bold text-white">{cooldownRemaining}s</span>
-              </div>
-            )}
-            <button
-              onClick={() => {
-                setShowResultOverlay(false);
-                setLastHand(null);
-                game.clearLastResult();
-              }}
-              className="mt-6 px-6 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Header - responsive */}
       <header className="p-2 sm:p-4 border-b border-slate-700/50">
         <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
@@ -270,8 +214,19 @@ export function GameBoard() {
           <div className="space-y-4 sm:space-y-6 md:space-y-8">
             {/* Casino Table - Realistic felt with psychological elements */}
             <div
-              className={`casino-table ${gameResult === 'win' ? 'celebrating' : ''} ${gameResult === 'lose' && game.playerValue?.value && game.playerValue.value > 21 ? 'bust' : ''}`}
+              className={`casino-table ${gameResult === 'blackjack' ? 'blackjack-glow' : ''} ${gameResult === 'lose' ? 'lose-shake' : ''} ${gameResult === 'lose' && game.playerValue?.value && game.playerValue.value > 21 ? 'bust' : ''}`}
             >
+              {/* Win celebration overlay - DEGEN confetti effect */}
+              {(gameResult === 'win' || gameResult === 'blackjack') && (
+                <>
+                  <div className="win-flash" />
+                  <div className="win-celebration" />
+                </>
+              )}
+
+              {/* Loss flash overlay - subtle red */}
+              {gameResult === 'lose' && <div className="lose-flash" />}
+
               {/* Card Deck - LEFT side */}
               <CardDeck
                 cardsDealt={
@@ -356,6 +311,21 @@ export function GameBoard() {
                     </span>
                   </div>
                 )}
+
+                {/* INLINE RESULT BANNER - appears with elastic bounce animation */}
+                {gameResult && getResultStyle(gameResult) && (
+                  <div
+                    className={`result-banner ${getResultStyle(gameResult)?.bg} ${getResultStyle(gameResult)?.text} animate-result-bounce`}
+                  >
+                    <span className="result-emoji">{getResultStyle(gameResult)?.emoji}</span>
+                    <span className="result-message">{getResultStyle(gameResult)?.message}</span>
+                    {lastHand && (
+                      <span className="result-values">
+                        {lastHand.playerValue} vs {lastHand.dealerValue}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Blackjack payout text */}
@@ -409,7 +379,12 @@ export function GameBoard() {
                   </div>
 
                   <button
-                    onClick={() => game.placeBet(betAmount)}
+                    onClick={() => {
+                      // Clear previous game display before new bet
+                      setLastHand(null);
+                      game.clearLastResult();
+                      game.placeBet(betAmount);
+                    }}
                     disabled={game.isLoading || !canBet}
                     className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/25"
                   >

@@ -123,24 +123,41 @@ export function useGameState(wallet: UseRiseWalletReturn): UseGameStateReturn {
     (event: GameEndEvent) => {
       console.log('[GameState] Game ended with result:', event);
 
-      // Get cards: prefer accumulated, then snapshot, then empty
-      const finalCards =
-        accumulatedCards.playerCards.length > 0
-          ? accumulatedCards
-          : (cardSnapshotRef.current ?? {
-              playerCards: [],
-              dealerCards: [],
-              dealerHiddenCard: null,
-            });
+      // Get cards from multiple sources (best available)
+      // Priority: accumulated > snapshot > contract state
+      let playerCards: number[] = [];
+      let dealerCards: number[] = [];
 
-      // Build final dealer cards (include hidden card if exists)
-      const finalDealerCards = [...finalCards.dealerCards];
-      if (
-        finalCards.dealerHiddenCard !== null &&
-        !finalDealerCards.includes(finalCards.dealerHiddenCard)
-      ) {
-        // Insert hidden card at position 1 (second card)
-        finalDealerCards.splice(1, 0, finalCards.dealerHiddenCard);
+      if (accumulatedCards.playerCards.length >= 2) {
+        playerCards = [...accumulatedCards.playerCards];
+        console.log('[GameState] Using accumulated player cards:', playerCards);
+      } else if (cardSnapshotRef.current?.playerCards.length) {
+        playerCards = [...cardSnapshotRef.current.playerCards];
+        console.log('[GameState] Using snapshot player cards:', playerCards);
+      } else if (state.gameData?.playerCards?.length) {
+        playerCards = [...state.gameData.playerCards];
+        console.log('[GameState] Using contract player cards:', playerCards);
+      }
+
+      if (accumulatedCards.dealerCards.length >= 1) {
+        dealerCards = [...accumulatedCards.dealerCards];
+        // Add hidden card if exists
+        if (
+          accumulatedCards.dealerHiddenCard !== null &&
+          !dealerCards.includes(accumulatedCards.dealerHiddenCard)
+        ) {
+          dealerCards.splice(1, 0, accumulatedCards.dealerHiddenCard);
+        }
+        console.log('[GameState] Using accumulated dealer cards:', dealerCards);
+      } else if (cardSnapshotRef.current?.dealerCards.length) {
+        dealerCards = [...cardSnapshotRef.current.dealerCards];
+        if (cardSnapshotRef.current.dealerHiddenCard !== null) {
+          dealerCards.splice(1, 0, cardSnapshotRef.current.dealerHiddenCard);
+        }
+        console.log('[GameState] Using snapshot dealer cards:', dealerCards);
+      } else if (state.gameData?.dealerCards?.length) {
+        dealerCards = [...state.gameData.dealerCards];
+        console.log('[GameState] Using contract dealer cards:', dealerCards);
       }
 
       setLastGameResult({
@@ -148,15 +165,15 @@ export function useGameState(wallet: UseRiseWalletReturn): UseGameStateReturn {
         payout: event.payout,
         playerFinalValue: event.playerFinalValue,
         dealerFinalValue: event.dealerFinalValue,
-        playerCards: finalCards.playerCards,
-        dealerCards: finalDealerCards,
+        playerCards,
+        dealerCards,
       });
 
       // Clear accumulated cards for next game
       setAccumulatedCards({ playerCards: [], dealerCards: [], dealerHiddenCard: null });
       cardSnapshotRef.current = null;
     },
-    [accumulatedCards]
+    [accumulatedCards, state.gameData]
   );
 
   const clearLastResult = useCallback(() => {

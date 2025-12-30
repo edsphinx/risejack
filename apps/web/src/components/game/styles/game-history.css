@@ -115,13 +115,13 @@
   border-radius: 2px;
 }
 
-/* History item */
+/* History item - compact */
 .history-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.4rem 0.5rem 0.4rem 0.75rem;
-  border-radius: 8px;
+  gap: 0.5rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
   background: rgba(30, 41, 59, 0.5);
   transition: all 0.15s;
 }
@@ -152,14 +152,14 @@
 }
 
 .item-result {
-  width: 24px;
-  min-width: 24px;
+  width: 16px;
+  min-width: 16px;
   text-align: center;
   flex-shrink: 0;
 }
 
 .result-emoji {
-  font-size: 1rem;
+  font-size: 0.65rem;
 }
 
 .item-details {

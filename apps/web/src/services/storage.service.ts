@@ -101,6 +101,54 @@ function clearAllSessionKeys(): void {
   keys.forEach((k) => localStorage.removeItem(k));
 }
 
+// ==================== Game History Storage ====================
+
+const GAME_HISTORY_KEY = 'risejack.gameHistory';
+const MAX_HISTORY_ENTRIES = 50;
+
+export interface GameHistoryEntry {
+  id: string;
+  timestamp: number;
+  playerCards: number[];
+  dealerCards: number[];
+  playerValue: number;
+  dealerValue: number;
+  bet: string;
+  result: 'win' | 'lose' | 'push' | 'blackjack' | 'surrender';
+  payout: string;
+}
+
+function getGameHistory(): GameHistoryEntry[] {
+  try {
+    const data = localStorage.getItem(GAME_HISTORY_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+function addGameToHistory(entry: Omit<GameHistoryEntry, 'id' | 'timestamp'>): void {
+  const history = getGameHistory();
+
+  const newEntry: GameHistoryEntry = {
+    ...entry,
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    timestamp: Date.now(),
+  };
+
+  // Add to front, limit to MAX_HISTORY_ENTRIES
+  history.unshift(newEntry);
+  if (history.length > MAX_HISTORY_ENTRIES) {
+    history.pop();
+  }
+
+  localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(history));
+}
+
+function clearGameHistory(): void {
+  localStorage.removeItem(GAME_HISTORY_KEY);
+}
+
 // ==================== Export ====================
 
 export const StorageService = {
@@ -115,6 +163,11 @@ export const StorageService = {
   removeSessionKey,
   findValidSessionKey,
   clearAllSessionKeys,
+
+  // Game History
+  getGameHistory,
+  addGameToHistory,
+  clearGameHistory,
 } as const;
 
 export type { WalletData, SessionKeyData };

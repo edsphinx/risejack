@@ -148,12 +148,12 @@ async function getCooldownRemaining(playerAddress: `0x${string}`): Promise<numbe
       publicClient.readContract({
         address: contractAddress,
         abi: RISEJACK_ABI,
-        functionName: 'GAME_COOLDOWN',
+        functionName: 'gameCooldown',
       }),
     ]);
 
     const now = BigInt(Math.floor(Date.now() / 1000));
-    const cooldownEnds = lastTimestamp + cooldownDuration;
+    const cooldownEnds = lastTimestamp + (cooldownDuration as bigint);
 
     if (now >= cooldownEnds) {
       return 0;

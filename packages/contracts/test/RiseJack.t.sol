@@ -807,10 +807,7 @@ contract RiseJackTest is Test {
         risejack.placeBet{ value: amount }();
     }
 
-    function testFuzz_CalculateHandValue(
-        uint8 card1,
-        uint8 card2
-    ) public view {
+    function testFuzz_CalculateHandValue(uint8 card1, uint8 card2) public view {
         // Bound cards to valid range (0-51)
         card1 = uint8(bound(card1, 0, 51));
         card2 = uint8(bound(card2, 0, 51));

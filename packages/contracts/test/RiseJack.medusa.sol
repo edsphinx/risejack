@@ -116,10 +116,7 @@ contract RiseJackMedusaTest {
     /**
      * @notice Property: Hand value must be between 2 and 30
      */
-    function property_handValueInRange(
-        uint8 card1,
-        uint8 card2
-    ) external view returns (bool) {
+    function property_handValueInRange(uint8 card1, uint8 card2) external view returns (bool) {
         card1 = uint8(_bound(card1, 0, 51));
         card2 = uint8(_bound(card2, 0, 51));
 
@@ -134,10 +131,7 @@ contract RiseJackMedusaTest {
     /**
      * @notice Property: Soft hands cannot exceed 21
      */
-    function property_softHandsNotOver21(
-        uint8 card1,
-        uint8 card2
-    ) external view returns (bool) {
+    function property_softHandsNotOver21(uint8 card1, uint8 card2) external view returns (bool) {
         card1 = uint8(_bound(card1, 0, 51));
         card2 = uint8(_bound(card2, 0, 51));
 
@@ -193,11 +187,7 @@ contract RiseJackMedusaTest {
 
     // ==================== HELPERS ====================
 
-    function _bound(
-        uint256 value,
-        uint256 min,
-        uint256 max
-    ) internal pure returns (uint256) {
+    function _bound(uint256 value, uint256 min, uint256 max) internal pure returns (uint256) {
         if (value < min) return min;
         if (value > max) return max;
         return value;

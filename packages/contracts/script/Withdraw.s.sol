@@ -6,14 +6,19 @@ import { Script, console } from "forge-std/Script.sol";
 interface IRiseJack {
     function owner() external view returns (address);
     function minReserve() external view returns (uint256);
-    function withdrawHouseFunds(uint256 amount) external;
-    function getHouseStats() external view returns (
-        uint256 balance,
-        uint256 exposure,
-        uint256 reserve,
-        uint256 recentLosses,
-        bool isPaused
-    );
+    function withdrawHouseFunds(
+        uint256 amount
+    ) external;
+    function getHouseStats()
+        external
+        view
+        returns (
+            uint256 balance,
+            uint256 exposure,
+            uint256 reserve,
+            uint256 recentLosses,
+            bool isPaused
+        );
 }
 
 /**
@@ -27,35 +32,35 @@ contract WithdrawScript is Script {
 
     function run() external {
         IRiseJack riseJack = IRiseJack(RISEJACK_ADDRESS);
-        
+
         // Get contract state
         (uint256 balance, uint256 exposure, uint256 reserve,,) = riseJack.getHouseStats();
         address owner = riseJack.owner();
-        
+
         console.log("=== RiseJack Withdraw ===");
         console.log("Contract:", RISEJACK_ADDRESS);
         console.log("Owner:", owner);
         console.log("Balance:", balance, "wei");
         console.log("Exposure:", exposure);
         console.log("Min Reserve:", reserve);
-        
+
         // Calculate withdrawable amount
         uint256 withdrawable = balance > reserve ? balance - reserve : 0;
         console.log("Withdrawable:", withdrawable, "wei");
-        
+
         if (withdrawable == 0) {
             console.log("Nothing to withdraw!");
             return;
         }
-        
+
         console.log("");
         console.log("Withdrawing", withdrawable, "wei...");
-        
+
         // Start broadcast - uses the private key from CLI flag
         vm.startBroadcast();
         riseJack.withdrawHouseFunds(withdrawable);
         vm.stopBroadcast();
-        
+
         console.log("=== Withdraw Complete! ===");
     }
 }

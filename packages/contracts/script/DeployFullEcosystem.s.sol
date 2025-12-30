@@ -9,7 +9,7 @@ import { RiseCasinoStaking } from "../src/defi/RiseCasinoStaking.sol";
 import { MockWETH } from "../src/mocks/MockWETH.sol";
 
 contract DeployFullEcosystem is Script {
-    function setUp() public {}
+    function setUp() public { }
 
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -19,9 +19,9 @@ contract DeployFullEcosystem is Script {
 
         // 1. Deploy WETH or use existing
         address wethAddress = 0x4200000000000000000000000000000000000006; // Standard OP Stack WETH (Rise)
-        
+
         // If we are on a local chain (chainId 31337), deploy MockWETH
-        if (block.chainid == 31337) {
+        if (block.chainid == 31_337) {
             MockWETH wethMock = new MockWETH();
             wethAddress = address(wethMock);
             console.log("MockWETH deployed at:", wethAddress);

@@ -1,0 +1,39 @@
+# Codecov Configuration
+# https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  precision: 2
+  round: down
+  range: '70...100'
+
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 2%
+    patch:
+      default:
+        target: 70%
+        informational: true
+
+# Ignore test files and scripts from coverage
+ignore:
+  - 'packages/contracts/test/**'
+  - 'packages/contracts/script/**'
+  - 'packages/contracts/src/mocks/**'
+  - '**/*.t.sol'
+  - '**/*.s.sol'
+  - '**/*.medusa.sol'
+
+# Flag management for different coverage types
+flags:
+  contracts:
+    paths:
+      - packages/contracts/src/
+    carryforward: true
+
+# Comment configuration for PRs
+comment:
+  layout: 'header, diff, flags, components'
+  behavior: default
+  require_changes: true

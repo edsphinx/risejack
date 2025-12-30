@@ -8,11 +8,19 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 // Interfaces
 interface IStakingRewards {
-    function earned(address account) external view returns (uint256);
+    function earned(
+        address account
+    ) external view returns (uint256);
     function totalSupply() external view returns (uint256);
-    function balanceOf(address account) external view returns (uint256);
-    function stake(uint256 amount) external;
-    function withdraw(uint256 amount) external;
+    function balanceOf(
+        address account
+    ) external view returns (uint256);
+    function stake(
+        uint256 amount
+    ) external;
+    function withdraw(
+        uint256 amount
+    ) external;
     function getReward() external;
     function exit() external;
 }
@@ -69,7 +77,9 @@ contract RiseCasinoStaking is IStakingRewards, ReentrancyGuard, Ownable {
         return _totalSupply;
     }
 
-    function balanceOf(address account) external view returns (uint256) {
+    function balanceOf(
+        address account
+    ) external view returns (uint256) {
         return _balances[account];
     }
 
@@ -81,15 +91,15 @@ contract RiseCasinoStaking is IStakingRewards, ReentrancyGuard, Ownable {
         if (_totalSupply == 0) {
             return rewardPerTokenStored;
         }
-        return
-            rewardPerTokenStored +
-            (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18) / _totalSupply);
+        return rewardPerTokenStored
+            + (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18) / _totalSupply);
     }
 
-    function earned(address account) public view returns (uint256) {
-        return
-            ((_balances[account] * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18) +
-            rewards[account];
+    function earned(
+        address account
+    ) public view returns (uint256) {
+        return ((_balances[account] * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18)
+            + rewards[account];
     }
 
     function getRewardForDuration() external view returns (uint256) {
@@ -98,7 +108,9 @@ contract RiseCasinoStaking is IStakingRewards, ReentrancyGuard, Ownable {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function stake(uint256 amount) external nonReentrant updateReward(msg.sender) {
+    function stake(
+        uint256 amount
+    ) external nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
         _totalSupply += amount;
         _balances[msg.sender] += amount;
@@ -106,7 +118,9 @@ contract RiseCasinoStaking is IStakingRewards, ReentrancyGuard, Ownable {
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) public nonReentrant updateReward(msg.sender) {
+    function withdraw(
+        uint256 amount
+    ) public nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         _totalSupply -= amount;
         _balances[msg.sender] -= amount;
@@ -130,7 +144,9 @@ contract RiseCasinoStaking is IStakingRewards, ReentrancyGuard, Ownable {
 
     /* ========== RESTRICTED FUNCTIONS ========== */
 
-    function notifyRewardAmount(uint256 reward) external onlyOwner updateReward(address(0)) {
+    function notifyRewardAmount(
+        uint256 reward
+    ) external onlyOwner updateReward(address(0)) {
         if (block.timestamp >= periodFinish) {
             rewardRate = reward / rewardsDuration;
         } else {
@@ -150,7 +166,9 @@ contract RiseCasinoStaking is IStakingRewards, ReentrancyGuard, Ownable {
         emit RewardAdded(reward);
     }
 
-    function setRewardsDuration(uint256 _rewardsDuration) external onlyOwner {
+    function setRewardsDuration(
+        uint256 _rewardsDuration
+    ) external onlyOwner {
         require(
             block.timestamp > periodFinish,
             "Previous rewards period must be complete before changing the duration for the new period"
@@ -161,7 +179,9 @@ contract RiseCasinoStaking is IStakingRewards, ReentrancyGuard, Ownable {
 
     /* ========== MODIFIERS ========== */
 
-    modifier updateReward(address account) {
+    modifier updateReward(
+        address account
+    ) {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0)) {

@@ -57,8 +57,17 @@ jobs:
         run: forge test -vvv
 
       - name: Run coverage
-        run: forge coverage --no-match-coverage "script|mocks"
+        run: forge coverage --ir-minimum --no-match-coverage "script|mocks" --report lcov
         continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./lcov.info
+          flags: contracts
+          name: contracts-coverage
+          fail_ci_if_error: false
+          verbose: true
 
       - name: Check gas snapshots
         run: forge snapshot --check --tolerance 5
@@ -112,4 +121,3 @@ jobs:
       - name: Run Slither
         run: slither src/ --solc-remaps "@=lib/" --exclude-dependencies
         continue-on-error: true
-

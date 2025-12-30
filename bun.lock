@@ -41,7 +41,6 @@
         "rise-wallet": "^0.3.0",
         "shreds": "^0.2.3",
         "viem": "^2.21.54",
-        "wouter": "^3.9.0",
         "wouter-preact": "^3.9.0",
       },
       "devDependencies": {
@@ -831,8 +830,6 @@
     "which": ["which@2.0.2", "", { "dependencies": { "isexe": "^2.0.0" }, "bin": { "node-which": "./bin/node-which" } }, "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA=="],
 
     "word-wrap": ["word-wrap@1.2.5", "", {}, "sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA=="],
-
-    "wouter": ["wouter@3.9.0", "", { "dependencies": { "mitt": "^3.0.1", "regexparam": "^3.0.0", "use-sync-external-store": "^1.0.0" }, "peerDependencies": { "react": ">=16.8.0" } }, "sha512-sF/od/PIgqEQBQcrN7a2x3MX6MQE6nW0ygCfy9hQuUkuB28wEZuu/6M5GyqkrrEu9M6jxdkgE12yDFsQMKos4Q=="],
 
     "wouter-preact": ["wouter-preact@3.9.0", "", { "dependencies": { "mitt": "^3.0.1", "regexparam": "^3.0.0" }, "peerDependencies": { "preact": "^10.0.0" } }, "sha512-rldHdAwygx1yTn8zdopPy7v1uJyYTOF9WFuRg2GYT3zJGUSQZ2d97HfpQQezlxhWxpSEpWFl1YM9EwzekCXIUw=="],
 

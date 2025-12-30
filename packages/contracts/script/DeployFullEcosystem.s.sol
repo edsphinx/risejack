@@ -17,11 +17,17 @@ contract DeployFullEcosystem is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // 1. Deploy WETH (Mock for now, or use existing if configured)
-        // For simplicity in this script, we always deploy MockWETH.
-        // In production, we would use vm.envAddress("WETH_ADDRESS") or similar.
-        MockWETH weth = new MockWETH();
-        console.log("WETH deployed at:", address(weth));
+        // 1. Deploy WETH or use existing
+        address wethAddress = 0x4200000000000000000000000000000000000006; // Standard OP Stack WETH (Rise)
+        
+        // If we are on a local chain (chainId 31337), deploy MockWETH
+        if (block.chainid == 31337) {
+            MockWETH wethMock = new MockWETH();
+            wethAddress = address(wethMock);
+            console.log("MockWETH deployed at:", wethAddress);
+        } else {
+            console.log("Using existing WETH at:", wethAddress);
+        }
 
         // 2. Deploy CHIP Token
         CHIPToken chip = new CHIPToken(deployer);
@@ -32,14 +38,14 @@ contract DeployFullEcosystem is Script {
         console.log("RiseCasinoFactory deployed at:", address(factory));
 
         // 4. Deploy Router
-        RiseCasinoRouter router = new RiseCasinoRouter(address(factory), address(weth));
+        RiseCasinoRouter router = new RiseCasinoRouter(address(factory), wethAddress);
         console.log("RiseCasinoRouter deployed at:", address(router));
 
         // 5. Deploy Staking (Stake CHIP, Earn WETH)
         // Owner = deployer
         // Rewards = WETH
         // Staking = CHIP
-        RiseCasinoStaking staking = new RiseCasinoStaking(deployer, address(weth), address(chip));
+        RiseCasinoStaking staking = new RiseCasinoStaking(deployer, wethAddress, address(chip));
         console.log("RiseCasinoStaking deployed at:", address(staking));
 
         // Optional: Create initial Liquidity for CHIP/ETH

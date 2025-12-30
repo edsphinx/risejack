@@ -61,20 +61,17 @@ function SpadeIcon() {
           <stop offset="100%" stopColor="#8b5cf6" />
         </linearGradient>
         <filter id="spadeGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" result="glow" />
+          <feGaussianBlur stdDeviation="2" result="glow" />
           <feMerge>
             <feMergeNode in="glow" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
       </defs>
-      {/* Spade shape */}
+      {/* Spade body */}
       <path
-        d="M50 10 C30 35, 10 50, 10 65 C10 85, 30 90, 50 75 C70 90, 90 85, 90 65 C90 50, 70 35, 50 10 Z M50 75 L50 95 M35 95 L65 95"
+        d="M50 5 C50 5 15 40 15 55 C15 70 30 75 42 68 C40 78 35 85 30 90 L70 90 C65 85 60 78 58 68 C70 75 85 70 85 55 C85 40 50 5 50 5 Z"
         fill="url(#spadeGradient)"
-        stroke="url(#spadeGradient)"
-        strokeWidth="2"
-        strokeLinecap="round"
         filter="url(#spadeGlow)"
       />
     </svg>

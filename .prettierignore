@@ -12,3 +12,4 @@ package-lock.json
 lib
 broadcast
 cache
+packages/contracts/lib/

@@ -465,16 +465,19 @@ export function GameBoard() {
               )}
             </div>
 
-            {/* Session Key Hint */}
-            {!wallet.hasSessionKey && wallet.isConnected && (
-              <div className="text-center text-sm text-purple-400 bg-purple-900/20 rounded-lg py-3 border border-purple-500/20">
-                💡 Enable <strong>Fast Mode</strong> above for instant, popup-free gameplay!
-              </div>
-            )}
+            {/* Action Area Layout: Buttons + History side by side on desktop */}
+            <div className="action-area-layout">
+              {/* Session Key Hint - spans full width */}
+              {!wallet.hasSessionKey && wallet.isConnected && (
+                <div className="session-hint text-center text-sm text-purple-400 bg-purple-900/20 rounded-lg py-3 border border-purple-500/20">
+                  💡 Enable <strong>Fast Mode</strong> above for instant, popup-free gameplay!
+                </div>
+              )}
 
-            {/* Game History */}
-            <div className="mt-4">
-              <GameHistory />
+              {/* History Panel */}
+              <div className="history-panel">
+                <GameHistory />
+              </div>
             </div>
           </div>
         )}

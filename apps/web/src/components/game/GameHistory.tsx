@@ -66,12 +66,15 @@ export function GameHistory({ onHistoryChange }: GameHistoryProps) {
   };
 
   const formatCards = (cards: number[]) => {
-    return cards
-      .map((c) => {
-        const { rank, suit } = getCardDisplay(c);
-        return `${rank}${suit}`;
-      })
-      .join(' ');
+    return cards.map((c, i) => {
+      const { rank, suit, color } = getCardDisplay(c);
+      return (
+        <span key={i} className={`card-${color}`}>
+          {rank}
+          {suit}{' '}
+        </span>
+      );
+    });
   };
 
   const formatTime = (timestamp: number) => {

@@ -61,21 +61,33 @@ export function useWalletConnection(): UseWalletConnectionReturn {
       if (!savedWallet) return;
 
       try {
-        const provider = getProvider();
-        const accounts = (await provider.request({
+        // Wait a bit for Rise Wallet to initialize
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        // Create Rise Wallet instance and use its provider (like Meteoro does)
+        const { RiseWallet } = await import('rise-wallet');
+        const rw = RiseWallet.create();
+
+        // Check for existing accounts using Rise Wallet's provider
+        const accounts = (await rw.provider.request({
           method: 'eth_accounts',
         })) as `0x${string}`[];
 
-        if (
-          accounts?.length > 0 &&
-          accounts[0].toLowerCase() === savedWallet.address.toLowerCase()
-        ) {
-          console.log('🔗 Wallet session restored:', accounts[0]);
-          setAddress(accounts[0]);
-          setIsConnected(true);
+        if (accounts?.length > 0) {
+          const restoredAddress = accounts[0];
+          // Verify it matches our saved address
+          if (restoredAddress.toLowerCase() === savedWallet.address.toLowerCase()) {
+            console.log('🔗 Wallet auto-reconnected:', restoredAddress);
+            setAddress(restoredAddress);
+            setIsConnected(true);
+            return;
+          } else {
+            console.log('🔗 Different account found, clearing saved wallet');
+            removeWallet();
+          }
         } else {
-          console.log('🔗 Wallet session expired');
-          removeWallet();
+          console.log('🔗 No accounts found, wallet session expired');
+          // Don't remove saved wallet - user can manually reconnect
         }
       } catch {
         console.warn('🔗 Could not verify wallet session');

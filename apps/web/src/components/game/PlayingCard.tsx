@@ -1,80 +1,68 @@
 import type { PlayingCardProps } from '@risejack/shared';
-import { getCardDisplay } from '@/lib/cards';
+import { getCardDisplay, getCardImageUrl, getCardBackUrl } from '@/lib/cards';
+import './styles/playing-card.css';
+
+interface EnhancedPlayingCardProps extends PlayingCardProps {
+  /** Card is dealing from deck - starts off-screen */
+  isDealing?: boolean;
+  /** Index in deal sequence for stagger timing */
+  dealIndex?: number;
+  /** Callback when deal animation completes */
+  onDealComplete?: () => void;
+}
 
 export function PlayingCard({
   cardIndex,
   faceUp = true,
   delay = 0,
   isNew = false,
-}: PlayingCardProps) {
-  const { rank, suit, color } = getCardDisplay(cardIndex);
+  isDealing = false,
+  dealIndex = 0,
+  onDealComplete,
+}: EnhancedPlayingCardProps) {
+  const { rank, suit } = getCardDisplay(cardIndex);
+  const cardImageUrl = getCardImageUrl(cardIndex);
+  const cardBackUrl = getCardBackUrl();
 
-  const textColor = color === 'red' ? 'text-red-500' : 'text-slate-800';
+  // Calculate deal delay based on position in sequence
+  const dealDelay = dealIndex * 200;
+
+  const handleAnimationEnd = (e: { animationName: string }) => {
+    if (e.animationName === 'deal-from-deck' && onDealComplete) {
+      onDealComplete();
+    }
+  };
 
   return (
     <div
-      className={`card relative ${isNew ? 'deal-animation' : ''}`}
+      className={`playing-card ${isNew ? 'deal-animation' : ''} ${isDealing ? 'dealing-from-deck' : ''}`}
       style={{
-        animationDelay: `${delay}ms`,
-        width: '60px',
-        height: '84px',
-        perspective: '1000px',
+        animationDelay: isDealing ? `${dealDelay}ms` : `${delay}ms`,
+        '--deal-delay': `${dealDelay}ms`,
       }}
+      onAnimationEnd={handleAnimationEnd}
     >
-      <div
-        className={`card-inner w-full h-full transition-transform duration-500 ${faceUp ? '' : 'flipped'}`}
-        style={{ transformStyle: 'preserve-3d' }}
-      >
-        {/* Card Front */}
-        <div
-          className="card-front absolute inset-0 rounded-md bg-white shadow-xl"
-          style={{
-            backfaceVisibility: 'hidden',
-            border: '1px solid #e5e7eb',
-          }}
-        >
-          <div className={`h-full flex flex-col ${textColor}`}>
-            {/* Top corner */}
-            <div className="px-1 pt-0.5">
-              <div className="text-xs font-bold leading-none">{rank}</div>
-              <div className="text-xs leading-none">{suit}</div>
-            </div>
-
-            {/* Center suit - larger */}
-            <div className="flex-1 flex items-center justify-center -mt-1">
-              <span className="text-2xl">{suit}</span>
-            </div>
-
-            {/* Bottom corner - rotated */}
-            <div className="px-1 pb-0.5 rotate-180">
-              <div className="text-xs font-bold leading-none">{rank}</div>
-              <div className="text-xs leading-none">{suit}</div>
-            </div>
-          </div>
+      <div className={`card-inner ${faceUp ? '' : 'flipped'}`}>
+        {/* Card Front - PNG Image */}
+        <div className="card-front">
+          <img
+            src={cardImageUrl}
+            alt={`${rank} of ${suit}`}
+            className="card-image"
+            loading="lazy"
+            draggable={false}
+          />
         </div>
 
-        {/* Card Back */}
-        <div
-          className="card-back absolute inset-0 rounded-md shadow-xl"
-          style={{
-            backfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)',
-            background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #172554 100%)',
-            border: '1px solid #1e40af',
-          }}
-        >
-          {/* Pattern */}
-          <div className="w-full h-full flex items-center justify-center p-1.5">
-            <div
-              className="w-full h-full rounded border border-blue-400/30 flex items-center justify-center"
-              style={{
-                background:
-                  'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(59, 130, 246, 0.1) 3px, rgba(59, 130, 246, 0.1) 6px)',
-              }}
-            >
-              <span className="text-blue-300/60 text-lg">♠</span>
-            </div>
-          </div>
+        {/* Card Back - PNG Image */}
+        <div className="card-back">
+          <img
+            src={cardBackUrl}
+            alt="Card back"
+            className="card-image"
+            loading="lazy"
+            draggable={false}
+          />
         </div>
       </div>
     </div>

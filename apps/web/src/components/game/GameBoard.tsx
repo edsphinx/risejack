@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from 'preact/hooks';
 import { useRiseWallet } from '@/hooks/useRiseWallet';
 import { useGameState } from '@/hooks/useGameState';
 import { WalletConnect } from '@/components/wallet/WalletConnect';
-import { Hand } from './Hand';
+import { Hand, HandValue } from './Hand';
 import { ActionButtons } from './ActionButtons';
+import { CardDeck } from './CardDeck';
 import { ContractService } from '@/services';
 import { GameState, type GameResult } from '@risejack/shared';
+import './styles/casino-table.css';
 
 // Snapshot of hand when game ends for display during result
 interface HandSnapshot {
@@ -49,25 +51,25 @@ export function GameBoard() {
   })();
 
   // Show overlay when we have a result from WebSocket event
-  // lastGameResult now includes final hand values directly from contract event
+  // lastGameResult now includes cards from CardDealt accumulation
   useEffect(() => {
     if (game.lastGameResult) {
-      // Store the final hand values for display
+      // Store the final cards and values for display
       setLastHand({
-        playerCards: [], // Cards not needed - we have final values
-        dealerCards: [],
+        playerCards: game.lastGameResult.playerCards,
+        dealerCards: game.lastGameResult.dealerCards,
         playerValue: game.lastGameResult.playerFinalValue,
         dealerValue: game.lastGameResult.dealerFinalValue,
         bet: 0n,
       });
 
-      // Delay showing overlay to let user see the final card(s)
-      // 2 seconds gives time to see the last card dealt
+      // Delay showing overlay to let user see the final cards
+      // 2.5 seconds gives time to see dealer's reveal
       const showDelay = window.setTimeout(() => {
         setShowResultOverlay(true);
-      }, 2000);
+      }, 2500);
 
-      // Clear overlay after another 4 seconds (total 6s from game end)
+      // Clear overlay after another 4 seconds (total 6.5s from game end)
       if (resultTimeoutRef.current) {
         clearTimeout(resultTimeoutRef.current);
       }
@@ -75,7 +77,7 @@ export function GameBoard() {
         setShowResultOverlay(false);
         setLastHand(null);
         game.clearLastResult();
-      }, 6000);
+      }, 6500);
 
       return () => clearTimeout(showDelay);
     }
@@ -195,10 +197,10 @@ export function GameBoard() {
         </div>
       )}
 
-      {/* Header */}
-      <header className="p-4 border-b border-slate-700/50">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+      {/* Header - responsive */}
+      <header className="p-2 sm:p-4 border-b border-slate-700/50">
+        <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent whitespace-nowrap">
             ♠️ RiseJack
           </h1>
           <WalletConnect
@@ -216,7 +218,7 @@ export function GameBoard() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto p-4 py-8">
+      <main className="max-w-4xl mx-auto p-2 sm:p-4 py-4 sm:py-8">
         {/* Error Display */}
         {error && (
           <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200 flex items-start gap-3">
@@ -265,60 +267,106 @@ export function GameBoard() {
           </div>
         ) : (
           /* Game Area */
-          <div className="space-y-8">
-            {/* Game Table */}
-            <div className="bg-gradient-to-b from-green-800 to-green-900 rounded-2xl p-8 border-8 border-amber-900 shadow-2xl">
-              {/* Dealer Hand */}
-              <div className="mb-12">
-                {game.gameData?.dealerCards?.length || lastHand?.dealerCards?.length ? (
-                  <Hand
-                    cards={game.gameData?.dealerCards || lastHand?.dealerCards || []}
-                    value={game.dealerValue ?? lastHand?.dealerValue ?? undefined}
-                    isDealer
-                    hideSecond={canPlay && !gameResult}
-                    result={gameResult === 'lose' ? 'win' : null}
-                  />
-                ) : (
-                  <div className="text-center text-white/40 py-8">Dealer</div>
-                )}
-              </div>
+          <div className="space-y-4 sm:space-y-6 md:space-y-8">
+            {/* Casino Table - Realistic felt with psychological elements */}
+            <div
+              className={`casino-table ${gameResult === 'win' ? 'celebrating' : ''} ${gameResult === 'lose' && game.playerValue?.value && game.playerValue.value > 21 ? 'bust' : ''}`}
+            >
+              {/* Card Deck - LEFT side */}
+              <CardDeck
+                cardsDealt={
+                  (game.gameData?.playerCards?.length ?? 0) +
+                  (game.gameData?.dealerCards?.length ?? 0)
+                }
+              />
 
-              {/* Divider */}
-              <div className="border-t-2 border-dashed border-white/20 my-8" />
-
-              {/* Player Hand */}
-              <div className="mb-8">
-                {game.gameData?.playerCards?.length || lastHand?.playerCards?.length ? (
-                  <Hand
-                    cards={game.gameData?.playerCards || lastHand?.playerCards || []}
-                    value={game.playerValue?.value ?? lastHand?.playerValue}
-                    isSoft={game.playerValue?.isSoft}
-                    result={gameResult}
-                  />
-                ) : (
-                  <div className="text-center text-white/40 py-8">Your Hand</div>
-                )}
-              </div>
-
-              {/* Bet Info */}
-              {game.gameData && game.gameData.bet > 0n && (
-                <div className="text-center text-white/60 mb-4">
-                  Current Bet:{' '}
-                  <span className="text-white font-bold">
-                    {game.formatBet(game.gameData.bet)} ETH
-                  </span>
-                  {game.gameData.isDoubled && (
-                    <span className="text-yellow-400 ml-2">(Doubled)</span>
-                  )}
+              {/* Play Area - responsive padding */}
+              <div className="relative z-10 px-2 sm:px-8 md:px-28 py-4 sm:py-6 md:py-10">
+                {/* Dealer Zone */}
+                <div className="dealer-zone">
+                  <div className="zone-label">Dealer</div>
+                  <div className="zone-row">
+                    {/* Spacer to balance the value on right */}
+                    <div className="zone-spacer" />
+                    <div className="play-zone">
+                      {game.gameData?.dealerCards?.length || lastHand?.dealerCards?.length ? (
+                        <Hand
+                          cards={game.gameData?.dealerCards || lastHand?.dealerCards || []}
+                          value={game.dealerValue ?? lastHand?.dealerValue ?? undefined}
+                          isDealer
+                          hideSecond={canPlay && !gameResult}
+                          result={gameResult === 'lose' ? 'win' : null}
+                          hideValue
+                        />
+                      ) : (
+                        <span className="play-zone-empty">Deal to start</span>
+                      )}
+                    </div>
+                    {/* Value display */}
+                    <HandValue
+                      value={
+                        game.gameData?.dealerCards?.length || lastHand?.dealerCards?.length
+                          ? (game.dealerValue ?? lastHand?.dealerValue ?? undefined)
+                          : undefined
+                      }
+                      cardCount={(game.gameData?.dealerCards || lastHand?.dealerCards || []).length}
+                    />
+                  </div>
                 </div>
-              )}
+
+                {/* Player Zone */}
+                <div className="player-zone">
+                  <div className="zone-row">
+                    {/* Spacer to balance the value on right */}
+                    <div className="zone-spacer" />
+                    <div className="play-zone">
+                      {game.gameData?.playerCards?.length || lastHand?.playerCards?.length ? (
+                        <Hand
+                          cards={game.gameData?.playerCards || lastHand?.playerCards || []}
+                          value={game.playerValue?.value ?? lastHand?.playerValue}
+                          isSoft={game.playerValue?.isSoft}
+                          result={gameResult}
+                          hideValue
+                        />
+                      ) : (
+                        <span className="play-zone-empty">Your cards</span>
+                      )}
+                    </div>
+                    {/* Value display */}
+                    <HandValue
+                      value={
+                        game.gameData?.playerCards?.length || lastHand?.playerCards?.length
+                          ? (game.playerValue?.value ?? lastHand?.playerValue)
+                          : undefined
+                      }
+                      isSoft={game.playerValue?.isSoft}
+                      cardCount={(game.gameData?.playerCards || lastHand?.playerCards || []).length}
+                    />
+                  </div>
+                  <div className="zone-label">Your Hand</div>
+                </div>
+
+                {/* Bet display - right side on desktop, between values on mobile */}
+                {game.gameData && game.gameData.bet > 0n && (
+                  <div className="bet-display-side">
+                    <span className="bet-label">BET</span>
+                    <span className="bet-value">
+                      {game.formatBet(game.gameData.bet)} ETH
+                      {game.gameData.isDoubled && ' ×2'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Blackjack payout text */}
+              <div className="payout-text">Blackjack Pays 3 to 2</div>
             </div>
 
-            {/* Controls */}
-            <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-slate-700">
+            {/* Controls - responsive */}
+            <div className="bg-slate-800/50 backdrop-blur rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 border border-slate-700">
               {isIdle || gameResult ? (
                 /* Betting UI */
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Cooldown indicator */}
                   {cooldownRemaining > 0 && (
                     <div className="text-center py-3 bg-yellow-900/30 border border-yellow-500/30 rounded-lg">
@@ -402,7 +450,9 @@ export function GameBoard() {
       </main>
 
       {/* Add CSS animation */}
-      <style>{`
+      <style>
+        {' '}
+        {`
         @keyframes fade-in {
           from { opacity: 0; }
           to { opacity: 1; }
@@ -417,7 +467,8 @@ export function GameBoard() {
         .animate-bounce-once {
           animation: bounce-once 0.5s ease-out;
         }
-      `}</style>
+      `}
+      </style>
     </div>
   );
 }

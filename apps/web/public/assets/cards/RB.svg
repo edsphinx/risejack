@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" class="card" face="RB" height="3.5in" preserveAspectRatio="none" viewBox="-120 -168 240 336" width="2.5in">
+  <defs>
+    <linearGradient id="cardBackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e40af"/>
+      <stop offset="50%" style="stop-color:#1e3a8a"/>
+      <stop offset="100%" style="stop-color:#172554"/>
+    </linearGradient>
+    <pattern id="RBstripes" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="rgba(59,130,246,0.15)" stroke-width="6"/>
+    </pattern>
+  </defs>
+  <!-- Card base -->
+  <rect width="239" height="335" x="-119.5" y="-167.5" rx="12" ry="12" fill="url(#cardBackGrad)" stroke="#1e40af"/>
+  <!-- Inner border -->
+  <rect x="-108" y="-156" width="216" height="312" rx="10" ry="10" fill="none" stroke="rgba(96,165,250,0.4)" stroke-width="2"/>
+  <!-- Stripe pattern -->
+  <rect x="-108" y="-156" width="216" height="312" rx="10" ry="10" fill="url(#RBstripes)"/>
+  <!-- Center spade symbol -->
+  <text x="0" y="10" font-size="80" fill="rgba(147,197,253,0.4)" text-anchor="middle" font-family="serif">♠</text>
+  <!-- Brand text -->
+  <text font-size="18" font-family="Arial, sans-serif" fill="rgba(147,197,253,0.7)" text-anchor="middle" y="100">risejack.win</text>
+</svg>

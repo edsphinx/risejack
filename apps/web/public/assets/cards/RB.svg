@@ -3,37 +3,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" class="card" face="RB" height="3.5in" preserveAspectRatio="none" viewBox="-120 -168 240 336" width="2.5in">
   <defs>
     <!-- DEGEN Purple Gradient - deeper, more vibrant -->
-    <linearGradient id="cardBackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="cardBackGrad_RB" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#7c3aed"/>
       <stop offset="30%" style="stop-color:#a855f7"/>
       <stop offset="70%" style="stop-color:#8b5cf6"/>
       <stop offset="100%" style="stop-color:#6d28d9"/>
     </linearGradient>
     <!-- Shimmer effect gradient -->
-    <linearGradient id="shimmerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="shimmerGrad_RB" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" style="stop-color:rgba(255,255,255,0)"/>
       <stop offset="50%" style="stop-color:rgba(255,255,255,0.1)"/>
       <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
     </linearGradient>
     <!-- Inner glow gradient - more intense -->
-    <radialGradient id="innerGlow" cx="50%" cy="50%" r="50%">
+    <radialGradient id="innerGlow_RB" cx="50%" cy="50%" r="50%">
       <stop offset="0%" style="stop-color:rgba(236,72,153,0.25)"/>
       <stop offset="70%" style="stop-color:rgba(168,85,247,0.15)"/>
       <stop offset="100%" style="stop-color:transparent"/>
     </radialGradient>
     <!-- Geometric pattern - larger, more visible -->
-    <pattern id="RBpattern" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <pattern id="RBpattern_RB" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <rect width="24" height="24" fill="transparent"/>
       <circle cx="12" cy="12" r="2" fill="rgba(192,132,252,0.12)"/>
     </pattern>
     <!-- Spade gradient for center logo - brighter -->
-    <linearGradient id="spadeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="spadeGrad_RB" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#d8b4fe"/>
       <stop offset="50%" style="stop-color:#c084fc"/>
       <stop offset="100%" style="stop-color:#a855f7"/>
     </linearGradient>
     <!-- Glow filter for spade -->
-    <filter id="spadeGlow" x="-50%" y="-50%" width="200%" height="200%">
+    <filter id="spadeGlow_RB" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="3" result="glow"/>
       <feMerge>
         <feMergeNode in="glow"/>
@@ -41,58 +41,49 @@
       </feMerge>
     </filter>
   </defs>
-  
   <!-- Card base with purple gradient -->
-  <rect width="239" height="335" x="-119.5" y="-167.5" rx="12" ry="12" fill="url(#cardBackGrad)" stroke="#6d28d9" stroke-width="2"/>
-  
+  <rect width="239" height="335" x="-119.5" y="-167.5" rx="12" ry="12" fill="url(#cardBackGrad_RB)" stroke="#6d28d9" stroke-width="2"/>
   <!-- Shimmer overlay -->
-  <rect x="-119.5" y="-167.5" width="239" height="335" rx="12" ry="12" fill="url(#shimmerGrad)" opacity="0.3"/>
-  
+  <rect x="-119.5" y="-167.5" width="239" height="335" rx="12" ry="12" fill="url(#shimmerGrad_RB)" opacity="0.3"/>
   <!-- Inner glow effect -->
-  <ellipse cx="0" cy="-20" rx="90" ry="130" fill="url(#innerGlow)"/>
-  
+  <ellipse cx="0" cy="-20" rx="90" ry="130" fill="url(#innerGlow_RB)"/>
   <!-- Decorative border - double line -->
   <rect x="-105" y="-153" width="210" height="306" rx="8" ry="8" fill="none" stroke="rgba(192,132,252,0.25)" stroke-width="1"/>
   <rect x="-100" y="-148" width="200" height="296" rx="6" ry="6" fill="none" stroke="rgba(192,132,252,0.15)" stroke-width="0.5"/>
-  
   <!-- Geometric dot pattern -->
-  <rect x="-105" y="-153" width="210" height="306" rx="8" ry="8" fill="url(#RBpattern)"/>
-  
+  <rect x="-105" y="-153" width="210" height="306" rx="8" ry="8" fill="url(#RBpattern_RB)"/>
   <!-- Center spade symbol - same as Logo for consistency -->
-  <g transform="translate(-50, -50) scale(1)" filter="url(#spadeGlow)">
+  <g transform="translate(-50, -50) scale(1)" filter="url(#spadeGlow_RB)">
     <path 
-      d="M50 5 C50 5 15 40 15 55 C15 70 30 75 42 68 C40 78 35 85 30 90 L70 90 C65 85 60 78 58 68 C70 75 85 70 85 55 C85 40 50 5 50 5 Z"
-      fill="url(#spadeGrad)"
-      stroke="rgba(255,255,255,0.15)"
-      stroke-width="0.5"
-      opacity="0.9"
-    />
+          d="M50 5 C50 5 15 40 15 55 C15 70 30 75 42 68 C40 78 35 85 30 90 L70 90 C65 85 60 78 58 68 C70 75 85 70 85 55 C85 40 50 5 50 5 Z"
+          fill="url(#spadeGrad_RB)"
+          stroke="rgba(255,255,255,0.15)"
+          stroke-width="0.5"
+          opacity="0.9"
+        />
   </g>
-  
   <!-- RISEJACK text - full brand name with arc effect -->
   <text 
-    x="0" 
-    y="105" 
-    font-size="18" 
-    font-family="Arial Black, Arial, sans-serif" 
-    font-weight="900"
-    fill="rgba(216,180,254,0.6)" 
-    text-anchor="middle"
-    letter-spacing="3"
-  >RISEJACK</text>
-  
+      x="0" 
+      y="105" 
+      font-size="18" 
+      font-family="Arial Black, Arial, sans-serif" 
+      font-weight="900"
+      fill="rgba(216,180,254,0.6)" 
+      text-anchor="middle"
+      letter-spacing="3"
+    >RISEJACK</text>
   <!-- Tagline -->
   <text 
-    x="0" 
-    y="122" 
-    font-size="8" 
-    font-family="Arial, sans-serif" 
-    font-weight="400"
-    fill="rgba(168,85,247,0.4)" 
-    text-anchor="middle"
-    letter-spacing="2"
-  >ON-CHAIN CASINO</text>
-  
+      x="0" 
+      y="122" 
+      font-size="8" 
+      font-family="Arial, sans-serif" 
+      font-weight="400"
+      fill="rgba(168,85,247,0.4)" 
+      text-anchor="middle"
+      letter-spacing="2"
+    >ON-CHAIN CASINO</text>
   <!-- Corner spades - matching brand -->
   <g font-size="14" fill="rgba(192,132,252,0.4)">
     <text x="-92" y="-132" text-anchor="middle">♠</text>
@@ -100,7 +91,6 @@
     <text x="-92" y="145" text-anchor="middle">♠</text>
     <text x="92" y="145" text-anchor="middle">♠</text>
   </g>
-  
   <!-- Subtle corner lines -->
   <g stroke="rgba(192,132,252,0.2)" stroke-width="1">
     <line x1="-85" y1="-145" x2="-75" y2="-145"/>
@@ -113,3 +103,4 @@
     <line x1="85" y1="145" x2="85" y2="135"/>
   </g>
 </svg>
+

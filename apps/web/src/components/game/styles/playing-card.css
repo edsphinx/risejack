@@ -38,6 +38,8 @@
   transform: rotateY(180deg);
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  /* Thin white border to match deck design */
+  border: 0.5px solid rgba(255, 255, 255, 0.6);
 }
 
 /* PNG Image styling */

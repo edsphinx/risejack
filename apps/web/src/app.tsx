@@ -32,24 +32,27 @@ function Header() {
 
           {/* Navigation - Subtle integration */}
           <nav className="hidden md:flex gap-4 text-xs font-bold text-gray-400 tracking-wider">
-            <a
+            <button
+              type="button"
               onClick={() => setLocation('/')}
-              className={`cursor-pointer hover:text-purple-400 transition-colors ${location === '/' ? 'text-purple-400' : ''}`}
+              className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/' ? 'text-purple-400' : ''}`}
             >
               LOBBY
-            </a>
-            <a
+            </button>
+            <button
+              type="button"
               onClick={() => setLocation('/swap')}
-              className={`cursor-pointer hover:text-purple-400 transition-colors ${location === '/swap' ? 'text-purple-400' : ''}`}
+              className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/swap' ? 'text-purple-400' : ''}`}
             >
               SWAP
-            </a>
-            <a
+            </button>
+            <button
+              type="button"
               onClick={() => setLocation('/stake')}
-              className={`cursor-pointer hover:text-purple-400 transition-colors ${location === '/stake' ? 'text-purple-400' : ''}`}
+              className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/stake' ? 'text-purple-400' : ''}`}
             >
               STAKE
-            </a>
+            </button>
           </nav>
         </div>
 

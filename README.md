@@ -33,9 +33,9 @@ Detailed documentation is available in the `docs/` directory:
 ### Smart Contracts (`/packages/contracts`)
 
 - **RiseJack.sol**: Core Blackjack engine with VRF integration.
-- **CHIPToken.sol**: ERC-20 gaming currency (OpenZeppelin based).
-- **CHIPAMM.sol**: Uniswap V2 fork for ETH/CHIP swaps.
-- **CHIPStaking.sol**: Synthetix-based staking rewards.
+- **CHIPToken.sol** _(Planned)_: ERC-20 gaming currency ($CHIP). The lifeblood of the casino.
+- **RiseCasinoSwap.sol** _(Planned)_: Native DEX for instant ETH ↔ CHIP swaps.
+- **RiseCasinoStaking.sol** _(Planned)_: House Edge sharing vault (Stake CHIP, Earn ETH).
 
 ### Frontend (`/apps/web`)
 

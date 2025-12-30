@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { Script, console } from "forge-std/Script.sol";
-import { CHIPToken } from "../src/defi/CHIPToken.sol";
+import {Script, console} from "forge-std/Script.sol";
+import {CHIPToken} from "../src/defi/CHIPToken.sol";
 
 interface IUniswapV2Router02 {
     function addLiquidityETH(
@@ -18,10 +18,7 @@ interface IUniswapV2Router02 {
 }
 
 interface IUniswapV2Factory {
-    function getPair(
-        address tokenA,
-        address tokenB
-    ) external view returns (address pair);
+    function getPair(address tokenA, address tokenB) external view returns (address pair);
 }
 
 contract AddLiquidity is Script {
@@ -32,22 +29,28 @@ contract AddLiquidity is Script {
     // Short deadline to minimize MEV exposure (60 seconds)
     uint256 constant DEADLINE_SECONDS = 60;
 
-    function run() public {
-        // Validate environment variable exists
-        // Note: vm.envUint will revert if not set, but we add explicit check for clarity
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        require(deployerPrivateKey != 0, "DEPLOYER_PRIVATE_KEY not set or invalid");
+    // Slippage tolerance: 5% to prevent transaction failures
+    uint256 constant SLIPPAGE_BPS = 500; // 5% = 500 basis points
 
+    function run() public {
+        // vm.envUint reverts if DEPLOYER_PRIVATE_KEY is not set
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
 
         // Minimal liquidity amounts
         uint256 ethAmount = 0.0001 ether;
         uint256 chipAmount = 1000 * 1e18;
 
+        // Calculate minimum amounts with slippage tolerance
+        uint256 minChipAmount = (chipAmount * (10000 - SLIPPAGE_BPS)) / 10000;
+        uint256 minEthAmount = (ethAmount * (10000 - SLIPPAGE_BPS)) / 10000;
+
         console.log("=== AddLiquidity Script ===");
         console.log("Deployer:", deployer);
         console.log("ETH amount:", ethAmount);
         console.log("CHIP amount:", chipAmount);
+        console.log("Min CHIP (5% slippage):", minChipAmount);
+        console.log("Min ETH (5% slippage):", minEthAmount);
 
         // Validate balances before starting
         require(deployer.balance >= ethAmount, "Insufficient ETH balance");
@@ -63,16 +66,14 @@ contract AddLiquidity is Script {
         chip.approve(ROUTER, chipAmount);
         console.log("CHIP approved for Router");
 
-        // Add liquidity with short deadline to minimize MEV
+        // Add liquidity with slippage tolerance and short deadline
         IUniswapV2Router02 router = IUniswapV2Router02(ROUTER);
-        (uint256 amountToken, uint256 amountETH, uint256 liquidity) = router.addLiquidityETH{
-            value: ethAmount
-        }(
+        (uint256 amountToken, uint256 amountETH, uint256 liquidity) = router.addLiquidityETH{value: ethAmount}(
             CHIP,
             chipAmount,
-            chipAmount, // min token amount (exact for first liquidity add)
-            ethAmount, // min ETH amount
-            deployer, // LP tokens go to deployer
+            minChipAmount, // Allow 5% slippage
+            minEthAmount, // Allow 5% slippage
+            deployer,
             block.timestamp + DEADLINE_SECONDS
         );
 

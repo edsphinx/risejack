@@ -1,272 +1,140 @@
-import { useState, useEffect, useCallback, useMemo } from 'preact/hooks';
-import { createPublicClient, http, parseEther, formatEther } from 'viem';
-import { RISEJACK_ABI, getRiseJackAddress, riseTestnet } from '../lib/contract';
-import { useRiseWallet } from './useRiseWallet';
-import type { GameData, GameState, HandValue, BetLimits } from '@risejack/shared';
+/**
+ * useGameState - Compositor hook for game state and actions
+ * Combines useContractState and useGameActions
+ *
+ * NOTE: GameEnded event now includes final hand values directly from contract,
+ * so we no longer need client-side card tracking.
+ */
 
-// Polling interval - reduced for better performance (5 seconds instead of 2)
-const GAME_STATE_POLL_INTERVAL = 5000;
+import { useState, useCallback } from 'preact/hooks';
+import { useContractState } from './useContractState';
+import { useGameActions, type GameEndData } from './useGameActions';
+import { useGameEvents, type GameEndEvent } from './useGameEvents';
+import type { UseRiseWalletReturn } from './useRiseWallet';
+import type { GameData, HandValue, BetLimits, GameResult } from '@risejack/shared';
 
-// Max retries for transaction confirmation
-const MAX_TX_RETRIES = 10;
-const TX_RETRY_DELAY = 1000;
+export interface UseGameStateReturn {
+  // State
+  gameData: GameData | null;
+  playerValue: HandValue | null;
+  dealerValue: number | null;
+  betLimits: BetLimits;
+  isFetching: boolean;
 
-// Safe error messages (prevent info leakage)
-const SAFE_ERROR_MESSAGES: Record<string, string> = {
-  'Invalid bet amount': 'Invalid bet amount',
-  'Insufficient balance': 'Insufficient balance',
-  'Game not in correct state': 'Cannot perform this action now',
-  'user rejected': 'Transaction was cancelled',
-  'User rejected': 'Transaction was cancelled',
-};
+  // Last game result with final hand values (from contract event)
+  lastGameResult: {
+    result: GameResult;
+    payout: bigint;
+    playerFinalValue: number;
+    dealerFinalValue: number;
+  } | null;
+  clearLastResult: () => void;
 
-function getSafeErrorMessage(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
+  // WebSocket status
+  isEventConnected: boolean;
 
-  // Check for known safe messages
-  for (const [key, safeMessage] of Object.entries(SAFE_ERROR_MESSAGES)) {
-    if (message.toLowerCase().includes(key.toLowerCase())) {
-      return safeMessage;
-    }
-  }
+  // Actions
+  isLoading: boolean;
+  error: string | null;
+  placeBet: (betAmount: string) => Promise<boolean>;
+  hit: () => Promise<boolean>;
+  stand: () => Promise<boolean>;
+  double: () => Promise<boolean>;
+  surrender: () => Promise<boolean>;
 
-  // Generic fallback - don't expose internal details
-  return 'Transaction failed. Please try again.';
+  // Utils
+  fetchGameState: () => Promise<void>;
+  formatBet: (value: bigint) => string;
 }
 
-export function useGameState(address: `0x${string}` | null) {
-  const wallet = useRiseWallet();
+export function useGameState(wallet: UseRiseWalletReturn): UseGameStateReturn {
+  const state = useContractState(wallet.address);
+  const [lastGameResult, setLastGameResult] = useState<UseGameStateReturn['lastGameResult']>(null);
 
-  const [gameData, setGameData] = useState<GameData | null>(null);
-  const [playerValue, setPlayerValue] = useState<HandValue | null>(null);
-  const [dealerValue, setDealerValue] = useState<number | null>(null);
-  const [betLimits, setBetLimits] = useState<BetLimits>({ min: 0n, max: 0n });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Handle CardDealt event - just refetch to update UI
+  const handleCardDealt = useCallback(() => {
+    console.log('[GameState] Card dealt via WebSocket, refetching...');
+    state.refetch();
+  }, [state.refetch]);
 
-  const contractAddress = useMemo(() => getRiseJackAddress(), []);
+  // Handle game end event from WebSocket
+  // Event now includes final hand values directly from contract!
+  const handleGameEnd = useCallback((event: GameEndEvent) => {
+    console.log('[GameState] Game ended with result:', event);
 
-  const publicClient = useMemo(
-    () =>
-      createPublicClient({
-        chain: riseTestnet,
-        transport: http(),
-      }),
-    []
-  );
-
-  // Fetch bet limits
-  const fetchBetLimits = useCallback(async () => {
-    try {
-      const [min, max] = await Promise.all([
-        publicClient.readContract({
-          address: contractAddress,
-          abi: RISEJACK_ABI,
-          functionName: 'minBet',
-        }),
-        publicClient.readContract({
-          address: contractAddress,
-          abi: RISEJACK_ABI,
-          functionName: 'maxBet',
-        }),
-      ]);
-      setBetLimits({ min, max });
-    } catch (err: unknown) {
-      console.error('Failed to fetch bet limits:', err);
-    }
-  }, [publicClient, contractAddress]);
-
-  // Fetch game state
-  const fetchGameState = useCallback(async () => {
-    if (!address) return;
-
-    try {
-      const [game, handValue, dealerVal] = await Promise.all([
-        publicClient.readContract({
-          address: contractAddress,
-          abi: RISEJACK_ABI,
-          functionName: 'getGameState',
-          args: [address],
-        }),
-        publicClient.readContract({
-          address: contractAddress,
-          abi: RISEJACK_ABI,
-          functionName: 'getPlayerHandValue',
-          args: [address],
-        }),
-        publicClient.readContract({
-          address: contractAddress,
-          abi: RISEJACK_ABI,
-          functionName: 'getDealerVisibleValue',
-          args: [address],
-        }),
-      ]);
-
-      setGameData({
-        player: game.player,
-        bet: game.bet,
-        playerCards: game.playerCards,
-        dealerCards: game.dealerCards,
-        state: game.state as GameState,
-        timestamp: game.timestamp,
-        isDoubled: game.isDoubled,
-      });
-      setPlayerValue({ value: handValue[0], isSoft: handValue[1] });
-      setDealerValue(dealerVal);
-    } catch (err: unknown) {
-      console.error('Failed to fetch game state:', err);
-    }
-  }, [address, publicClient, contractAddress]);
-
-  // Wait for transaction confirmation with retries
-  const waitForTransaction = useCallback(
-    async (hash: `0x${string}`): Promise<boolean> => {
-      for (let i = 0; i < MAX_TX_RETRIES; i++) {
-        try {
-          const receipt = await publicClient.getTransactionReceipt({ hash });
-          if (receipt) {
-            return receipt.status === 'success';
-          }
-        } catch {
-          // Transaction not yet mined, continue waiting
-        }
-        await new Promise((resolve) => setTimeout(resolve, TX_RETRY_DELAY));
-      }
-      return false;
-    },
-    [publicClient]
-  );
-
-  // Execute game action
-  const executeAction = useCallback(
-    async (
-      functionName: 'placeBet' | 'hit' | 'stand' | 'double' | 'surrender',
-      value?: bigint
-    ): Promise<boolean> => {
-      // Validate wallet is connected
-      if (!wallet.isConnected || !wallet.address) {
-        setError('Please connect your wallet first');
-        return false;
-      }
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const hash = await wallet.sendTransaction(functionName, value);
-
-        if (!hash) {
-          setError('Transaction failed to submit');
-          return false;
-        }
-
-        // Wait for actual transaction confirmation
-        const success = await waitForTransaction(hash);
-
-        if (success) {
-          await fetchGameState();
-          return true;
-        } else {
-          setError('Transaction failed on-chain');
-          return false;
-        }
-      } catch (err: unknown) {
-        setError(getSafeErrorMessage(err));
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [wallet, fetchGameState, waitForTransaction]
-  );
-
-  // Game actions with proper validation
-  const placeBet = useCallback(
-    async (betAmount: string): Promise<boolean> => {
-      // Validate input - empty check
-      if (!betAmount || betAmount.trim() === '') {
-        setError('Please enter a bet amount');
-        return false;
-      }
-
-      // Validate input - numeric check
-      const amount = parseFloat(betAmount);
-      if (isNaN(amount) || amount <= 0) {
-        setError('Bet amount must be a positive number');
-        return false;
-      }
-
-      // Parse to wei - handle format errors
-      let betWei: bigint;
-      try {
-        betWei = parseEther(betAmount);
-      } catch {
-        setError('Invalid bet amount format');
-        return false;
-      }
-
-      // Validate against bet limits
-      if (betLimits.min > 0n && betWei < betLimits.min) {
-        setError(`Minimum bet is ${formatEther(betLimits.min)} ETH`);
-        return false;
-      }
-      if (betLimits.max > 0n && betWei > betLimits.max) {
-        setError(`Maximum bet is ${formatEther(betLimits.max)} ETH`);
-        return false;
-      }
-
-      // Execute the bet action
-      return executeAction('placeBet', betWei);
-    },
-    [executeAction, betLimits]
-  );
-
-  const hit = useCallback(() => executeAction('hit'), [executeAction]);
-  const stand = useCallback(() => executeAction('stand'), [executeAction]);
-
-  const double = useCallback((): Promise<boolean> => {
-    if (!gameData || !gameData.bet) {
-      setError('No active game');
-      return Promise.resolve(false);
-    }
-    return executeAction('double', gameData.bet);
-  }, [executeAction, gameData]);
-
-  const surrender = useCallback(() => executeAction('surrender'), [executeAction]);
-
-  // Format bet amount
-  const formatBet = useCallback((value: bigint): string => {
-    return formatEther(value);
+    setLastGameResult({
+      result: event.result,
+      payout: event.payout,
+      playerFinalValue: event.playerFinalValue,
+      dealerFinalValue: event.dealerFinalValue,
+    });
   }, []);
 
-  // Initialize - fetch bet limits once
-  useEffect(() => {
-    fetchBetLimits();
-  }, [fetchBetLimits]);
+  const clearLastResult = useCallback(() => {
+    setLastGameResult(null);
+  }, []);
 
-  // Poll game state when connected (with reduced frequency)
-  useEffect(() => {
-    if (!address) return;
+  // WebSocket listener for game events (GameEnded + CardDealt)
+  const { isConnected: isEventConnected } = useGameEvents(wallet.address, {
+    onGameEnd: handleGameEnd,
+    onCardDealt: handleCardDealt,
+  });
 
-    fetchGameState();
-    const interval = setInterval(fetchGameState, GAME_STATE_POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [address, fetchGameState]);
+  // Also handle GameEndData from transaction parsing (fallback)
+  const handleGameEndFromTx = useCallback((data: GameEndData) => {
+    console.log('[GameState] Game ended from TX (fallback):', data);
+    // This is the old format without hand values - use 0 as fallback
+    setLastGameResult({
+      result: data.result,
+      payout: data.payout,
+      playerFinalValue: 0,
+      dealerFinalValue: 0,
+    });
+  }, []);
+
+  const actions = useGameActions({
+    address: wallet.address,
+    hasSessionKey: wallet.hasSessionKey,
+    keyPair: wallet.keyPair,
+    betLimits: state.betLimits,
+    onSuccess: state.refetch,
+    onGameEnd: handleGameEndFromTx,
+  });
+
+  // Wrap double to use current bet from state
+  const double = async (): Promise<boolean> => {
+    if (!state.gameData?.bet) {
+      return false;
+    }
+    return actions.double(state.gameData.bet);
+  };
 
   return {
-    gameData,
-    playerValue,
-    dealerValue,
-    betLimits,
-    isLoading,
-    error,
+    // State
+    gameData: state.gameData,
+    playerValue: state.playerValue,
+    dealerValue: state.dealerValue,
+    betLimits: state.betLimits,
+    isFetching: state.isFetching,
 
-    placeBet,
-    hit,
-    stand,
+    // Last result with hand values from event
+    lastGameResult,
+    clearLastResult,
+
+    // WebSocket
+    isEventConnected,
+
+    // Actions
+    isLoading: actions.isLoading,
+    error: actions.error,
+    placeBet: actions.placeBet,
+    hit: actions.hit,
+    stand: actions.stand,
     double,
-    surrender,
-    fetchGameState,
-    formatBet,
+    surrender: actions.surrender,
+
+    // Utils
+    fetchGameState: state.refetch,
+    formatBet: actions.formatBet,
   };
 }

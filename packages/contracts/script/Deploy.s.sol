@@ -73,6 +73,7 @@ contract DeployLocal is Script {
 
 /**
  * @notice Deploy to Rise Testnet (uses default VRF)
+ * @dev Configures: 0 cooldown, low min bet, initial funding
  */
 contract DeployTestnet is Script {
     function run() public {
@@ -83,6 +84,31 @@ contract DeployTestnet is Script {
         // Deploy with default Rise VRF (address(0) triggers default)
         RiseJack risejack = new RiseJack(address(0));
         console.log("RiseJack deployed to:", address(risejack));
+
+        // Configure for testnet: 0 cooldown for fast testing
+        risejack.setGameCooldown(0);
+        console.log("Game cooldown set to 0");
+
+        // Set low VRF timeout for Rise Chain's fast blocks
+        risejack.setVRFTimeout(10 seconds);
+        console.log("VRF timeout set to 10 seconds");
+
+        // Set low min bet for testing (0.00001 ETH = 10000000000000 wei)
+        risejack.setBetLimits(0.000_01 ether, 0.1 ether);
+        console.log("Bet limits: 0.00001 - 0.1 ETH");
+
+        // Disable min reserve for testnet (prevents auto-pause on losses)
+        risejack.setMinReserve(0);
+        console.log("Min reserve set to 0 (testnet mode)");
+
+        // Initial funding (0.001 ETH = ~10 full bets at max)
+        uint256 fundAmount = 0.001 ether;
+        (bool success,) = address(risejack).call{ value: fundAmount }("");
+        if (success) {
+            console.log("Funded with", fundAmount, "wei");
+        } else {
+            console.log("Funding skipped (add funds manually)");
+        }
 
         vm.stopBroadcast();
     }

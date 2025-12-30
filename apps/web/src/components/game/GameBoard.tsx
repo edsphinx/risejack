@@ -5,6 +5,7 @@ import { WalletConnect } from '@/components/wallet/WalletConnect';
 import { Hand, HandValue } from './Hand';
 import { ActionButtons } from './ActionButtons';
 import { CardDeck } from './CardDeck';
+import { Logo } from '@/components/brand/Logo';
 import { ContractService } from '@/services';
 import { GameState, type GameResult } from '@risejack/shared';
 import './styles/casino-table.css';
@@ -159,9 +160,13 @@ export function GameBoard() {
       {/* Header - responsive */}
       <header className="p-2 sm:p-4 border-b border-slate-700/50">
         <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent whitespace-nowrap">
-            ♠️ RiseJack
-          </h1>
+          {/* Logo - compact on mobile, full on desktop */}
+          <div className="sm:hidden">
+            <Logo size="compact" />
+          </div>
+          <div className="hidden sm:block">
+            <Logo size="full" />
+          </div>
           <WalletConnect
             account={wallet.address}
             isConnected={wallet.isConnected}

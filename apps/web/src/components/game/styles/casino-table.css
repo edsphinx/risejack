@@ -99,15 +99,19 @@
 }
 
 /* ==================== RESULT BANNER ==================== */
-/* Inline result display with elastic bounce animation (UX Psychology) */
+/* Absolute positioned so it doesn't affect play zone layout */
 .result-banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
   padding: 1rem 2rem;
   border-radius: 16px;
-  margin: 1rem auto;
   max-width: 90%;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
@@ -158,28 +162,28 @@
   }
 }
 
-/* Elastic bounce animation - optimized for dopamine response (400-600ms) */
+/* Elastic bounce animation - preserves centering transform */
 @keyframes result-bounce {
   0% {
-    transform: scale(0) translateY(-50px);
+    transform: translate(-50%, -50%) scale(0);
     opacity: 0;
   }
 
   50% {
-    transform: scale(1.15) translateY(0);
+    transform: translate(-50%, -50%) scale(1.15);
     opacity: 1;
   }
 
   70% {
-    transform: scale(0.95) translateY(0);
+    transform: translate(-50%, -50%) scale(0.95);
   }
 
   85% {
-    transform: scale(1.05) translateY(0);
+    transform: translate(-50%, -50%) scale(1.05);
   }
 
   100% {
-    transform: scale(1) translateY(0);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 

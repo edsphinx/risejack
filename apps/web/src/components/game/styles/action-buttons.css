@@ -2,10 +2,12 @@
 /* Psychological optimization for house advantage */
 
 .action-buttons-container {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
-  justify-content: center;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
 }
 
 /* Base action button */
@@ -13,8 +15,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 5.5rem;
-  padding: 0.875rem 1.25rem;
+  padding: 1rem;
   border-radius: 12px;
   font-weight: 800;
   font-size: 0.95rem;
@@ -25,6 +26,7 @@
   position: relative;
   overflow: hidden;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 56px;
 }
 
 .action-btn:active:not(:disabled) {
@@ -163,17 +165,18 @@
 @media (max-width: 640px) {
   .action-buttons-container {
     gap: 0.5rem;
+    max-width: 280px;
   }
 
   .action-btn {
-    min-width: 4.5rem;
-    padding: 0.75rem 1rem;
-    font-size: 0.85rem;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
     border-radius: 10px;
+    min-height: 48px;
   }
 
   .btn-emoji {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 }
 

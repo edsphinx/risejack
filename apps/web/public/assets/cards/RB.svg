@@ -58,22 +58,15 @@
   <!-- Geometric dot pattern -->
   <rect x="-105" y="-153" width="210" height="306" rx="8" ry="8" fill="url(#RBpattern)"/>
   
-  <!-- Center spade symbol - clean classic design -->
-  <g transform="translate(0, -15)" filter="url(#spadeGlow)">
-    <!-- Spade body - classic shape -->
+  <!-- Center spade symbol - proper classic spade -->
+  <g transform="translate(0, 0)" filter="url(#spadeGlow)">
+    <!-- Classic spade shape -->
     <path 
-      d="M0 -50 
-         C0 -50 -40 -10 -40 20 
-         C-40 40 -25 50 -10 45 
-         C-10 45 -15 65 -20 70 
-         L20 70 
-         C15 65 10 45 10 45 
-         C25 50 40 40 40 20 
-         C40 -10 0 -50 0 -50 Z"
+      d="M0,-55 C-5,-50 -35,-25 -35,5 C-35,25 -20,35 0,25 C0,25 0,50 -12,60 L12,60 C0,50 0,25 0,25 C20,35 35,25 35,5 C35,-25 5,-50 0,-55 Z"
       fill="url(#spadeGrad)"
-      stroke="rgba(255,255,255,0.2)"
+      stroke="rgba(255,255,255,0.15)"
       stroke-width="0.5"
-      opacity="0.85"
+      opacity="0.9"
     />
   </g>
   

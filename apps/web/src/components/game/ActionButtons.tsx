@@ -1,8 +1,18 @@
 import { useState } from 'preact/hooks';
 import type { ActionButtonsProps } from '@risejack/shared';
+import './styles/action-buttons.css';
 
 type ActionType = 'hit' | 'stand' | 'double' | 'surrender' | null;
 
+/**
+ * DEGEN UX Action Buttons
+ *
+ * Psychological optimization for house advantage:
+ * - HIT: Most attractive (green, energetic copy) - more hits = more bust risk
+ * - DOUBLE: Urgent/exciting (gold, FOMO copy) - doubles the bet
+ * - STAND: Neutral (amber, calm copy) - ends play
+ * - SURRENDER: Least attractive (muted, subdued) - returns half bet
+ */
 export function ActionButtons({
   onHit,
   onStand,
@@ -24,22 +34,24 @@ export function ActionButtons({
     }
   };
 
-  // Fixed width to prevent layout shift - same width for all buttons
-  const baseClass = `
-        min-w-24 px-6 py-3 rounded-lg font-bold text-lg 
-        transition-all duration-200 
-        active:scale-95 
-        disabled:opacity-50 disabled:cursor-not-allowed
-        relative overflow-hidden
-    `;
-
   // Show spinner overlay only on the clicked button
-  const ButtonContent = ({ label, action }: { label: string; action: ActionType }) => {
+  const ButtonContent = ({
+    label,
+    emoji,
+    action,
+  }: {
+    label: string;
+    emoji: string;
+    action: ActionType;
+  }) => {
     const isPending = pendingAction === action && isLoading;
     return (
       <>
         {/* Text - stays visible but dimmed when loading */}
-        <span className={isPending ? 'opacity-0' : 'opacity-100'}>{label}</span>
+        <span className={`btn-content ${isPending ? 'opacity-0' : ''}`}>
+          <span className="btn-emoji">{emoji}</span>
+          <span className="btn-label">{label}</span>
+        </span>
         {/* Spinner overlay */}
         {isPending && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -54,37 +66,43 @@ export function ActionButtons({
   const anyPending = isLoading || pendingAction !== null;
 
   return (
-    <div className="flex flex-wrap gap-3 justify-center">
+    <div className="action-buttons-container">
+      {/* Row 1: Risky actions - HIT + DOUBLE */}
+      {/* HIT - Most attractive (house benefits from busts) */}
       <button
         onClick={() => handleAction('hit', onHit)}
         disabled={anyPending}
-        className={`${baseClass} bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-500/20`}
+        className="action-btn action-btn-hit"
       >
-        <ButtonContent label="HIT" action="hit" />
+        <ButtonContent label="HIT ME" emoji="🎯" action="hit" />
       </button>
 
-      <button
-        onClick={() => handleAction('stand', onStand)}
-        disabled={anyPending}
-        className={`${baseClass} bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20`}
-      >
-        <ButtonContent label="STAND" action="stand" />
-      </button>
-
+      {/* DOUBLE - Exciting/FOMO (doubles the bet) */}
       <button
         onClick={() => handleAction('double', onDouble)}
         disabled={anyPending || !canDouble}
-        className={`${baseClass} bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 ${!canDouble && 'opacity-40'}`}
+        className={`action-btn action-btn-double ${!canDouble ? 'disabled-muted' : ''}`}
       >
-        <ButtonContent label="DOUBLE" action="double" />
+        <ButtonContent label="2X" emoji="💰" action="double" />
       </button>
 
+      {/* Row 2: Conservative actions - STAND + SURRENDER */}
+      {/* STAND - Neutral option */}
+      <button
+        onClick={() => handleAction('stand', onStand)}
+        disabled={anyPending}
+        className="action-btn action-btn-stand"
+      >
+        <ButtonContent label="HODL" emoji="✋" action="stand" />
+      </button>
+
+      {/* SURRENDER - Least attractive (player recovers money) */}
       <button
         onClick={() => handleAction('surrender', onSurrender)}
         disabled={anyPending || !canSurrender}
-        className={`${baseClass} bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/20 ${!canSurrender && 'opacity-40'}`}
+        className={`action-btn action-btn-surrender ${!canSurrender ? 'disabled-muted' : ''}`}
       >
-        <ButtonContent label="SURRENDER" action="surrender" />
+        <ButtonContent label="SURRENDER" emoji="🏳️" action="surrender" />
       </button>
     </div>
   );

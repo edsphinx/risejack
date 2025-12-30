@@ -2,6 +2,7 @@ import { useState, useEffect } from 'preact/hooks';
 import { formatEther } from 'viem';
 import { getProvider } from '@/lib/riseWallet';
 import type { WalletConnectProps, TimeRemaining } from '@risejack/shared';
+import './styles/header.css';
 
 export function WalletConnect({
   account,
@@ -65,91 +66,81 @@ export function WalletConnect({
     }
   };
 
-  // Not connected state - simple button
+  const copyAddress = async () => {
+    await navigator.clipboard.writeText(account!);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Not connected state
   if (!isConnected) {
     return (
-      <div className="flex flex-col items-end gap-2">
-        <button
-          onClick={onConnect}
-          disabled={isConnecting}
-          className="px-6 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
-        >
+      <div className="wallet-section">
+        <button onClick={onConnect} disabled={isConnecting} className="header-cta">
           {isConnecting ? (
-            <span className="flex items-center gap-2">
+            <>
               <span className="animate-spin">⏳</span>
-              Connecting...
-            </span>
+              <span>Connecting...</span>
+            </>
           ) : (
-            <span className="flex items-center gap-2">
+            <>
               <span>⚡</span>
-              Connect Rise Wallet
-            </span>
+              <span>Connect Wallet</span>
+            </>
           )}
         </button>
-        {error && <span className="text-xs text-red-400 max-w-[200px] text-right">{error}</span>}
+        {error && <span className="text-xs text-red-400">{error}</span>}
       </div>
     );
   }
 
-  // Connected state - show address and session status
+  // Connected state
   return (
-    <div className="flex items-center gap-3">
-      {/* Session Key Badge */}
+    <div className="wallet-section">
+      {/* Session Key */}
       {hasSessionKey ? (
-        <div className="flex items-center gap-1">
-          <div className="px-2.5 py-1.5 rounded-l-lg bg-green-900/50 border border-green-500/30 flex items-center gap-1.5">
-            <span className="text-green-400 text-sm">🔑</span>
-            <span className="text-green-400 text-xs font-medium">{formatTime(sessionExpiry)}</span>
-          </div>
-          <button
-            onClick={onRevokeSession}
-            className="px-2 py-1.5 rounded-r-lg bg-red-900/30 border border-red-500/30 text-red-400 text-xs hover:bg-red-900/50 transition-colors"
-            title="Revoke session key"
-          >
+        <div className="header-badge session-active">
+          <span>🔑</span>
+          <span className="badge-text badge-time">{formatTime(sessionExpiry)}</span>
+          <span className="badge-separator">|</span>
+          <span onClick={onRevokeSession} className="badge-disconnect" title="Revoke session">
             ✕
-          </button>
+          </span>
         </div>
       ) : (
         <button
           onClick={handleCreateSession}
           disabled={isCreatingSession}
-          className="px-3 py-1.5 rounded-lg bg-purple-900/50 border border-purple-500/30 text-purple-300 text-xs font-medium hover:bg-purple-800/50 transition-colors disabled:opacity-50"
+          className="header-badge create-session"
         >
-          {isCreatingSession ? '⏳ Creating...' : '🔑 Enable Fast Mode'}
+          <span>🔑</span>
+          <span className="badge-text">{isCreatingSession ? '...' : 'Fast Mode'}</span>
         </button>
       )}
 
-      {/* Balance Badge */}
+      {/* Balance */}
       {balance !== null && (
-        <div className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600">
-          <span className="text-yellow-400 font-mono text-sm font-medium">
-            {Number(formatEther(balance)).toFixed(5)} ETH
-          </span>
+        <div className="header-badge balance">
+          <span className="badge-balance">{Number(formatEther(balance)).toFixed(5)} ETH</span>
         </div>
       )}
 
-      {/* Address Badge - Click to copy */}
-      <button
-        onClick={async () => {
-          await navigator.clipboard.writeText(account!);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        }}
-        className="px-2.5 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/50 flex items-center gap-1.5 hover:border-purple-500/50 hover:bg-slate-700/80 transition-all cursor-pointer"
-        title="Click to copy address"
-      >
-        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-        <span className="text-slate-300 font-mono text-xs">{shortenAddress(account!)}</span>
-        <span className="text-slate-500 text-[10px] transition-colors">{copied ? '✓' : '⧉'}</span>
-      </button>
-
-      {/* Disconnect */}
-      <button
-        onClick={onDisconnect}
-        className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-900/20 transition-colors"
-        title="Disconnect"
-      >
-        ✕
+      {/* Address + Disconnect (integrated like session key) */}
+      <button onClick={copyAddress} className="header-badge" title="Copy address">
+        <div className="status-dot" />
+        <span className="badge-address">{shortenAddress(account!)}</span>
+        <span className="text-slate-500">{copied ? '✓' : '⧉'}</span>
+        <span className="badge-separator">|</span>
+        <span
+          onClick={(e) => {
+            e.stopPropagation();
+            onDisconnect();
+          }}
+          className="badge-disconnect"
+          title="Disconnect"
+        >
+          ✕
+        </span>
       </button>
     </div>
   );

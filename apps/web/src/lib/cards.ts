@@ -37,3 +37,31 @@ export function safeGetCardDisplay(cardIndex: number): CardDisplay {
         return { rank: '?', suit: '?', color: 'black' };
     }
 }
+
+/**
+ * Get SVG image URL for a card
+ * Uses poker-qr SVG files - naming: {rank}{suit}.svg
+ * Ranks: A, 2-9, T (10), J, Q, K
+ * Suits: S (spades), H (hearts), D (diamonds), C (clubs)
+ */
+export function getCardImageUrl(cardIndex: number): string {
+    const suits = ['S', 'H', 'D', 'C']; // Spades, Hearts, Diamonds, Clubs
+    const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'];
+
+    // Validate
+    if (!Number.isInteger(cardIndex) || cardIndex < 0 || cardIndex > 51) {
+        return '/assets/cards/AS.svg'; // Fallback to Ace of Spades
+    }
+
+    const suit = suits[Math.floor(cardIndex / 13)];
+    const rank = ranks[cardIndex % 13];
+
+    return `/assets/cards/${rank}${suit}.svg`;
+}
+
+/**
+ * Get card back image URL - RB = Rise Back
+ */
+export function getCardBackUrl(): string {
+    return '/assets/cards/RB.svg';
+}

@@ -83,7 +83,15 @@ interface HandValueProps {
 }
 
 export function HandValue({ value, isSoft, cardCount = 0 }: HandValueProps) {
-  if (value === undefined) return null;
+  // Show placeholder when no cards dealt to prevent layout shift
+  if (value === undefined) {
+    return (
+      <div className="hand-value-standalone value-placeholder">
+        <span className="value-number">--</span>
+        <span className="value-type">&nbsp;</span>
+      </div>
+    );
+  }
 
   let valueClass = 'value-normal';
   let badge: string | null = null;

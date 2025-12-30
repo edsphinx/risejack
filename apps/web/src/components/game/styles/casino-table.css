@@ -453,6 +453,18 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+/* Placeholder style when no bet is active */
+.bet-display-side.bet-placeholder {
+  background: rgba(100, 116, 139, 0.3);
+  border-color: rgba(100, 116, 139, 0.3);
+  box-shadow: none;
+}
+
+.bet-display-side.bet-placeholder .bet-label,
+.bet-display-side.bet-placeholder .bet-value {
+  color: rgba(148, 163, 184, 0.5);
+}
+
 /* Mobile: bet display smaller but still on right */
 @media (max-width: 640px) {
   .bet-display-side {

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { Script, console } from "forge-std/Script.sol";
-import { CHIPToken } from "../src/defi/CHIPToken.sol";
+import {Script, console} from "forge-std/Script.sol";
+import {CHIPToken} from "../src/defi/CHIPToken.sol";
 
 contract DeployCHIP is Script {
     function run() public {

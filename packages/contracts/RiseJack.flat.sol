@@ -1,8 +1,48 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { IVRFConsumer } from "./interfaces/IVRFConsumer.sol";
-import { IVRFCoordinator } from "./interfaces/IVRFCoordinator.sol";
+// src/interfaces/IVRFConsumer.sol
+
+/**
+ * @title IVRFConsumer
+ * @author edsphinx
+ * @custom:company blocketh
+ * @notice Interface that contracts must implement to receive VRF callbacks
+ */
+interface IVRFConsumer {
+    /**
+     * @notice Callback function called by VRF Coordinator with random numbers
+     * @param requestId The request ID returned from requestRandomNumbers
+     * @param randomNumbers Array of random numbers
+     */
+    function rawFulfillRandomNumbers(
+        uint256 requestId,
+        uint256[] memory randomNumbers
+    ) external;
+}
+
+// src/interfaces/IVRFCoordinator.sol
+
+/**
+ * @title IVRFCoordinator
+ * @author edsphinx
+ * @custom:company blocketh
+ * @notice Interface for Rise Chain VRF Coordinator
+ */
+interface IVRFCoordinator {
+    /**
+     * @notice Request random numbers from VRF
+     * @param numNumbers How many random numbers you need
+     * @param seed Seed for randomness generation
+     * @return requestId Unique identifier for the request
+     */
+    function requestRandomNumbers(
+        uint32 numNumbers,
+        uint256 seed
+    ) external returns (uint256 requestId);
+}
+
+// src/RiseJack.sol
 
 /**
  * @title RiseJack
@@ -120,8 +160,8 @@ contract RiseJack is IVRFConsumer {
     event CardDealt(address indexed player, uint8 card, bool isDealer, bool faceUp);
     event PlayerAction(address indexed player, string action);
     event GameEnded(
-        address indexed player,
-        GameState result,
+        address indexed player, 
+        GameState result, 
         uint256 payout,
         uint8 playerFinalValue,
         uint8 dealerFinalValue,
@@ -730,7 +770,7 @@ contract RiseJack is IVRFConsumer {
         Game storage game = games[player];
         (uint8 playerValue,) = calculateHandValue(game.playerCards);
         (uint8 dealerValue,) = calculateHandValue(game.dealerCards);
-
+        
         emit GameEnded(
             player,
             result,
@@ -1135,3 +1175,4 @@ contract RiseJack is IVRFConsumer {
 
     receive() external payable { }
 }
+

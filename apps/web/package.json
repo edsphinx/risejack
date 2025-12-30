@@ -13,13 +13,11 @@
   },
   "dependencies": {
     "@risejack/shared": "workspace:*",
-    "@tanstack/react-query": "^5.90.14",
     "ox": "^0.6.7",
     "preact": "^10.25.4",
     "rise-wallet": "^0.3.0",
     "shreds": "^0.2.3",
-    "viem": "^2.21.54",
-    "wagmi": "^3.1.3"
+    "viem": "^2.21.54"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.9.4",
@@ -31,5 +29,8 @@
     "autoprefixer": "^10.4.20",
     "@types/node": "^22.10.2",
     "rollup-plugin-visualizer": "^5.14.0"
+  },
+  "overrides": {
+    "ox": "^0.6.7"
   }
 }

@@ -1,19 +1,7 @@
-import { useState } from 'preact/hooks';
-import { useBalance } from 'wagmi';
+import { useState, useEffect } from 'preact/hooks';
 import { formatEther } from 'viem';
-import type { TimeRemaining } from '@risejack/shared';
-
-interface WalletConnectProps {
-  account: `0x${string}` | null;
-  isConnected: boolean;
-  isConnecting: boolean;
-  hasSessionKey: boolean;
-  sessionExpiry: TimeRemaining | null;
-  error: string | null;
-  onConnect: () => void;
-  onDisconnect: () => void;
-  onCreateSession: () => Promise<boolean>;
-}
+import { getProvider } from '@/lib/riseWallet';
+import type { WalletConnectProps, TimeRemaining } from '@risejack/shared';
 
 export function WalletConnect({
   account,
@@ -25,11 +13,37 @@ export function WalletConnect({
   onConnect,
   onDisconnect,
   onCreateSession,
+  onRevokeSession,
 }: WalletConnectProps) {
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [balance, setBalance] = useState<bigint | null>(null);
 
-  // Fetch balance
-  const { data: balanceData } = useBalance({ address: account ?? undefined });
+  // Fetch balance using direct provider call
+  useEffect(() => {
+    if (!account) {
+      setBalance(null);
+      return;
+    }
+
+    const fetchBalance = async () => {
+      try {
+        const provider = getProvider();
+        const result = await provider.request({
+          method: 'eth_getBalance',
+          params: [account, 'latest'],
+        });
+        setBalance(BigInt(result as string));
+      } catch {
+        setBalance(null);
+      }
+    };
+
+    fetchBalance();
+    // Poll every 10 seconds
+    const interval = setInterval(fetchBalance, 10000);
+    return () => clearInterval(interval);
+  }, [account]);
 
   const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
@@ -82,9 +96,18 @@ export function WalletConnect({
     <div className="flex items-center gap-3">
       {/* Session Key Badge */}
       {hasSessionKey ? (
-        <div className="px-3 py-1.5 rounded-lg bg-green-900/50 border border-green-500/30 flex items-center gap-2">
-          <span className="text-green-400 text-sm">🔑</span>
-          <span className="text-green-400 text-xs font-medium">{formatTime(sessionExpiry)}</span>
+        <div className="flex items-center gap-1">
+          <div className="px-2.5 py-1.5 rounded-l-lg bg-green-900/50 border border-green-500/30 flex items-center gap-1.5">
+            <span className="text-green-400 text-sm">🔑</span>
+            <span className="text-green-400 text-xs font-medium">{formatTime(sessionExpiry)}</span>
+          </div>
+          <button
+            onClick={onRevokeSession}
+            className="px-2 py-1.5 rounded-r-lg bg-red-900/30 border border-red-500/30 text-red-400 text-xs hover:bg-red-900/50 transition-colors"
+            title="Revoke session key"
+          >
+            ✕
+          </button>
         </div>
       ) : (
         <button
@@ -97,19 +120,28 @@ export function WalletConnect({
       )}
 
       {/* Balance Badge */}
-      {balanceData && (
+      {balance !== null && (
         <div className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600">
           <span className="text-yellow-400 font-mono text-sm font-medium">
-            {Number(formatEther(balanceData.value)).toFixed(5)} ETH
+            {Number(formatEther(balance)).toFixed(5)} ETH
           </span>
         </div>
       )}
 
-      {/* Address Badge */}
-      <div className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 flex items-center gap-2">
-        <div className="w-2 h-2 bg-green-500 rounded-full" />
-        <span className="text-white font-mono text-sm">{shortenAddress(account!)}</span>
-      </div>
+      {/* Address Badge - Click to copy */}
+      <button
+        onClick={async () => {
+          await navigator.clipboard.writeText(account!);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }}
+        className="px-2.5 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/50 flex items-center gap-1.5 hover:border-purple-500/50 hover:bg-slate-700/80 transition-all cursor-pointer"
+        title="Click to copy address"
+      >
+        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+        <span className="text-slate-300 font-mono text-xs">{shortenAddress(account!)}</span>
+        <span className="text-slate-500 text-[10px] transition-colors">{copied ? '✓' : '⧉'}</span>
+      </button>
 
       {/* Disconnect */}
       <button

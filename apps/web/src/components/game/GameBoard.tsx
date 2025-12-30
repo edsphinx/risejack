@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { useRiseWallet } from '@/hooks/useRiseWallet';
 import { useGameState } from '@/hooks/useGameState';
 import { WalletConnect } from '@/components/wallet/WalletConnect';
 import { Hand, HandValue } from './Hand';
 import { ActionButtons } from './ActionButtons';
 import { CardDeck } from './CardDeck';
+import { GameHistory } from './GameHistory';
 import { Logo } from '@/components/brand/Logo';
 import { ContractService } from '@/services';
+import { StorageService } from '@/services/storage.service';
 import { GameState, type GameResult } from '@risejack/shared';
 import './styles/casino-table.css';
 import './styles/action-buttons.css';
@@ -50,10 +52,14 @@ export function GameBoard() {
     }
   })();
 
-  // When game ends, store the final cards for display
-  // Use lastGameResult cards if available, otherwise fall back to gameData
+  // Track if we've saved this result to avoid duplicates
+  const lastSavedResultRef = useRef<string | null>(null);
+
+  // When game ends, store the final cards for display AND save to history
   useEffect(() => {
     if (game.lastGameResult) {
+      const resultId = `${game.lastGameResult.playerFinalValue}-${game.lastGameResult.dealerFinalValue}-${Date.now()}`;
+
       // Get cards: prefer lastGameResult, but fall back to gameData if WebSocket race condition
       const playerCards =
         (game.lastGameResult.playerCards?.length >= 2
@@ -77,8 +83,25 @@ export function GameBoard() {
         dealerValue: game.lastGameResult.dealerFinalValue,
         bet: 0n,
       });
+
+      // Save to history (only if not already saved)
+      if (lastSavedResultRef.current !== resultId) {
+        lastSavedResultRef.current = resultId;
+        const result = game.lastGameResult;
+        StorageService.addGameToHistory({
+          playerCards: [...playerCards],
+          dealerCards: [...dealerCards],
+          playerValue: result.playerFinalValue ?? 0,
+          dealerValue: result.dealerFinalValue ?? 0,
+          bet: betAmount,
+          result: result.result as 'win' | 'lose' | 'push' | 'blackjack' | 'surrender',
+          payout: result.payout ? game.formatBet(result.payout) : '0',
+        });
+        // Notify history component
+        window.dispatchEvent(new CustomEvent('risejack:gameEnd'));
+      }
     }
-  }, [game.lastGameResult, game.gameData]);
+  }, [game.lastGameResult, game.gameData, betAmount, game.formatBet]);
 
   // Track cooldown - check when in idle state or after game ends
   useEffect(() => {
@@ -447,6 +470,11 @@ export function GameBoard() {
                 💡 Enable <strong>Fast Mode</strong> above for instant, popup-free gameplay!
               </div>
             )}
+
+            {/* Game History */}
+            <div className="mt-4">
+              <GameHistory />
+            </div>
           </div>
         )}
       </main>

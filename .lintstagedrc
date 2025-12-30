@@ -12,5 +12,8 @@
   ],
   "*.css": [
     "prettier --write"
+  ],
+  "packages/contracts/**/*.sol": [
+    "bash -c 'cd packages/contracts && forge fmt'"
   ]
 }

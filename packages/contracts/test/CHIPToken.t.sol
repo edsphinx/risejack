@@ -70,8 +70,9 @@ contract CHIPTokenTest is Test {
         vm.assume(to != address(0));
         vm.assume(amount < type(uint256).max - INITIAL_SUPPLY);
 
+        uint256 balanceBefore = chip.balanceOf(to);
         chip.mint(to, amount);
-        assertEq(chip.balanceOf(to), amount);
+        assertEq(chip.balanceOf(to), balanceBefore + amount);
     }
 
     // ==================== BURN ====================

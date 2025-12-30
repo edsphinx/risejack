@@ -291,6 +291,18 @@ cd apps/api && bun run typecheck
 | **RiseCasinoRouter.sol**  | `src/defi/RiseCasinoRouter.sol`  | Uniswap V2 Router        | Swap and liquidity management               |
 | **RiseCasinoStaking.sol** | `src/defi/RiseCasinoStaking.sol` | Synthetix StakingRewards | LP token staking for real yield             |
 
+### External DeFi Contracts (Rise Testnet)
+
+The following audited DeFi contracts are deployed as separate repositories for maximum security:
+
+| Contract              | Address                                                                                                                                  | Source                                                                         | Verified |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | -------- |
+| **UniswapV2Factory**  | [`0xB3c8D76d227A8937898BE6c3e1C99ed22CcB5040`](https://explorer.testnet.riselabs.xyz/address/0xb3c8d76d227a8937898be6c3e1c99ed22ccb5040) | [risecasinoswap](https://github.com/edsphinx/risecasinoswap)                   | ✅       |
+| **UniswapV2Router02** | [`0x67b3925D7b2b2d9BD316DAC8bCF888A60B9F24F0`](https://explorer.testnet.riselabs.xyz/address/0x67b3925d7b2b2d9bd316dac8bcf888a60b9f24f0) | [risecasinorouter](https://github.com/edsphinx/risecasinorouter)               | ✅       |
+| **CHIPToken**         | [`0x2D97Ba366119e55B1a98D9349ce35868920C7Ae8`](https://explorer.testnet.riselabs.xyz/address/0x2d97ba366119e55b1a98d9349ce35868920c7ae8) | `src/defi/CHIPToken.sol`                                                       | ✅       |
+| **CHIP/ETH LP**       | [`0x5A36854D9a48957BF78790E974BFC01fbF123a84`](https://explorer.testnet.riselabs.xyz/address/0x5a36854d9a48957bf78790e974bfc01fbf123a84) | Factory-created                                                                | ✅       |
+| **StakingRewards**    | [`0x9eEE56e0907AA69f023b29a93Ae5ea54CA8DD8c3`](https://explorer.testnet.riselabs.xyz/address/0x9eee56e0907aa69f023b29a93ae5ea54ca8dd8c3) | [risecasinosimplestaking](https://github.com/edsphinx/risecasinosimplestaking) | ✅       |
+
 ### Build
 
 ```bash

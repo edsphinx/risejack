@@ -1,6 +1,6 @@
-import { useState } from 'preact/hooks';
-import { useBalance } from 'wagmi';
+import { useState, useEffect } from 'preact/hooks';
 import { formatEther } from 'viem';
+import { getProvider } from '@/lib/riseWallet';
 import type { WalletConnectProps, TimeRemaining } from '@risejack/shared';
 
 export function WalletConnect({
@@ -17,9 +17,33 @@ export function WalletConnect({
 }: WalletConnectProps) {
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [balance, setBalance] = useState<bigint | null>(null);
 
-  // Fetch balance
-  const { data: balanceData } = useBalance({ address: account ?? undefined });
+  // Fetch balance using direct provider call
+  useEffect(() => {
+    if (!account) {
+      setBalance(null);
+      return;
+    }
+
+    const fetchBalance = async () => {
+      try {
+        const provider = getProvider();
+        const result = await provider.request({
+          method: 'eth_getBalance',
+          params: [account, 'latest'],
+        });
+        setBalance(BigInt(result as string));
+      } catch {
+        setBalance(null);
+      }
+    };
+
+    fetchBalance();
+    // Poll every 10 seconds
+    const interval = setInterval(fetchBalance, 10000);
+    return () => clearInterval(interval);
+  }, [account]);
 
   const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
@@ -96,10 +120,10 @@ export function WalletConnect({
       )}
 
       {/* Balance Badge */}
-      {balanceData && (
+      {balance !== null && (
         <div className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600">
           <span className="text-yellow-400 font-mono text-sm font-medium">
-            {Number(formatEther(balanceData.value)).toFixed(5)} ETH
+            {Number(formatEther(balance)).toFixed(5)} ETH
           </span>
         </div>
       )}

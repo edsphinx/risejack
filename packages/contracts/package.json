@@ -1,21 +1,29 @@
 {
-    "name": "@risejack/contracts",
-    "version": "0.1.0",
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "build": "forge build",
-        "test": "forge test",
-        "test:gas": "forge test --gas-report",
-        "coverage": "forge coverage",
-        "deploy:local": "forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast",
-        "deploy:testnet": "forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify",
-        "clean": "forge clean",
-        "fmt": "forge fmt",
-        "snapshot": "forge snapshot",
-        "typecheck": "echo 'No TypeScript in contracts'"
-    },
-    "devDependencies": {
-        "typescript": "^5.7.2"
-    }
+  "name": "@risejack/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "test:gas": "forge test --gas-report",
+    "coverage": "forge coverage",
+    "deploy:local": "forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast",
+    "deploy:testnet": "bash -c 'export $(cat .env | xargs) && ETHERSCAN_API_KEY=dummy forge script script/Deploy.s.sol --tc DeployTestnet --rpc-url https://testnet.riselabs.xyz --broadcast --private-key $DEPLOYER_PRIVATE_KEY --verify --verifier blockscout --verifier-url https://explorer.testnet.riselabs.xyz/api/'",
+    "withdraw": "bash -c 'export $(cat .env | xargs) && forge script script/Withdraw.s.sol --rpc-url https://testnet.riselabs.xyz --broadcast --private-key $DEPLOYER_PRIVATE_KEY'",
+    "balance:deployer": "cast balance 0xB55b2Ed00193864c58b355999eaa8BfEc302515E --rpc-url https://testnet.riselabs.xyz --ether",
+    "balance:contract": "cast balance 0xe17C645aE8dC321B41BA00bbc8B9E392342A0cA2 --rpc-url https://testnet.riselabs.xyz --ether",
+    "verify": "forge verify-contract --rpc-url https://testnet.riselabs.xyz 0xe17C645aE8dC321B41BA00bbc8B9E392342A0cA2 src/RiseJack.sol:RiseJack --verifier blockscout --verifier-url https://explorer.testnet.riselabs.xyz/api/",
+    "admin:unpause": "bash -c 'export $(cat .env | xargs) && cast send 0xe17C645aE8dC321B41BA00bbc8B9E392342A0cA2 unpause() --rpc-url https://testnet.riselabs.xyz --private-key $DEPLOYER_PRIVATE_KEY'",
+    "admin:setMinReserve": "bash -c 'export $(cat .env | xargs) && cast send 0xe17C645aE8dC321B41BA00bbc8B9E392342A0cA2 \"setMinReserve(uint256)\" $(cast to-wei $0 ether) --rpc-url https://testnet.riselabs.xyz --private-key $DEPLOYER_PRIVATE_KEY'",
+    "admin:fund": "bash -c 'export $(cat .env | xargs) && cast send 0xe17C645aE8dC321B41BA00bbc8B9E392342A0cA2 --value 0.01ether --rpc-url https://testnet.riselabs.xyz --private-key $DEPLOYER_PRIVATE_KEY'",
+    "clean": "forge clean",
+    "fmt": "forge fmt",
+    "snapshot": "forge snapshot",
+    "sync-abi": "node scripts/sync-abi.js",
+    "typecheck": "echo 'No TypeScript in contracts'"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
 }

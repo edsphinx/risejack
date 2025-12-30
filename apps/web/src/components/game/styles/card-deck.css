@@ -18,13 +18,18 @@
   width: 100%;
   height: 100%;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.8);
+  /* White edge for stack visibility */
 
   /* Use actual RB.svg card back */
   background-image: url('/assets/cards/RB.svg');
   background-size: cover;
   background-position: center;
-  border: 1px solid #6d28d9;
+
+  /* White border to see stacked cards */
+  border: 2px solid rgba(255, 255, 255, 0.9);
 
   /* 3D stack */
   transform: translateY(calc(var(--card-index, 0) * -2px));

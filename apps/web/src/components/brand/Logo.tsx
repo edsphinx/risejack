@@ -25,10 +25,13 @@ export function Logo({ size = 'full', animated = true, className = '' }: LogoPro
   }
 
   if (size === 'compact') {
+    // Full name even on mobile for brand recognition
     return (
       <div className={`logo-compact ${animatedClass} ${className}`}>
         <SpadeIcon />
-        <span className="logo-text-short">RJ</span>
+        <div className="logo-text-wrapper">
+          <span className="logo-text">RISEJACK</span>
+        </div>
       </div>
     );
   }
@@ -37,7 +40,9 @@ export function Logo({ size = 'full', animated = true, className = '' }: LogoPro
   return (
     <div className={`logo-full ${animatedClass} ${className}`}>
       <SpadeIcon />
-      <span className="logo-text">RISEJACK</span>
+      <div className="logo-text-wrapper">
+        <span className="logo-text">RISEJACK</span>
+      </div>
     </div>
   );
 }

@@ -803,18 +803,28 @@
   }
 }
 
-/* ==================== ACTION AREA LAYOUT ==================== */
-/* History panel next to controls on desktop, below on mobile */
+/* ==================== CONTROLS AREA LAYOUT ==================== */
+/* Controls panel + History side by side on desktop */
 
-.action-area-layout {
+.controls-area-layout {
   display: flex;
   align-items: flex-start;
-  gap: 1.5rem;
+  gap: 1rem;
   margin-top: 1rem;
 }
 
-.session-hint {
+.controls-panel {
   flex: 1;
+  max-width: 400px;
+  min-height: 180px;
+  padding: 1rem 1.5rem;
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .history-panel {
@@ -822,28 +832,27 @@
   width: 280px;
 }
 
-/* Desktop: History on the right */
+/* Desktop: Side by side centered */
 @media (min-width: 1024px) {
-  .action-area-layout {
+  .controls-area-layout {
     justify-content: center;
-  }
-
-  .history-panel .game-history {
-    max-width: 280px;
   }
 }
 
-/* Mobile: History below, full width */
+/* Mobile: Stack vertically */
 @media (max-width: 1023px) {
-  .action-area-layout {
+  .controls-area-layout {
     flex-direction: column;
     align-items: stretch;
   }
 
+  .controls-panel {
+    max-width: 100%;
+    min-height: auto;
+  }
+
   .history-panel {
     width: 100%;
-    order: 10;
-    /* Push to bottom */
   }
 
   .history-panel .game-history {

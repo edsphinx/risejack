@@ -328,16 +328,20 @@ export function GameBoard() {
                   </div>
                 )}
 
-                {/* INLINE RESULT BANNER - appears with elastic bounce animation */}
+                {/* INLINE RESULT BANNER - DEGEN UX with glass effect */}
                 {gameResult && getResultStyle(gameResult) && (
                   <div
-                    className={`result-banner ${getResultStyle(gameResult)?.bg} ${getResultStyle(gameResult)?.text} animate-result-bounce`}
+                    className={`result-banner ${getResultStyle(gameResult)?.bg} ${getResultStyle(gameResult)?.text}`}
                   >
-                    <span className="result-emoji">{getResultStyle(gameResult)?.emoji}</span>
-                    <span className="result-message">{getResultStyle(gameResult)?.message}</span>
+                    {/* Top row: emoji + message */}
+                    <div className="result-top">
+                      <span className="result-emoji">{getResultStyle(gameResult)?.emoji}</span>
+                      <span className="result-message">{getResultStyle(gameResult)?.message}</span>
+                    </div>
+                    {/* Score pill */}
                     {lastHand && (
                       <span className="result-values">
-                        {lastHand.playerValue} vs {lastHand.dealerValue}
+                        You: {lastHand.playerValue} • Dealer: {lastHand.dealerValue}
                       </span>
                     )}
                   </div>

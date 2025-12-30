@@ -36,13 +36,13 @@ export default defineConfig({
       output: {
         manualChunks: {
           viem: ['viem'],
-          'rise-wallet': ['rise-wallet', 'wagmi', '@tanstack/react-query'],
+          'rise-wallet': ['rise-wallet'],
         },
       },
     },
   },
 
   optimizeDeps: {
-    include: ['preact', 'viem', 'rise-wallet', 'wagmi', '@tanstack/react-query', 'ox', 'shreds'],
+    include: ['preact', 'viem', 'rise-wallet', 'ox', 'shreds'],
   },
 });

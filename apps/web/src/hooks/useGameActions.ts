@@ -37,6 +37,7 @@ export interface UseGameActionsReturn {
   stand: () => Promise<boolean>;
   double: (currentBet: bigint) => Promise<boolean>;
   surrender: () => Promise<boolean>;
+  cancelTimedOutGame: () => Promise<boolean>;
   formatBet: (value: bigint) => string;
 }
 
@@ -199,19 +200,28 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
         let gameEndData: GameEndData | null = null;
 
         if (hasSessionKey && keyPair) {
-          console.log('[GameActions] Using session key...');
+          console.log('[GameActions] 🔑 Using session key...', {
+            hasSessionKey,
+            publicKey: keyPair.publicKey?.slice(0, 20) + '...',
+          });
           try {
             const result = await sendSessionTransaction(contractAddress, value ?? 0n, data);
             txHash = result.txHash;
             gameEndData = result.gameEndData;
           } catch (sessionErr) {
             // Session key failed - fallback to passkey
-            console.warn('[GameActions] Session key failed, falling back to passkey:', sessionErr);
-            console.log('[GameActions] Falling back to passkey...');
+            console.warn(
+              '[GameActions] ⚠️ Session key FAILED, falling back to passkey:',
+              sessionErr
+            );
+            console.log('[GameActions] 🔐 Falling back to passkey...');
             txHash = await sendPasskeyTransaction(contractAddress, value ?? 0n, data);
           }
         } else {
-          console.log('[GameActions] Using passkey...');
+          console.log('[GameActions] 🔐 Using passkey (no session key)...', {
+            hasSessionKey,
+            hasKeyPair: !!keyPair,
+          });
           txHash = await sendPasskeyTransaction(contractAddress, value ?? 0n, data);
         }
 
@@ -299,6 +309,46 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
   const surrender = useCallback(() => executeAction('surrender'), [executeAction]);
   const formatBet = useCallback((value: bigint): string => formatEther(value), []);
 
+  // Cancel a timed out game (VRF never arrived)
+  const cancelTimedOutGame = useCallback(async (): Promise<boolean> => {
+    if (!address) {
+      setError('Wallet not connected');
+      return false;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = encodeFunctionData({
+        abi: RISEJACK_ABI,
+        functionName: 'cancelTimedOutGame',
+        args: [address],
+      });
+
+      const provider = getProvider();
+      console.log('[GameActions] 🚪 Cancelling timed out game...');
+
+      const txHash = (await provider.request({
+        method: 'eth_sendTransaction',
+        params: [{ from: address, to: contractAddress, data }],
+      })) as `0x${string}`;
+
+      console.log('[GameActions] 🚪 Cancel TX:', txHash);
+
+      // Wait a bit then refresh
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      onSuccess?.();
+      return true;
+    } catch (err: unknown) {
+      console.error('[GameActions] Cancel failed:', err);
+      setError(ErrorService.getSafeMessage(err));
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [address, contractAddress, onSuccess]);
+
   return {
     isLoading,
     error,
@@ -308,6 +358,7 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
     stand,
     double,
     surrender,
+    cancelTimedOutGame,
     formatBet,
   };
 }

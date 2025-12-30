@@ -51,6 +51,23 @@ export function useContractState(address: `0x${string}` | null): UseContractStat
         dealerValue: dv,
       } = await ContractService.getFullGameData(addr);
 
+      console.log('[ContractState] 🔍 Game state:', {
+        state: gd?.state,
+        stateLabel: gd
+          ? [
+              'Idle',
+              'WaitingVRF',
+              'PlayerTurn',
+              'DealerTurn',
+              'PlayerWin',
+              'DealerWin',
+              'Push',
+              'Blackjack',
+            ][gd.state]
+          : 'null',
+        playerCards: gd?.playerCards,
+        bet: gd?.bet?.toString(),
+      });
       setGameData(gd);
       setPlayerValue(pv);
       setDealerValue(dv);
@@ -71,7 +88,10 @@ export function useContractState(address: `0x${string}` | null): UseContractStat
     }
 
     // Single fetch on connect - no polling!
-    refetch();
+    console.log('[ContractState] 🔍 Initial fetch for address:', address);
+    refetch().then(() => {
+      console.log('[ContractState] 🔍 Initial gameData fetched');
+    });
   }, [address, refetch]);
 
   return {

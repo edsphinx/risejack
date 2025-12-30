@@ -200,9 +200,16 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
 
         if (hasSessionKey && keyPair) {
           console.log('[GameActions] Using session key...');
-          const result = await sendSessionTransaction(contractAddress, value ?? 0n, data);
-          txHash = result.txHash;
-          gameEndData = result.gameEndData;
+          try {
+            const result = await sendSessionTransaction(contractAddress, value ?? 0n, data);
+            txHash = result.txHash;
+            gameEndData = result.gameEndData;
+          } catch (sessionErr) {
+            // Session key failed - fallback to passkey
+            console.warn('[GameActions] Session key failed, falling back to passkey:', sessionErr);
+            console.log('[GameActions] Falling back to passkey...');
+            txHash = await sendPasskeyTransaction(contractAddress, value ?? 0n, data);
+          }
         } else {
           console.log('[GameActions] Using passkey...');
           txHash = await sendPasskeyTransaction(contractAddress, value ?? 0n, data);

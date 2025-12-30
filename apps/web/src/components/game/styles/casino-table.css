@@ -808,16 +808,17 @@
 
 .controls-area-layout {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
+  /* Equal height */
   gap: 1rem;
   margin-top: 1rem;
+  width: 100%;
 }
 
 .controls-panel {
   flex: 1;
-  max-width: 400px;
-  min-height: 180px;
-  padding: 1rem 1.5rem;
+  min-height: 240px;
+  padding: 1.25rem 1.5rem;
   background: rgba(30, 41, 59, 0.5);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(71, 85, 105, 0.5);
@@ -829,13 +830,23 @@
 
 .history-panel {
   flex-shrink: 0;
-  width: 280px;
+  width: 300px;
+  display: flex;
+}
+
+.history-panel .game-history {
+  flex: 1;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Desktop: Side by side centered */
 @media (min-width: 1024px) {
   .controls-area-layout {
-    justify-content: center;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 

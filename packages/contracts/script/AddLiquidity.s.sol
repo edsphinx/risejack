@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Script, console} from "forge-std/Script.sol";
-import {CHIPToken} from "../src/defi/CHIPToken.sol";
+import { Script, console } from "forge-std/Script.sol";
+import { CHIPToken } from "../src/defi/CHIPToken.sol";
 
 interface IUniswapV2Router02 {
     function addLiquidityETH(
@@ -18,7 +18,10 @@ interface IUniswapV2Router02 {
 }
 
 interface IUniswapV2Factory {
-    function getPair(address tokenA, address tokenB) external view returns (address pair);
+    function getPair(
+        address tokenA,
+        address tokenB
+    ) external view returns (address pair);
 }
 
 contract AddLiquidity is Script {
@@ -62,7 +65,9 @@ contract AddLiquidity is Script {
 
         // Add liquidity with short deadline to minimize MEV
         IUniswapV2Router02 router = IUniswapV2Router02(ROUTER);
-        (uint256 amountToken, uint256 amountETH, uint256 liquidity) = router.addLiquidityETH{value: ethAmount}(
+        (uint256 amountToken, uint256 amountETH, uint256 liquidity) = router.addLiquidityETH{
+            value: ethAmount
+        }(
             CHIP,
             chipAmount,
             chipAmount, // min token amount (exact for first liquidity add)

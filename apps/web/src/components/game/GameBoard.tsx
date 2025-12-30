@@ -5,6 +5,7 @@ import { Hand, HandValue } from './Hand';
 import { ActionButtons } from './ActionButtons';
 import { CardDeck } from './CardDeck';
 import { GameHistory } from './GameHistory';
+import { VRFWaitingOverlay } from './VRFWaitingOverlay';
 import { ContractService } from '@/services';
 import { StorageService } from '@/services/storage.service';
 import { GameState, type GameResult } from '@risejack/shared';
@@ -139,10 +140,30 @@ export function GameBoard() {
     (!game.gameData || game.gameData.state === GameState.Idle) && cooldownRemaining === 0;
   const isIdle = canBet && !game.lastGameResult;
 
+  // Check if waiting for VRF (stuck state detection)
+  const isWaitingVRF =
+    game.gameData?.state === GameState.WaitingForDeal ||
+    game.gameData?.state === GameState.WaitingForHit;
+
   // Can double only on first action (2 cards)
   const canDouble = canPlay && game.gameData?.playerCards.length === 2 && !game.gameData.isDoubled;
   // Can surrender only on first action
   const canSurrender = canPlay && game.gameData?.playerCards.length === 2;
+
+  // Debug: Log rendering decision
+  console.log('[GameBoard] 🎮 Render decision:', {
+    isConnected: wallet.isConnected,
+    gameState: game.gameData?.state,
+    isIdle,
+    canBet,
+    canPlay,
+    gameResult,
+    willShow: !wallet.isConnected
+      ? 'Connect Wallet'
+      : isIdle || gameResult
+        ? 'Betting UI'
+        : 'ActionButtons',
+  });
 
   // Combined error
   const error = wallet.error || game.error;
@@ -405,16 +426,26 @@ export function GameBoard() {
                   </p>
                 </div>
               ) : (
-                /* Action Buttons */
-                <ActionButtons
-                  onHit={game.hit}
-                  onStand={game.stand}
-                  onDouble={game.double}
-                  onSurrender={game.surrender}
-                  canDouble={canDouble}
-                  canSurrender={canSurrender}
-                  isLoading={game.isLoading}
-                />
+                /* Action Buttons with VRF Overlay if stuck */
+                <div className="relative">
+                  <ActionButtons
+                    onHit={game.hit}
+                    onStand={game.stand}
+                    onDouble={game.double}
+                    onSurrender={game.surrender}
+                    canDouble={canDouble}
+                    canSurrender={canSurrender}
+                    isLoading={game.isLoading}
+                  />
+                  {/* VRF Waiting Overlay - shows when waiting for VRF */}
+                  {isWaitingVRF && game.gameData?.timestamp && (
+                    <VRFWaitingOverlay
+                      gameTimestamp={game.gameData.timestamp}
+                      onCancel={game.cancelTimedOutGame}
+                      isLoading={game.isLoading}
+                    />
+                  )}
+                </div>
               )}
             </div>
 

@@ -54,6 +54,7 @@ export interface UseGameStateReturn {
   stand: () => Promise<boolean>;
   double: () => Promise<boolean>;
   surrender: () => Promise<boolean>;
+  cancelTimedOutGame: () => Promise<boolean>;
 
   // Utils
   fetchGameState: () => Promise<void>;
@@ -281,6 +282,7 @@ export function useGameState(wallet: UseRiseWalletReturn): UseGameStateReturn {
     stand: wrappedStand,
     double: wrappedDouble,
     surrender: wrappedSurrender,
+    cancelTimedOutGame: actions.cancelTimedOutGame,
 
     // Utils
     fetchGameState: state.refetch,

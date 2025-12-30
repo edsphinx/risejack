@@ -15,9 +15,17 @@ import type { BetLimits, GameResult } from '@risejack/shared';
 // Valid game action types
 type GameActionName = 'placeBet' | 'hit' | 'stand' | 'double' | 'surrender';
 
+// Card dealt from transaction logs
+interface CardDealtFromTx {
+  card: number;
+  isDealer: boolean;
+  faceUp: boolean;
+}
+
 export interface GameEndData {
   result: GameResult;
   payout: bigint;
+  cardsDealt?: CardDealtFromTx[]; // Cards from this transaction
 }
 
 export interface UseGameActionsReturn {

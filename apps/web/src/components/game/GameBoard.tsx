@@ -323,16 +323,17 @@ export function GameBoard() {
                   <div className="zone-label">Your Hand</div>
                 </div>
 
-                {/* Bet display - right side on desktop, between values on mobile */}
-                {game.gameData && game.gameData.bet > 0n && (
-                  <div className="bet-display-side">
-                    <span className="bet-label">BET</span>
-                    <span className="bet-value">
-                      {game.formatBet(game.gameData.bet)} ETH
-                      {game.gameData.isDoubled && ' ×2'}
-                    </span>
-                  </div>
-                )}
+                {/* Bet display - always visible to prevent layout shift */}
+                <div
+                  className={`bet-display-side ${game.gameData && game.gameData.bet > 0n ? '' : 'bet-placeholder'}`}
+                >
+                  <span className="bet-label">BET</span>
+                  <span className="bet-value">
+                    {game.gameData && game.gameData.bet > 0n
+                      ? `${game.formatBet(game.gameData.bet)} ETH${game.gameData.isDoubled ? ' ×2' : ''}`
+                      : '-- ETH'}
+                  </span>
+                </div>
 
                 {/* INLINE RESULT BANNER - DEGEN UX with glass effect */}
                 {gameResult && getResultStyle(gameResult) && (

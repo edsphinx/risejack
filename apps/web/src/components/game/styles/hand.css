@@ -249,6 +249,13 @@
   background: rgba(255, 0, 60, 0.3);
 }
 
+/* Placeholder style - shown before cards are dealt */
+.hand-value-standalone.value-placeholder {
+  background: rgba(100, 116, 139, 0.1);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  color: rgba(100, 116, 139, 0.5);
+}
+
 .hand-winner .hand-cards {
   filter: drop-shadow(0 0 20px rgba(0, 255, 100, 0.4));
 }

@@ -94,7 +94,7 @@ contract DeployTestnet is Script {
         console.log("VRF timeout set to 10 seconds");
 
         // Set low min bet for testing (0.00001 ETH = 10000000000000 wei)
-        risejack.setBetLimits(0.00001 ether, 0.1 ether);
+        risejack.setBetLimits(0.000_01 ether, 0.1 ether);
         console.log("Bet limits: 0.00001 - 0.1 ETH");
 
         // Disable min reserve for testnet (prevents auto-pause on losses)

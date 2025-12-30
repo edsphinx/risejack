@@ -67,6 +67,7 @@ export function ActionButtons({
 
   return (
     <div className="action-buttons-container">
+      {/* Row 1: Risky actions - HIT + DOUBLE */}
       {/* HIT - Most attractive (house benefits from busts) */}
       <button
         onClick={() => handleAction('hit', onHit)}
@@ -74,15 +75,6 @@ export function ActionButtons({
         className="action-btn action-btn-hit"
       >
         <ButtonContent label="HIT ME" emoji="🎯" action="hit" />
-      </button>
-
-      {/* STAND - Neutral option */}
-      <button
-        onClick={() => handleAction('stand', onStand)}
-        disabled={anyPending}
-        className="action-btn action-btn-stand"
-      >
-        <ButtonContent label="HODL" emoji="✋" action="stand" />
       </button>
 
       {/* DOUBLE - Exciting/FOMO (doubles the bet) */}
@@ -94,13 +86,23 @@ export function ActionButtons({
         <ButtonContent label="2X" emoji="💰" action="double" />
       </button>
 
+      {/* Row 2: Conservative actions - STAND + SURRENDER */}
+      {/* STAND - Neutral option */}
+      <button
+        onClick={() => handleAction('stand', onStand)}
+        disabled={anyPending}
+        className="action-btn action-btn-stand"
+      >
+        <ButtonContent label="HODL" emoji="✋" action="stand" />
+      </button>
+
       {/* SURRENDER - Least attractive (player recovers money) */}
       <button
         onClick={() => handleAction('surrender', onSurrender)}
         disabled={anyPending || !canSurrender}
         className={`action-btn action-btn-surrender ${!canSurrender ? 'disabled-muted' : ''}`}
       >
-        <ButtonContent label="FOLD" emoji="🏳️" action="surrender" />
+        <ButtonContent label="SURRENDER" emoji="🏳️" action="surrender" />
       </button>
     </div>
   );

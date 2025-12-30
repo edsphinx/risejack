@@ -405,8 +405,17 @@ If needed, deploy separately to:
 
 ## License
 
-MIT License - see [LICENSE](./LICENSE) for details.
+This project is licensed under the **Business Source License 1.1 (BSL)**.
+
+- **Change License**: Apache 2.0 (effective 2028-04-01)
+- **Commercial Use**: Restricted until the Change Date
+
+See [LICENSE](./LICENSE) for full details.
 
 ---
 
-Built for Rise Chain | Powered by Bun
+## Author
+
+Developed by **[@edsphinx](https://github.com/edsphinx)**
+
+Built for Rise Chain | Powered by Bun | Secured by Foundry

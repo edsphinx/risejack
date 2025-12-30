@@ -49,20 +49,34 @@ export function GameBoard() {
   })();
 
   // When game ends, store the final cards for display
-  // DON'T auto-clear - keep visible until user starts new game
+  // Use lastGameResult cards if available, otherwise fall back to gameData
   useEffect(() => {
     if (game.lastGameResult) {
-      // Store the final cards and values for display
+      // Get cards: prefer lastGameResult, but fall back to gameData if WebSocket race condition
+      const playerCards =
+        (game.lastGameResult.playerCards?.length >= 2
+          ? game.lastGameResult.playerCards
+          : game.gameData?.playerCards) || [];
+      const dealerCards =
+        (game.lastGameResult.dealerCards?.length >= 2
+          ? game.lastGameResult.dealerCards
+          : game.gameData?.dealerCards) || [];
+
+      console.log('[GameBoard] Setting lastHand with:', {
+        playerCards,
+        dealerCards,
+        fromResult: game.lastGameResult.playerCards?.length >= 2,
+      });
+
       setLastHand({
-        playerCards: game.lastGameResult.playerCards,
-        dealerCards: game.lastGameResult.dealerCards,
+        playerCards: [...playerCards],
+        dealerCards: [...dealerCards],
         playerValue: game.lastGameResult.playerFinalValue,
         dealerValue: game.lastGameResult.dealerFinalValue,
         bet: 0n,
       });
-      // No auto-clear - user will see this until they start a new game
     }
-  }, [game.lastGameResult]);
+  }, [game.lastGameResult, game.gameData]);
 
   // Track cooldown - check when in idle state or after game ends
   useEffect(() => {

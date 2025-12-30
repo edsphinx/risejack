@@ -7,10 +7,7 @@
   border-radius: 12px;
   padding: 0.75rem;
   width: 100%;
-  max-width: 300px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  max-width: 280px;
 }
 
 .game-history.empty {
@@ -92,12 +89,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  flex: 1;
+  max-height: 200px;
   overflow-y: auto;
 }
 
 .game-history.expanded .history-list {
-  max-height: none;
+  max-height: 400px;
 }
 
 /* Scrollbar styling */
@@ -115,15 +112,16 @@
   border-radius: 2px;
 }
 
-/* History item - compact */
+/* History item */
 .history-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.25rem 0.4rem;
+  padding: 0.05rem 0.5rem 0.05rem 0.5rem;
   border-radius: 6px;
   background: rgba(30, 41, 59, 0.5);
   transition: all 0.15s;
+  line-height: 1.1;
 }
 
 .history-item:hover {
@@ -152,14 +150,16 @@
 }
 
 .item-result {
-  width: 16px;
-  min-width: 16px;
+  width: 24px;
+  min-width: 24px;
   text-align: center;
   flex-shrink: 0;
 }
 
 .result-emoji {
-  font-size: 0.65rem;
+  font-size: 0.5rem;
+  transform: scale(0.5);
+  display: inline-block;
 }
 
 .item-details {

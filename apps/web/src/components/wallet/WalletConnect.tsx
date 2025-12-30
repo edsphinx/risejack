@@ -121,7 +121,7 @@ export function WalletConnect({
       {/* Balance */}
       {balance !== null && (
         <div className="header-badge balance">
-          <span className="badge-balance">{Number(formatEther(balance)).toFixed(4)} ETH</span>
+          <span className="badge-balance">{Number(formatEther(balance)).toFixed(5)} ETH</span>
         </div>
       )}
 

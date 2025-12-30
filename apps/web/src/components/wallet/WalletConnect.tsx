@@ -102,13 +102,10 @@ export function WalletConnect({
         <div className="header-badge session-active">
           <span>🔑</span>
           <span className="badge-text badge-time">{formatTime(sessionExpiry)}</span>
-          <button
-            onClick={onRevokeSession}
-            className="text-red-400 hover:text-red-300 ml-1"
-            title="Revoke"
-          >
+          <span className="badge-separator">|</span>
+          <span onClick={onRevokeSession} className="badge-disconnect" title="Revoke session">
             ✕
-          </button>
+          </span>
         </div>
       ) : (
         <button

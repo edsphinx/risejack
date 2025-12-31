@@ -1,0 +1,193 @@
+// Prisma Schema for Rise Casino
+// This is the source of truth for the database structure.
+// Run `bunx prisma migrate dev` to sync with Supabase.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // For Supabase pooling
+}
+
+// ==================== USERS ====================
+
+model User {
+  id            String   @id @default(uuid())
+  walletAddress String   @unique @map("wallet_address") @db.VarChar(42)
+
+  // Off-chain identity (optional, for marketing)
+  email         String?  @unique @db.VarChar(255)
+  emailVerified Boolean  @default(false) @map("email_verified")
+  telegramId    String?  @unique @map("telegram_id") @db.VarChar(64)
+  discordId     String?  @unique @map("discord_id") @db.VarChar(64)
+  twitterHandle String?  @map("twitter_handle") @db.VarChar(64)
+
+  // Profile
+  displayName String? @map("display_name") @db.VarChar(64)
+  avatarUrl   String? @map("avatar_url")
+
+  // Gamification
+  xp      Int    @default(0)
+  level   Int    @default(1)
+  vipTier String @default("bronze") @map("vip_tier") @db.VarChar(16) // bronze, silver, gold, platinum, diamond
+
+  // Analytics (AI-populated)
+  riskScore    Float? @map("risk_score") // 0.0 (conservative) to 1.0 (degen)
+  ltvPredicted Float? @map("ltv_predicted") // Predicted Lifetime Value
+
+  // Referral
+  referrerId   String? @map("referrer_id")
+  referrer     User?   @relation("Referrals", fields: [referrerId], references: [id])
+  referees     User[]  @relation("Referrals")
+  referralCode String  @unique @map("referral_code") @db.VarChar(16)
+
+  // Timestamps
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")
+  lastSeenAt DateTime? @map("last_seen_at")
+
+  // Relations
+  games            Game[]
+  referralEarnings ReferralEarning[] @relation("ReferrerEarnings")
+  refereeEarnings  ReferralEarning[] @relation("RefereeEarnings")
+  sessions         Session[]
+  emailSubscription EmailSubscription?
+
+  @@index([walletAddress])
+  @@index([referrerId])
+  @@index([vipTier])
+  @@map("users")
+}
+
+// ==================== GAMES ====================
+
+model Game {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Game info
+  gameType    String @map("game_type") @db.VarChar(32) // 'blackjack', 'roulette', 'poker'
+  txHash      String @unique @map("tx_hash") @db.VarChar(66)
+  blockNumber BigInt @map("block_number")
+
+  // Bet details (stored as string for BigInt compatibility)
+  betAmount String @map("bet_amount") @db.VarChar(78) // Wei
+  currency  String @db.VarChar(42) // 'ETH' or token address
+
+  // Outcome
+  payout  String @db.VarChar(78)
+  pnl     String @db.VarChar(78) // Can be negative
+  outcome String @db.VarChar(32) // 'win', 'lose', 'push', 'blackjack'
+
+  // Game-specific data
+  gameData Json? @map("game_data") // { playerHand: [2,11], dealerHand: [...] }
+
+  // Timestamps
+  startedAt DateTime  @map("started_at")
+  endedAt   DateTime? @default(now()) @map("ended_at")
+
+  // Relations
+  referralEarnings ReferralEarning[]
+
+  @@index([userId])
+  @@index([gameType])
+  @@index([blockNumber])
+  @@index([endedAt(sort: Desc)])
+  @@map("games")
+}
+
+// ==================== REFERRAL EARNINGS ====================
+
+model ReferralEarning {
+  id         String @id @default(uuid())
+  referrerId String @map("referrer_id")
+  referrer   User   @relation("ReferrerEarnings", fields: [referrerId], references: [id])
+  refereeId  String @map("referee_id")
+  referee    User   @relation("RefereeEarnings", fields: [refereeId], references: [id])
+  gameId     String @map("game_id")
+  game       Game   @relation(fields: [gameId], references: [id])
+
+  // Earnings
+  tier      Int    @default(1) // 1 = direct, 2 = second-level
+  houseEdge String @map("house_edge") @db.VarChar(78)
+  earned    String @db.VarChar(78)
+  currency  String @db.VarChar(42)
+
+  // Claim status
+  claimed     Boolean   @default(false)
+  claimedAt   DateTime? @map("claimed_at")
+  claimTxHash String?   @map("claim_tx_hash") @db.VarChar(66)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([referrerId])
+  @@map("referral_earnings")
+}
+
+// ==================== EMAIL SUBSCRIPTIONS ====================
+
+model EmailSubscription {
+  id     String  @id @default(uuid())
+  userId String? @unique @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id])
+  email  String  @unique @db.VarChar(255)
+
+  status String  @default("subscribed") @db.VarChar(16) // subscribed, unsubscribed, bounced
+  source String? @db.VarChar(64) // 'landing_page', 'post_game', 'referral'
+
+  consentAt      DateTime  @default(now()) @map("consent_at")
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([status])
+  @@map("email_subscriptions")
+}
+
+// ==================== SESSIONS ====================
+
+model Session {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  startedAt    DateTime  @default(now()) @map("started_at")
+  endedAt      DateTime? @map("ended_at")
+  durationSecs Int?      @map("duration_secs")
+
+  // Attribution
+  referrerUrl String? @map("referrer_url")
+  utmSource   String? @map("utm_source") @db.VarChar(64)
+  utmMedium   String? @map("utm_medium") @db.VarChar(64)
+  utmCampaign String? @map("utm_campaign") @db.VarChar(64)
+
+  // Device info
+  userAgent    String? @map("user_agent")
+  ipGeoCountry String? @map("ip_geo_country") @db.VarChar(2)
+  ipGeoCity    String? @map("ip_geo_city") @db.VarChar(64)
+  deviceType   String? @map("device_type") @db.VarChar(16) // 'mobile', 'desktop', 'tablet'
+
+  @@index([userId])
+  @@index([startedAt(sort: Desc)])
+  @@map("sessions")
+}
+
+// ==================== LEADERBOARD SNAPSHOTS ====================
+
+model LeaderboardSnapshot {
+  id          String   @id @default(uuid())
+  period      String   @db.VarChar(16) // 'daily', 'weekly', 'monthly', 'all_time'
+  periodStart DateTime @map("period_start")
+
+  entries Json // [{ rank, userId, displayName, value, ... }]
+  metric  String @db.VarChar(32) // 'volume', 'wins', 'pnl', 'xp'
+
+  generatedAt DateTime @default(now()) @map("generated_at")
+
+  @@index([period, periodStart(sort: Desc)])
+  @@map("leaderboard_snapshots")
+}

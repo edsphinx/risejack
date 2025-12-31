@@ -1,89 +1,102 @@
-import { Hono } from 'hono'
-import { cors } from 'hono/cors'
-import { logger } from 'hono/logger'
-import { prettyJSON } from 'hono/pretty-json'
+/**
+ * Rise Casino API
+ *
+ * Powered by Hono + Prisma + Supabase
+ */
 
-const app = new Hono()
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+import { prettyJSON } from 'hono/pretty-json';
+
+// Route imports
+import users from './routes/users';
+import referrals from './routes/referrals';
+import leaderboard from './routes/leaderboard';
+
+const app = new Hono();
 
 // Middleware
-app.use('*', logger())
-app.use('*', cors())
-app.use('*', prettyJSON())
+app.use('*', logger());
+app.use(
+  '*',
+  cors({
+    origin: ['http://localhost:5173', 'https://risecasino.xyz'],
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
+  })
+);
+app.use('*', prettyJSON());
 
 // Health check
 app.get('/health', (c) => {
-    return c.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        service: 'risejack-api'
-    })
-})
+  return c.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'risecasino-api',
+    version: '1.0.0',
+  });
+});
 
-// API routes
+// Root endpoint
 app.get('/', (c) => {
-    return c.json({
-        name: 'Rise Blackjack API',
-        version: '0.1.0',
-        endpoints: {
-            health: '/health',
-            game: '/api/game',
-            stats: '/api/stats'
-        }
-    })
-})
+  return c.json({
+    name: 'Rise Casino API',
+    version: '1.0.0',
+    description: 'Backend for Rise Casino - Leaderboards, Referrals, User Stats',
+    endpoints: {
+      health: 'GET /health',
+      users: {
+        profile: 'GET /api/users/:walletAddress',
+        register: 'POST /api/users/register',
+        games: 'GET /api/users/:walletAddress/games',
+      },
+      referrals: {
+        stats: 'GET /api/referrals/:walletAddress',
+        history: 'GET /api/referrals/:walletAddress/history',
+        register: 'POST /api/referrals/register',
+      },
+      leaderboard: {
+        cached: 'GET /api/leaderboard/:period',
+        live: 'GET /api/leaderboard/live/:metric',
+      },
+    },
+  });
+});
 
-// Game routes (placeholder)
-const gameRoutes = new Hono()
+// Mount routes
+app.route('/api/users', users);
+app.route('/api/referrals', referrals);
+app.route('/api/leaderboard', leaderboard);
 
-gameRoutes.get('/state/:address', (c) => {
-    const address = c.req.param('address')
-    return c.json({
-        player: address,
-        status: 'idle',
-        balance: '0',
-        currentGame: null
-    })
-})
+// Global stats endpoint
+app.get('/api/stats', async (c) => {
+  // TODO: Implement with Prisma once DB is connected
+  return c.json({
+    totalGames: 0,
+    totalPlayers: 0,
+    totalVolume: '0',
+    houseEdge: '1.5%',
+    updatedAt: new Date().toISOString(),
+  });
+});
 
-gameRoutes.get('/history/:address', (c) => {
-    const address = c.req.param('address')
-    return c.json({
-        player: address,
-        games: [],
-        totalWins: 0,
-        totalLosses: 0
-    })
-})
+// 404 handler
+app.notFound((c) => {
+  return c.json({ error: 'Not found', path: c.req.path }, 404);
+});
 
-app.route('/api/game', gameRoutes)
-
-// Stats routes (placeholder)
-const statsRoutes = new Hono()
-
-statsRoutes.get('/global', (c) => {
-    return c.json({
-        totalGames: 0,
-        totalPlayers: 0,
-        totalVolume: '0',
-        houseEdge: '1.5%'
-    })
-})
-
-statsRoutes.get('/leaderboard', (c) => {
-    return c.json({
-        leaderboard: [],
-        updatedAt: new Date().toISOString()
-    })
-})
-
-app.route('/api/stats', statsRoutes)
+// Error handler
+app.onError((err, c) => {
+  console.error('API Error:', err);
+  return c.json({ error: 'Internal server error' }, 500);
+});
 
 // Start server
-const port = process.env.PORT || 3000
+const port = Number(process.env.PORT) || 3000;
 
-console.log(`🃏 Rise Blackjack API running on http://localhost:${port}`)
+console.log(`🎰 Rise Casino API running on http://localhost:${port}`);
 
 export default {
-    port,
-    fetch: app.fetch
-}
+  port,
+  fetch: app.fetch,
+};

@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'preact/hooks';
 import { ContractService } from '@/services';
+import { logger } from '@/lib/logger';
 import type { GameData, HandValue, BetLimits } from '@risejack/shared';
 
 export interface UseContractStateReturn {
@@ -35,7 +36,7 @@ export function useContractState(address: `0x${string}` | null): UseContractStat
   useEffect(() => {
     ContractService.getBetLimits()
       .then(setBetLimits)
-      .catch((err) => console.error('Failed to fetch bet limits:', err));
+      .catch((err) => logger.error('Failed to fetch bet limits:', err));
   }, []);
 
   // Fetch game state - stable callback (no deps that change)
@@ -51,7 +52,7 @@ export function useContractState(address: `0x${string}` | null): UseContractStat
         dealerValue: dv,
       } = await ContractService.getFullGameData(addr);
 
-      console.log('[ContractState] 🔍 Game state:', {
+      logger.log('[ContractState] 🔍 Game state:', {
         state: gd?.state,
         stateLabel: gd
           ? [
@@ -72,7 +73,7 @@ export function useContractState(address: `0x${string}` | null): UseContractStat
       setPlayerValue(pv);
       setDealerValue(dv);
     } catch (err) {
-      console.error('[ContractState] Failed to fetch game state:', err);
+      logger.error('[ContractState] Failed to fetch game state:', err);
     } finally {
       setIsFetching(false);
     }
@@ -88,9 +89,9 @@ export function useContractState(address: `0x${string}` | null): UseContractStat
     }
 
     // Single fetch on connect - no polling!
-    console.log('[ContractState] 🔍 Initial fetch for address:', address);
+    logger.log('[ContractState] 🔍 Initial fetch for address:', address);
     refetch().then(() => {
-      console.log('[ContractState] 🔍 Initial gameData fetched');
+      logger.log('[ContractState] 🔍 Initial gameData fetched');
     });
   }, [address, refetch]);
 

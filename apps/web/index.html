@@ -1,43 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Rise Blackjack - Sub-second on-chain Blackjack powered by Rise Chain's 10ms blocks" />
-    <title>Rise Blackjack | On-Chain Casino</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="app"></div>
-    <script>
-      // WebAuthn Polyfill for Rise Wallet SDK
-      // Fixes "publicKey.pubKeyCredParams is missing" error on some browsers/mobile
-      // This enables proper wallet connection on mobile devices and Firefox
-      if (navigator.credentials && navigator.credentials.create) {
-        const originalCreate = navigator.credentials.create;
-        navigator.credentials.create = async function(options) {
-          if (options && options.publicKey) {
-            if (!options.publicKey.pubKeyCredParams) {
-              options.publicKey.pubKeyCredParams = [];
-            }
-            const params = options.publicKey.pubKeyCredParams;
-            // Ensure ES256 (-7) is present
-            if (!params.some(p => p.alg === -7)) {
-              console.log("[WebAuthn Polyfill] Injecting ES256 algorithm");
-              params.push({ alg: -7, type: "public-key" });
-            }
-            // Ensure RS256 (-257) is present
-            if (!params.some(p => p.alg === -257)) {
-              console.log("[WebAuthn Polyfill] Injecting RS256 algorithm");
-              params.push({ alg: -257, type: "public-key" });
-            }
-          }
-          return originalCreate.call(navigator.credentials, options);
-        };
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Rise Blackjack - Sub-second on-chain Blackjack powered by Rise Chain's 10ms blocks" />
+  <title>Rise Blackjack | On-Chain Casino</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap"
+    rel="stylesheet" />
+</head>
+
+<body>
+  <div id="app"></div>
+  <script>
+    // WebAuthn Polyfill for Rise Wallet SDK
+    // Fixes "publicKey.pubKeyCredParams is missing" error on some browsers/mobile
+    // This enables proper wallet connection on mobile devices and Firefox
+    (function () {
+      'use strict';
+
+      if (!navigator.credentials || typeof navigator.credentials.create !== 'function') {
+        return; // WebAuthn not supported, skip polyfill
       }
-    </script>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+      const originalCreate = navigator.credentials.create.bind(navigator.credentials);
+
+      navigator.credentials.create = async function (options) {
+        try {
+          // Validate options is a proper object with expected structure
+          if (options === null || typeof options !== 'object') {
+            return originalCreate(options);
+          }
+
+          const publicKey = options.publicKey;
+          if (publicKey === null || typeof publicKey !== 'object') {
+            return originalCreate(options);
+          }
+
+          // Ensure pubKeyCredParams exists and is an array
+          if (!Array.isArray(publicKey.pubKeyCredParams)) {
+            publicKey.pubKeyCredParams = [];
+          }
+
+          const params = publicKey.pubKeyCredParams;
+
+          // Helper to safely check if algorithm exists with correct type
+          const hasAlgorithm = (alg) => params.some(p =>
+            p !== null &&
+            typeof p === 'object' &&
+            typeof p.alg === 'number' &&
+            p.alg === alg &&
+            p.type === 'public-key'
+          );
+
+          // Ensure ES256 (-7) is present (standard WebAuthn algorithm)
+          if (!hasAlgorithm(-7)) {
+            params.push({ alg: -7, type: 'public-key' });
+          }
+
+          // Ensure RS256 (-257) is present (standard WebAuthn algorithm)  
+          if (!hasAlgorithm(-257)) {
+            params.push({ alg: -257, type: 'public-key' });
+          }
+
+          return originalCreate(options);
+        } catch (err) {
+          // If polyfill fails, fall back to original behavior
+          return originalCreate(options);
+        }
+      };
+    })();
+  </script>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

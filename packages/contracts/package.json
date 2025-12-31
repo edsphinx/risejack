@@ -34,6 +34,10 @@
     "typecheck": "echo 'No TypeScript in contracts'"
   },
   "devDependencies": {
-    "typescript": "^5.7.2"
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@openzeppelin/contracts": "^5.4.0",
+    "hardhat": "^2.22.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

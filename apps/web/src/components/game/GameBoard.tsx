@@ -8,6 +8,7 @@ import { GameHistory } from './GameHistory';
 import { VRFWaitingOverlay } from './VRFWaitingOverlay';
 import { ContractService } from '@/services';
 import { StorageService } from '@/services/storage.service';
+import { logger } from '@/lib/logger';
 import { GameState, type GameResult } from '@risejack/shared';
 import './styles/casino-table.css';
 import './styles/action-buttons.css';
@@ -70,7 +71,7 @@ export function GameBoard() {
           ? game.lastGameResult.dealerCards
           : game.gameData?.dealerCards) || [];
 
-      console.log('[GameBoard] Setting lastHand with:', {
+      logger.log('[GameBoard] Setting lastHand with:', {
         playerCards,
         dealerCards,
         fromResult: game.lastGameResult.playerCards?.length >= 2,
@@ -115,7 +116,7 @@ export function GameBoard() {
         );
         setCooldownRemaining(remaining);
       } catch (e) {
-        console.error('[Cooldown] Error:', e);
+        logger.error('[Cooldown] Error:', e);
       }
     };
 
@@ -151,7 +152,7 @@ export function GameBoard() {
   const canSurrender = canPlay && game.gameData?.playerCards.length === 2;
 
   // Debug: Log rendering decision
-  console.log('[GameBoard] 🎮 Render decision:', {
+  logger.log('[GameBoard] 🎮 Render decision:', {
     isConnected: wallet.isConnected,
     gameState: game.gameData?.state,
     isIdle,

@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import { getProvider } from '@/lib/riseWallet';
+import { logger } from '@/lib/logger';
 
 // Storage key
 const WALLET_STORAGE_KEY = 'risejack.wallet';
@@ -77,20 +78,20 @@ export function useWalletConnection(): UseWalletConnectionReturn {
           const restoredAddress = accounts[0];
           // Verify it matches our saved address
           if (restoredAddress.toLowerCase() === savedWallet.address.toLowerCase()) {
-            console.log('🔗 Wallet auto-reconnected:', restoredAddress);
+            logger.log('🔗 Wallet auto-reconnected:', restoredAddress);
             setAddress(restoredAddress);
             setIsConnected(true);
             return;
           } else {
-            console.log('🔗 Different account found, clearing saved wallet');
+            logger.log('🔗 Different account found, clearing saved wallet');
             removeWallet();
           }
         } else {
-          console.log('🔗 No accounts found, wallet session expired');
+          logger.log('🔗 No accounts found, wallet session expired');
           // Don't remove saved wallet - user can manually reconnect
         }
       } catch {
-        console.warn('🔗 Could not verify wallet session');
+        logger.warn('🔗 Could not verify wallet session');
         removeWallet();
       }
     };
@@ -105,7 +106,7 @@ export function useWalletConnection(): UseWalletConnectionReturn {
     try {
       const provider = getProvider();
 
-      console.log('🔗 Connecting to Rise Wallet...');
+      logger.log('🔗 Connecting to Rise Wallet...');
       const accounts = (await provider.request({
         method: 'eth_requestAccounts',
       })) as `0x${string}`[];
@@ -115,7 +116,7 @@ export function useWalletConnection(): UseWalletConnectionReturn {
       }
 
       const walletAddress = accounts[0];
-      console.log('🔗 Connected:', walletAddress);
+      logger.log('🔗 Connected:', walletAddress);
 
       setAddress(walletAddress);
       setIsConnected(true);
@@ -137,7 +138,7 @@ export function useWalletConnection(): UseWalletConnectionReturn {
     setIsConnected(false);
     setError(null);
     removeWallet();
-    console.log('🔗 Disconnected');
+    logger.log('🔗 Disconnected');
   }, []);
 
   return {

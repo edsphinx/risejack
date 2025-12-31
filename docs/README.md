@@ -4,7 +4,6 @@
 
 ```
 docs/
-├── ROADMAP.md                 # Project timeline and milestones
 ├── whitepaper/
 │   └── WHITEPAPER.md          # Public-facing vision document
 ├── tokenomics/
@@ -12,11 +11,12 @@ docs/
 │   ├── STAKING_MODEL.md       # Staking mechanics and yields
 │   └── LIQUIDITY_POOLS.md     # AMM/DEX design
 ├── architecture/
-│   ├── SYSTEM_OVERVIEW.md     # High-level system architecture (Flows, Stack)
 │   ├── SMART_CONTRACTS.md     # Contract architecture
+│   ├── BACKEND_EVALUATION.md  # Backend stack decisions
 │   └── FRONTEND.md            # Frontend architecture
-├── security/
-│   └── SECURITY_MODEL.md      # Security measures, session keys, and audits
+├── growth/
+│   ├── GROWTH_STRATEGY.md     # Master growth & monetization plan
+│   └── DATA_SCHEMA.md         # SQL schema for analytics platform
 ├── business/
 │   ├── REVENUE_MODEL.md       # All revenue streams
 │   └── RISK_ANALYSIS.md       # Economic risks and mitigations
@@ -26,20 +26,20 @@ docs/
 
 ## 📋 Documents Overview
 
-| Document         | Purpose                                        | Audience             |
-| ---------------- | ---------------------------------------------- | -------------------- |
-| **Roadmap**      | Feature timeline and strategic goals           | Community, Team      |
-| **Whitepaper**   | Vision, value proposition, high-level overview | Investors, Community |
-| **Tokenomics**   | Token distribution, emissions, utility         | Analysts, Investors  |
-| **Architecture** | Technical design and implementation            | Developers           |
-| **Security**     | Security model, audits, and safety measures    | Developers, Auditors |
-| **Business**     | Revenue model, sustainability analysis         | Team, Investors      |
-| **Games**        | Individual game specifications                 | Developers, Auditors |
+| Document            | Purpose                                        | Audience             |
+| ------------------- | ---------------------------------------------- | -------------------- |
+| **Whitepaper**      | Vision, value proposition, high-level overview | Investors, Community |
+| **Tokenomics**      | Token distribution, emissions, utility         | Analysts, Investors  |
+| **Architecture**    | Technical design and implementation            | Developers           |
+| **Growth Strategy** | Viral loops, data monetization, AI roadmap     | Team, Investors      |
+| **Business**        | Revenue model, sustainability analysis         | Team, Investors      |
+| **Games**           | Individual game specifications                 | Developers, Auditors |
 
 ## 🚀 Reading Order
 
-1. [Roadmap](../docs/ROADMAP.md) (what's next)
-2. [Whitepaper](../docs/whitepaper/WHITEPAPER.md) (vision)
-3. [System Overview](../docs/architecture/SYSTEM_OVERVIEW.md) (how it works)
-4. [Security Model](../docs/security/SECURITY_MODEL.md) (safety)
-5. [Tokenomics](../docs/tokenomics/CHIP_TOKEN.md) (economics)
+1. [Whitepaper](./whitepaper/WHITEPAPER.md) (vision)
+2. [Growth Strategy](./growth/GROWTH_STRATEGY.md) (how we grow)
+3. [Revenue Model](./business/REVENUE_MODEL.md) (how we make money)
+4. [Data Schema](./growth/DATA_SCHEMA.md) (what we capture)
+5. [CHIP Token](./tokenomics/CHIP_TOKEN.md) (token design)
+6. Individual game specs

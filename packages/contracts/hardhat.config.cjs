@@ -1,5 +1,16 @@
 require("@nomicfoundation/hardhat-verify");
 
+/**
+ * Hardhat Configuration for Rise Casino
+ * 
+ * PURPOSE: This config is ONLY used for contract verification on Blockscout.
+ * All development, testing, and deployment is done with Foundry.
+ * 
+ * viaIR is ENABLED here to match the Foundry CI profile settings,
+ * ensuring bytecode matches for verification of complex contracts
+ * like RiseCasinoRouter that require IR optimization.
+ */
+
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
     solidity: {
@@ -9,6 +20,7 @@ module.exports = {
                 enabled: true,
                 runs: 200,
             },
+            // viaIR enabled to match Foundry CI profile for verification consistency
             viaIR: true,
             evmVersion: "prague",
         },

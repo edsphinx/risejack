@@ -13,6 +13,7 @@ import { prettyJSON } from 'hono/pretty-json';
 import users from './routes/users';
 import referrals from './routes/referrals';
 import leaderboard from './routes/leaderboard';
+import events from './routes/events';
 
 const app = new Hono();
 
@@ -59,6 +60,11 @@ app.get('/', (c) => {
         cached: 'GET /api/leaderboard/:period',
         live: 'GET /api/leaderboard/live/:metric',
       },
+      events: {
+        log: 'POST /api/events',
+        types: 'GET /api/events/types',
+        funnel: 'GET /api/events/funnel',
+      },
     },
   });
 });
@@ -67,6 +73,7 @@ app.get('/', (c) => {
 app.route('/api/users', users);
 app.route('/api/referrals', referrals);
 app.route('/api/leaderboard', leaderboard);
+app.route('/api/events', events);
 
 // Global stats endpoint
 app.get('/api/stats', async (c) => {
@@ -94,6 +101,7 @@ app.onError((err, c) => {
 // Start server
 const port = Number(process.env.PORT) || 3000;
 
+// eslint-disable-next-line no-console
 console.log(`🎰 Rise Casino API running on http://localhost:${port}`);
 
 export default {

@@ -16,65 +16,7 @@
 
 <body>
   <div id="app"></div>
-  <script>
-    // WebAuthn Polyfill for Rise Wallet SDK
-    // Fixes "publicKey.pubKeyCredParams is missing" error on some browsers/mobile
-    // This enables proper wallet connection on mobile devices and Firefox
-    (function () {
-      'use strict';
-
-      if (!navigator.credentials || typeof navigator.credentials.create !== 'function') {
-        return; // WebAuthn not supported, skip polyfill
-      }
-
-      const originalCreate = navigator.credentials.create.bind(navigator.credentials);
-
-      navigator.credentials.create = async function (options) {
-        try {
-          // Validate options is a proper object with expected structure
-          if (options === null || typeof options !== 'object') {
-            return originalCreate(options);
-          }
-
-          const publicKey = options.publicKey;
-          if (publicKey === null || typeof publicKey !== 'object') {
-            return originalCreate(options);
-          }
-
-          // Ensure pubKeyCredParams exists and is an array
-          if (!Array.isArray(publicKey.pubKeyCredParams)) {
-            publicKey.pubKeyCredParams = [];
-          }
-
-          const params = publicKey.pubKeyCredParams;
-
-          // Helper to safely check if algorithm exists with correct type
-          const hasAlgorithm = (alg) => params.some(p =>
-            p !== null &&
-            typeof p === 'object' &&
-            typeof p.alg === 'number' &&
-            p.alg === alg &&
-            p.type === 'public-key'
-          );
-
-          // Ensure ES256 (-7) is present (standard WebAuthn algorithm)
-          if (!hasAlgorithm(-7)) {
-            params.push({ alg: -7, type: 'public-key' });
-          }
-
-          // Ensure RS256 (-257) is present (standard WebAuthn algorithm)  
-          if (!hasAlgorithm(-257)) {
-            params.push({ alg: -257, type: 'public-key' });
-          }
-
-          return originalCreate(options);
-        } catch (err) {
-          // If polyfill fails, fall back to original behavior
-          return originalCreate(options);
-        }
-      };
-    })();
-  </script>
+  <!-- WebAuthn polyfill loaded via main.tsx for CSP compliance -->
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

@@ -28,12 +28,25 @@ export function VRFWaitingOverlay({ gameTimestamp, onCancel, isLoading }: VRFWai
   useEffect(() => {
     const updateElapsed = () => {
       const now = Math.floor(Date.now() / 1000);
-      // Safe conversion with bounds checking
-      // JavaScript's MAX_SAFE_INTEGER is 2^53-1 (9007199254740991)
-      // Unix timestamps won't exceed this until year 285616, but we add safety check
-      const MAX_SAFE_TIMESTAMP = BigInt(Number.MAX_SAFE_INTEGER);
-      const safeTimestamp = gameTimestamp > MAX_SAFE_TIMESTAMP ? MAX_SAFE_TIMESTAMP : gameTimestamp;
-      const gameStart = Number(safeTimestamp);
+
+      // Safe BigInt to Number conversion with comprehensive bounds checking
+      // Note: BigInt comparison operators (>, <) work correctly between BigInts
+      let gameStart: number;
+
+      // Handle edge cases: invalid timestamps (0, negative, or impossibly large)
+      if (gameTimestamp <= 0n) {
+        // Invalid timestamp - treat as just started
+        gameStart = now;
+      } else {
+        // JavaScript's MAX_SAFE_INTEGER is 2^53-1 (9007199254740991)
+        // This is ~285 million years from Unix epoch, so safe for any real timestamp
+        const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
+        // Clamp to safe range before converting to Number
+        const safeTimestamp = gameTimestamp > MAX_SAFE ? MAX_SAFE : gameTimestamp;
+        gameStart = Number(safeTimestamp);
+      }
+
+      // Ensure elapsed is never negative (handles clock skew or future timestamps)
       setElapsedSeconds(Math.max(0, now - gameStart));
     };
 

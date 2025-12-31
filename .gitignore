@@ -48,4 +48,4 @@ coverage/
 
 # Misc
 *.tsbuildinfo
-*.local
+*.localapps/indexer/indexer

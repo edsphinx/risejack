@@ -1,23 +1,25 @@
 {
-    "name": "@risejack/api",
-    "version": "0.1.0",
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "dev": "bun run --watch src/index.ts",
-        "build": "bun build src/index.ts --outdir dist --target bun",
-        "start": "bun run dist/index.js",
-        "typecheck": "tsc --noEmit",
-        "lint": "eslint src --ext .ts",
-        "clean": "rm -rf dist"
-    },
-    "dependencies": {
-        "hono": "^4.6.14",
-        "@risejack/shared": "workspace:*"
-    },
-    "devDependencies": {
-        "@types/bun": "^1.1.14",
-        "bun-types": "^1.3.5",
-        "typescript": "^5.7.2"
-    }
+  "name": "@risejack/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.2.0",
+    "@risejack/shared": "workspace:*",
+    "hono": "^4.6.14",
+    "prisma": "^7.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "bun-types": "^1.3.5",
+    "typescript": "^5.7.2"
+  }
 }

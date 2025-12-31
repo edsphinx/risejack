@@ -24,6 +24,12 @@ interface IUniswapV2Factory {
     ) external view returns (address pair);
 }
 
+interface IERC20 {
+    function balanceOf(
+        address account
+    ) external view returns (uint256);
+}
+
 contract AddLiquidity is Script {
     address constant ROUTER = 0x67b3925D7b2b2d9BD316DAC8bCF888A60B9F24F0;
     address constant CHIP = 0x2D97Ba366119e55B1a98D9349ce35868920C7Ae8;
@@ -71,9 +77,10 @@ contract AddLiquidity is Script {
 
     function _getLPBalance(
         address account
-    ) internal view returns (address) {
+    ) internal view returns (uint256) {
         IUniswapV2Factory factory = IUniswapV2Factory(IUniswapV2Router02(ROUTER).factory());
-        return factory.getPair(CHIP, WETH);
+        address lpToken = factory.getPair(CHIP, WETH);
+        return IERC20(lpToken).balanceOf(account);
     }
 }
 

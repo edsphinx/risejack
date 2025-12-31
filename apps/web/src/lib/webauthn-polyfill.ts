@@ -45,12 +45,19 @@
                 publicKey.pubKeyCredParams.length === 0;
 
             if (needsPolyfill) {
-                // Ensure pubKeyCredParams exists as an array
-                if (!Array.isArray(publicKey.pubKeyCredParams)) {
-                    publicKey.pubKeyCredParams = [];
-                }
+                // SECURITY: Deep clone options to avoid mutating the original object
+                // This prevents potential side effects on the caller's data
+                const clonedOptions = {
+                    ...options,
+                    publicKey: {
+                        ...publicKey,
+                        pubKeyCredParams: Array.isArray(publicKey.pubKeyCredParams)
+                            ? [...publicKey.pubKeyCredParams]
+                            : []
+                    }
+                };
 
-                const params = publicKey.pubKeyCredParams;
+                const params = clonedOptions.publicKey.pubKeyCredParams;
 
                 // Helper to safely check if algorithm exists with correct type
                 const hasAlgorithm = (alg: number) => params.some(p =>
@@ -70,6 +77,8 @@
                 if (!hasAlgorithm(-257)) {
                     params.push({ alg: -257, type: 'public-key' });
                 }
+
+                return originalCreate(clonedOptions);
             }
 
             return originalCreate(options);

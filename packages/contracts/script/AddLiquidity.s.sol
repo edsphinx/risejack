@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { Script, console } from "forge-std/Script.sol";
+import { Script, console2 } from "forge-std/Script.sol";
 import { CHIPToken } from "../src/defi/CHIPToken.sol";
 
 interface IUniswapV2Router02 {
@@ -33,15 +33,15 @@ contract AddLiquidity is Script {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
 
-        console.log("Deployer:", deployer);
-        console.log("ETH amount:", 0.0001 ether);
-        console.log("CHIP amount:", 1000 ether);
+        console2.log("Deployer:", deployer);
+        console2.log("ETH amount:", uint256(0.0001 ether));
+        console2.log("CHIP amount:", uint256(1000 ether));
 
         vm.startBroadcast(deployerPrivateKey);
 
         // Approve CHIP for Router
         CHIPToken(CHIP).approve(ROUTER, 1000 ether);
-        console.log("CHIP approved for Router");
+        console2.log("CHIP approved for Router");
 
         // Add liquidity - use inline values to reduce stack usage
         IUniswapV2Router02(ROUTER).addLiquidityETH{ value: 0.0001 ether }(
@@ -53,7 +53,7 @@ contract AddLiquidity is Script {
             block.timestamp + 600
         );
 
-        console.log("Liquidity added!");
+        console2.log("Liquidity added!");
 
         // Log results separately to avoid stack issues
         _logResults(deployer);
@@ -64,9 +64,9 @@ contract AddLiquidity is Script {
     function _logResults(
         address deployer
     ) internal view {
-        console.log("CHIP used:", 1000 ether);
-        console.log("ETH used:", 0.0001 ether);
-        console.log("LP tokens received:", _getLPBalance(deployer));
+        console2.log("CHIP used:", uint256(1000 ether));
+        console2.log("ETH used:", uint256(0.0001 ether));
+        console2.log("LP tokens received:", _getLPBalance(deployer));
     }
 
     function _getLPBalance(

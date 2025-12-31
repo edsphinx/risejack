@@ -12,6 +12,7 @@ import {
   isSessionKeyValid,
   type SessionKeyData,
 } from '@/services/sessionKeyManager';
+import { logger } from '@/lib/logger';
 import type { TimeRemaining } from '@risejack/shared';
 
 export interface UseSessionKeyReturn {
@@ -36,7 +37,7 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
 
     const existingKey = getActiveSessionKey();
     if (existingKey && isSessionKeyValid(existingKey)) {
-      console.log('🔑 Restored session key from localStorage');
+      logger.log('🔑 Restored session key from localStorage');
       setSessionData(existingKey);
     }
   }, [address]);
@@ -47,7 +48,7 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
 
     const interval = setInterval(() => {
       if (!isSessionKeyValid(sessionData)) {
-        console.log('🔑 Session key expired');
+        logger.log('🔑 Session key expired');
         setSessionData(null);
       } else {
         // Force re-render to update time remaining
@@ -89,7 +90,7 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
       setSessionData(newKey);
       return true;
     } catch (err) {
-      console.error('🔑 Failed to create session key:', err);
+      logger.error('🔑 Failed to create session key:', err);
       return false;
     } finally {
       setIsCreating(false);
@@ -103,7 +104,7 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
       await revokeSessionKey(sessionData.publicKey);
       setSessionData(null);
     } catch (err) {
-      console.error('🔑 Failed to revoke session key:', err);
+      logger.error('🔑 Failed to revoke session key:', err);
     }
   }, [sessionData]);
 

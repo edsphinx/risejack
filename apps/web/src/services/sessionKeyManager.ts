@@ -7,6 +7,7 @@
 import { P256, PublicKey, Signature } from 'ox';
 import { getProvider } from '@/lib/riseWallet';
 import { GAME_PERMISSIONS } from '@/lib/gamePermissions';
+import { logger } from '@/lib/logger';
 
 // Storage prefix
 const STORAGE_PREFIX = 'risejack.sessionKey';
@@ -98,7 +99,7 @@ export function hasUsableSessionKey(): boolean {
  * Create a new session key and request permissions from Rise Wallet
  */
 export async function createSessionKey(walletAddress: string): Promise<SessionKeyData> {
-  console.log('🔑 Creating new session key...');
+  logger.log('🔑 Creating new session key...');
 
   const provider = getProvider();
 
@@ -108,8 +109,8 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
     includePrefix: false,
   });
 
-  console.log('🔑 Generated P256 key pair');
-  console.log('   Public key:', publicKey.slice(0, 20) + '...');
+  logger.log('🔑 Generated P256 key pair');
+  logger.log('   Public key:', publicKey.slice(0, 20) + '...');
 
   // Calculate expiry
   const expiry = Math.floor(Date.now() / 1000) + SESSION_EXPIRY_SECONDS;
@@ -130,7 +131,7 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
     },
   ];
 
-  console.log('🔑 Requesting permissions:', permissionParams);
+  logger.log('🔑 Requesting permissions:', permissionParams);
 
   // Use type assertion since SDK types are too strict for our params
   await (
@@ -140,7 +141,7 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
     params: permissionParams,
   });
 
-  console.log('🔑 Permissions granted');
+  logger.log('🔑 Permissions granted');
 
   // Store session key data
   const sessionKeyData: SessionKeyData = {
@@ -157,8 +158,8 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
   // Update cache
   activeKeyPair = sessionKeyData;
 
-  console.log('🔑 Session key created successfully');
-  console.log('   Expires:', new Date(expiry * 1000).toLocaleString());
+  logger.log('🔑 Session key created successfully');
+  logger.log('   Expires:', new Date(expiry * 1000).toLocaleString());
 
   return sessionKeyData;
 }
@@ -167,7 +168,7 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
  * Revoke a session key
  */
 export async function revokeSessionKey(publicKey: string): Promise<void> {
-  console.log('🔑 Revoking session key:', publicKey.slice(0, 20) + '...');
+  logger.log('🔑 Revoking session key:', publicKey.slice(0, 20) + '...');
 
   const provider = getProvider();
 
@@ -178,9 +179,9 @@ export async function revokeSessionKey(publicKey: string): Promise<void> {
       method: 'wallet_revokePermissions',
       params: [{ id: publicKey }],
     });
-    console.log('🔑 Permissions revoked on wallet');
+    logger.log('🔑 Permissions revoked on wallet');
   } catch {
-    console.warn('⚠️ Failed to revoke on wallet (may already be revoked)');
+    logger.warn('⚠️ Failed to revoke on wallet (may already be revoked)');
   }
 
   // Clean up local storage
@@ -191,14 +192,14 @@ export async function revokeSessionKey(publicKey: string): Promise<void> {
     activeKeyPair = null;
   }
 
-  console.log('🔑 Session key removed');
+  logger.log('🔑 Session key removed');
 }
 
 /**
  * Clear all stored session keys
  */
 export function clearAllSessionKeys(): void {
-  console.log('🔑 Clearing all session keys...');
+  logger.log('🔑 Clearing all session keys...');
 
   const keysToRemove: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
@@ -211,7 +212,7 @@ export function clearAllSessionKeys(): void {
   keysToRemove.forEach((key) => localStorage.removeItem(key));
   activeKeyPair = null;
 
-  console.log(`🔑 Cleared ${keysToRemove.length} session keys`);
+  logger.log(`🔑 Cleared ${keysToRemove.length} session keys`);
 }
 
 /**

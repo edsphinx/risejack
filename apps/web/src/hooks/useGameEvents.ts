@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { createPublicClient, webSocket } from 'viem';
 import { riseTestnet, RISEJACK_ABI, RISEJACK_ADDRESS } from '@/lib/contract';
+import { logger } from '@/lib/logger';
 import type { GameResult } from '@risejack/shared';
 
 // Rise Chain Testnet WebSocket URL
@@ -68,7 +69,7 @@ export function useGameEvents(
       return;
     }
 
-    console.log('[GameEvents] Starting WebSocket event monitoring for:', playerAddress);
+    logger.log('[GameEvents] Starting WebSocket event monitoring for:', playerAddress);
 
     try {
       // Create WebSocket client
@@ -87,7 +88,7 @@ export function useGameEvents(
           player: playerAddress,
         },
         onLogs: (logs) => {
-          console.log('[GameEvents] Received GameEnded events:', logs.length);
+          logger.log('[GameEvents] Received GameEnded events:', logs.length);
 
           for (const log of logs) {
             const args = log.args as {
@@ -120,7 +121,7 @@ export function useGameEvents(
                 ? Number(args.dealerCardCount)
                 : args.dealerCardCount;
 
-            console.log('[GameEvents] GameEnded:', {
+            logger.log('[GameEvents] GameEnded:', {
               player: args.player,
               result,
               payout: args.payout,
@@ -143,7 +144,7 @@ export function useGameEvents(
           }
         },
         onError: (error) => {
-          console.error('[GameEvents] GameEnded WebSocket error:', error);
+          logger.error('[GameEvents] GameEnded WebSocket error:', error);
         },
       });
       unwatchGameEndedRef.current = unwatchGameEnded;
@@ -157,7 +158,7 @@ export function useGameEvents(
           player: playerAddress,
         },
         onLogs: (logs) => {
-          console.log('[GameEvents] Received CardDealt events:', logs.length);
+          logger.log('[GameEvents] Received CardDealt events:', logs.length);
 
           for (const log of logs) {
             const args = log.args as {
@@ -168,7 +169,7 @@ export function useGameEvents(
             };
             const cardNum = typeof args.card === 'bigint' ? Number(args.card) : args.card;
 
-            console.log('[GameEvents] CardDealt:', {
+            logger.log('[GameEvents] CardDealt:', {
               card: cardNum,
               isDealer: args.isDealer,
               faceUp: args.faceUp,
@@ -184,21 +185,21 @@ export function useGameEvents(
           }
         },
         onError: (error) => {
-          console.error('[GameEvents] CardDealt WebSocket error:', error);
+          logger.error('[GameEvents] CardDealt WebSocket error:', error);
         },
       });
       unwatchCardDealtRef.current = unwatchCardDealt;
 
       setIsConnected(true);
-      console.log('[GameEvents] WebSocket connected successfully (GameEnded + CardDealt)');
+      logger.log('[GameEvents] WebSocket connected successfully (GameEnded + CardDealt)');
     } catch (error) {
-      console.error('[GameEvents] Failed to start WebSocket:', error);
+      logger.error('[GameEvents] Failed to start WebSocket:', error);
       setIsConnected(false);
     }
 
     // Cleanup
     return () => {
-      console.log('[GameEvents] Stopping WebSocket monitoring');
+      logger.log('[GameEvents] Stopping WebSocket monitoring');
       if (unwatchGameEndedRef.current) {
         unwatchGameEndedRef.current();
         unwatchGameEndedRef.current = null;

@@ -1,3 +1,7 @@
+# Default profile - optimized for fast local development
+# via_ir is DISABLED for faster compilation during development (~3x faster)
+# Complex contracts like RiseCasinoRouter may show "Stack too deep" warnings
+# but this is acceptable for rapid iteration. Use CI profile for production builds.
 [profile.default]
 src = "src"
 out = "out"
@@ -5,11 +9,15 @@ libs = ["lib"]
 solc = "0.8.28"
 optimizer = true
 optimizer_runs = 200
-via_ir = true
+via_ir = false
 ffi = false
 fs_permissions = [{ access = "read", path = "./"}]
 
-# CI profile - inherits from default
+# CI profile - optimized for production builds and GitHub Actions
+# via_ir is ENABLED to handle complex contracts with deep stack usage
+# (e.g., RiseCasinoRouter has many local variables that cause "Stack too deep")
+# This is slower to compile but ensures all contracts build correctly for deployment.
+# Matches Hardhat's viaIR: true setting for verification consistency.
 [profile.ci]
 src = "src"
 out = "out"
@@ -28,6 +36,8 @@ rise_testnet = "https://testnet.riselabs.xyz"
 local = "http://localhost:8545"
 
 # Fork profile - runs tests with Rise testnet state
+# via_ir is DISABLED for faster test execution during fork testing
+# If you encounter "Stack too deep" in fork tests, use FOUNDRY_PROFILE=ci
 [profile.fork]
 src = "src"
 out = "out"
@@ -35,7 +45,7 @@ libs = ["lib"]
 solc = "0.8.28"
 optimizer = true
 optimizer_runs = 200
-via_ir = true
+via_ir = false
 ffi = false
 fs_permissions = [{ access = "read", path = "./"}]
 eth_rpc_url = "https://testnet.riselabs.xyz"

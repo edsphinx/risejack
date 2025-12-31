@@ -11,6 +11,7 @@ import { useState, useCallback, useRef } from 'preact/hooks';
 import { useContractState } from './useContractState';
 import { useGameActions, type GameEndData } from './useGameActions';
 import { useGameEvents, type GameEndEvent, type CardDealtEvent } from './useGameEvents';
+import { logger } from '@/lib/logger';
 import type { UseRiseWalletReturn } from './useRiseWallet';
 import type { GameData, HandValue, BetLimits, GameResult } from '@risejack/shared';
 
@@ -91,13 +92,13 @@ export function useGameState(wallet: UseRiseWalletReturn): UseGameStateReturn {
       dealerHiddenCard: accumulatedCards.dealerHiddenCard,
     };
     cardSnapshotRef.current = snapshot;
-    console.log('[GameState] Cards snapshot taken:', snapshot);
+    logger.log('[GameState] Cards snapshot taken:', snapshot);
   }, [accumulatedCards, state.gameData]);
 
   // Handle CardDealt event - accumulate cards
   const handleCardDealt = useCallback(
     (event: CardDealtEvent) => {
-      console.log('[GameState] CardDealt:', event);
+      logger.log('[GameState] CardDealt:', event);
 
       setAccumulatedCards((prev) => {
         if (event.isDealer) {
@@ -129,7 +130,7 @@ export function useGameState(wallet: UseRiseWalletReturn): UseGameStateReturn {
   // Handle game end event from WebSocket
   const handleGameEnd = useCallback(
     (event: GameEndEvent) => {
-      console.log('[GameState] Game ended with result:', event);
+      logger.log('[GameState] Game ended with result:', event);
 
       // Delay 50ms to allow CardDealt events to be processed first
       // Rise is very fast, events may arrive nearly simultaneously
@@ -145,13 +146,13 @@ export function useGameState(wallet: UseRiseWalletReturn): UseGameStateReturn {
 
         if (currentAccumulated.playerCards.length >= 2) {
           playerCards = [...currentAccumulated.playerCards];
-          console.log('[GameState] Using accumulated player cards:', playerCards);
+          logger.log('[GameState] Using accumulated player cards:', playerCards);
         } else if (currentSnapshot?.playerCards.length) {
           playerCards = [...currentSnapshot.playerCards];
-          console.log('[GameState] Using snapshot player cards:', playerCards);
+          logger.log('[GameState] Using snapshot player cards:', playerCards);
         } else if (currentState.gameData?.playerCards?.length) {
           playerCards = [...currentState.gameData.playerCards];
-          console.log('[GameState] Using contract player cards:', playerCards);
+          logger.log('[GameState] Using contract player cards:', playerCards);
         }
 
         if (currentAccumulated.dealerCards.length >= 1) {
@@ -163,16 +164,16 @@ export function useGameState(wallet: UseRiseWalletReturn): UseGameStateReturn {
           ) {
             dealerCards.splice(1, 0, currentAccumulated.dealerHiddenCard);
           }
-          console.log('[GameState] Using accumulated dealer cards:', dealerCards);
+          logger.log('[GameState] Using accumulated dealer cards:', dealerCards);
         } else if (currentSnapshot?.dealerCards.length) {
           dealerCards = [...currentSnapshot.dealerCards];
           if (currentSnapshot.dealerHiddenCard !== null) {
             dealerCards.splice(1, 0, currentSnapshot.dealerHiddenCard);
           }
-          console.log('[GameState] Using snapshot dealer cards:', dealerCards);
+          logger.log('[GameState] Using snapshot dealer cards:', dealerCards);
         } else if (currentState.gameData?.dealerCards?.length) {
           dealerCards = [...currentState.gameData.dealerCards];
-          console.log('[GameState] Using contract dealer cards:', dealerCards);
+          logger.log('[GameState] Using contract dealer cards:', dealerCards);
         }
 
         setLastGameResult({
@@ -204,7 +205,7 @@ export function useGameState(wallet: UseRiseWalletReturn): UseGameStateReturn {
 
   // Fallback: handle GameEndData from transaction parsing
   const handleGameEndFromTx = useCallback((data: GameEndData) => {
-    console.log('[GameState] Game ended from TX (fallback):', data);
+    logger.log('[GameState] Game ended from TX (fallback):', data);
 
     const finalCards = cardSnapshotRef.current ?? {
       playerCards: [],

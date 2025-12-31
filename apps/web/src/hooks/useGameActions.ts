@@ -10,6 +10,7 @@ import { getProvider } from '@/lib/riseWallet';
 import { signWithSessionKey, getActiveSessionKey } from '@/services/sessionKeyManager';
 import { ErrorService } from '@/services';
 import { RISEJACK_ABI, getRiseJackAddress } from '@/lib/contract';
+import { logger } from '@/lib/logger';
 import type { BetLimits, GameResult } from '@risejack/shared';
 
 // Valid game action types
@@ -79,7 +80,7 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
         : ('0x0' as `0x${string}`);
 
       const t0 = performance.now();
-      console.log(`⚡ [T+0ms] Using session key`);
+      logger.log(`⚡ [T+0ms] Using session key`);
 
       // 1. Prepare Calls
       const prepareParams = [
@@ -101,14 +102,14 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
       })) as { digest: `0x${string}` };
 
       const t1 = performance.now();
-      console.log(`⚡ [T+${Math.round(t1 - t0)}ms] wallet_prepareCalls`);
+      logger.log(`⚡ [T+${Math.round(t1 - t0)}ms] wallet_prepareCalls`);
 
       const { digest, ...requestParams } = prepared;
 
       // 2. Sign digest using session key (local, no popup)
       const signature = signWithSessionKey(digest, sessionKey);
       const t2 = performance.now();
-      console.log(`⚡ [T+${Math.round(t2 - t0)}ms] P256 sign`);
+      logger.log(`⚡ [T+${Math.round(t2 - t0)}ms] P256 sign`);
 
       // 3. Send prepared calls
       const response = (await (
@@ -119,12 +120,12 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
       })) as Array<{ id: `0x${string}` }>;
 
       const t3 = performance.now();
-      console.log(`⚡ [T+${Math.round(t3 - t0)}ms] wallet_sendPreparedCalls`);
+      logger.log(`⚡ [T+${Math.round(t3 - t0)}ms] wallet_sendPreparedCalls`);
 
       const callId = response[0]?.id;
       if (!callId) return { txHash: null, gameEndData: null };
 
-      console.log(
+      logger.log(
         `⚡ [T+${Math.round(performance.now() - t0)}ms] TOTAL - returning callId:`,
         callId
       );
@@ -139,7 +140,7 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
         .then((callStatus) => {
           const status = callStatus as { receipts?: Array<{ transactionHash: string }> };
           const txHash = status.receipts?.[0]?.transactionHash;
-          console.log(`⚡ [async] wallet_getCallsStatus completed, txHash:`, txHash);
+          logger.log(`⚡ [async] wallet_getCallsStatus completed, txHash:`, txHash);
         })
         .catch(() => {
           /* ignore */
@@ -166,14 +167,14 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
         ? (`0x${value.toString(16)}` as `0x${string}`)
         : ('0x0' as `0x${string}`);
 
-      console.log('🔐 Sending passkey transaction...');
+      logger.log('🔐 Sending passkey transaction...');
 
       const txHash = (await provider.request({
         method: 'eth_sendTransaction',
         params: [{ from: address, to, value: hexValue, data }],
       })) as `0x${string}`;
 
-      console.log('🔐 Passkey transaction sent:', txHash);
+      logger.log('🔐 Passkey transaction sent:', txHash);
       return txHash;
     },
     [address]
@@ -200,7 +201,7 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
         let gameEndData: GameEndData | null = null;
 
         if (hasSessionKey && keyPair) {
-          console.log('[GameActions] 🔑 Using session key...', {
+          logger.log('[GameActions] 🔑 Using session key...', {
             hasSessionKey,
             publicKey: keyPair.publicKey?.slice(0, 20) + '...',
           });
@@ -210,15 +211,15 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
             gameEndData = result.gameEndData;
           } catch (sessionErr) {
             // Session key failed - fallback to passkey
-            console.warn(
+            logger.warn(
               '[GameActions] ⚠️ Session key FAILED, falling back to passkey:',
               sessionErr
             );
-            console.log('[GameActions] 🔐 Falling back to passkey...');
+            logger.log('[GameActions] 🔐 Falling back to passkey...');
             txHash = await sendPasskeyTransaction(contractAddress, value ?? 0n, data);
           }
         } else {
-          console.log('[GameActions] 🔐 Using passkey (no session key)...', {
+          logger.log('[GameActions] 🔐 Using passkey (no session key)...', {
             hasSessionKey,
             hasKeyPair: !!keyPair,
           });
@@ -230,22 +231,22 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
           return false;
         }
 
-        console.log('[GameActions] TX Hash:', txHash);
+        logger.log('[GameActions] TX Hash:', txHash);
 
         // If game ended, call the callback with result
         if (gameEndData) {
-          console.log('[GameActions] Game ended:', gameEndData);
+          logger.log('[GameActions] Game ended:', gameEndData);
           onGameEnd?.(gameEndData);
         }
 
         // Small delay to ensure Rise Chain has processed the tx before refetching
         await new Promise((resolve) => setTimeout(resolve, 100));
 
-        console.log('[GameActions] Calling onSuccess to refresh state...');
+        logger.log('[GameActions] Calling onSuccess to refresh state...');
         onSuccess?.();
         return true;
       } catch (err: unknown) {
-        console.error('[GameActions] Error:', err);
+        logger.error('[GameActions] Error:', err);
         setError(ErrorService.getSafeMessage(err));
         return false;
       } finally {
@@ -309,7 +310,7 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
   const surrender = useCallback(() => executeAction('surrender'), [executeAction]);
   const formatBet = useCallback((value: bigint): string => formatEther(value), []);
 
-  // Cancel a timed out game (VRF never arrived)
+  // Cancel a timed out game using session key + passkey fallback for consistency
   const cancelTimedOutGame = useCallback(async (): Promise<boolean> => {
     if (!address) {
       setError('Wallet not connected');
@@ -326,28 +327,53 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
         args: [address],
       });
 
-      const provider = getProvider();
-      console.log('[GameActions] 🚪 Cancelling timed out game...');
+      let txHash: `0x${string}` | null = null;
 
-      const txHash = (await provider.request({
-        method: 'eth_sendTransaction',
-        params: [{ from: address, to: contractAddress, data }],
-      })) as `0x${string}`;
+      // Use session key if available (consistent with other actions)
+      if (hasSessionKey && keyPair) {
+        logger.log('[GameActions] 🚪 Cancelling with session key...');
+        try {
+          const result = await sendSessionTransaction(contractAddress, 0n, data);
+          txHash = result.txHash;
+        } catch (sessionErr) {
+          logger.warn(
+            '[GameActions] Session key failed for cancel, falling back to passkey:',
+            sessionErr
+          );
+          txHash = await sendPasskeyTransaction(contractAddress, 0n, data);
+        }
+      } else {
+        logger.log('[GameActions] 🚪 Cancelling with passkey...');
+        txHash = await sendPasskeyTransaction(contractAddress, 0n, data);
+      }
 
-      console.log('[GameActions] 🚪 Cancel TX:', txHash);
+      if (!txHash) {
+        setError('Cancel transaction failed');
+        return false;
+      }
+
+      logger.log('[GameActions] 🚪 Cancel TX:', txHash);
 
       // Wait a bit then refresh
       await new Promise((resolve) => setTimeout(resolve, 500));
       onSuccess?.();
       return true;
     } catch (err: unknown) {
-      console.error('[GameActions] Cancel failed:', err);
+      logger.error('[GameActions] Cancel failed:', err);
       setError(ErrorService.getSafeMessage(err));
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [address, contractAddress, onSuccess]);
+  }, [
+    address,
+    hasSessionKey,
+    keyPair,
+    contractAddress,
+    sendSessionTransaction,
+    sendPasskeyTransaction,
+    onSuccess,
+  ]);
 
   return {
     isLoading,

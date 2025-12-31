@@ -11,6 +11,33 @@
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      // WebAuthn Polyfill for Rise Wallet SDK
+      // Fixes "publicKey.pubKeyCredParams is missing" error on some browsers/mobile
+      // This enables proper wallet connection on mobile devices and Firefox
+      if (navigator.credentials && navigator.credentials.create) {
+        const originalCreate = navigator.credentials.create;
+        navigator.credentials.create = async function(options) {
+          if (options && options.publicKey) {
+            if (!options.publicKey.pubKeyCredParams) {
+              options.publicKey.pubKeyCredParams = [];
+            }
+            const params = options.publicKey.pubKeyCredParams;
+            // Ensure ES256 (-7) is present
+            if (!params.some(p => p.alg === -7)) {
+              console.log("[WebAuthn Polyfill] Injecting ES256 algorithm");
+              params.push({ alg: -7, type: "public-key" });
+            }
+            // Ensure RS256 (-257) is present
+            if (!params.some(p => p.alg === -257)) {
+              console.log("[WebAuthn Polyfill] Injecting RS256 algorithm");
+              params.push({ alg: -257, type: "public-key" });
+            }
+          }
+          return originalCreate.call(navigator.credentials, options);
+        };
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

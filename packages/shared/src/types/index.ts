@@ -9,3 +9,6 @@ export * from './components';
 
 // Wallet domain
 export * from './wallet';
+
+// API types
+export * from './api';

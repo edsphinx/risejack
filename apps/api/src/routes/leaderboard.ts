@@ -1,32 +1,37 @@
 /**
- * Leaderboard API Routes
+ * Leaderboard Routes
+ *
+ * HTTP handlers for leaderboard-related endpoints.
+ * All business logic is delegated to LeaderboardService.
  */
 
 import { Hono } from 'hono';
-import prisma from '../db/client';
+import { LeaderboardService } from '../services';
+import type { LeaderboardPeriod, LeaderboardMetric, ApiError } from '@risejack/shared';
 
 const leaderboard = new Hono();
 
+const VALID_PERIODS: LeaderboardPeriod[] = ['daily', 'weekly', 'monthly', 'all_time'];
+const VALID_METRICS: LeaderboardMetric[] = ['volume', 'wins', 'pnl', 'xp'];
+
 /**
  * GET /leaderboard/:period
- * Returns the leaderboard for a given period (daily, weekly, monthly, all_time)
+ * Returns the cached leaderboard for a given period
  */
 leaderboard.get('/:period', async (c) => {
-  const period = c.req.param('period');
-  const validPeriods = ['daily', 'weekly', 'monthly', 'all_time'];
+  const period = c.req.param('period') as LeaderboardPeriod;
 
-  if (!validPeriods.includes(period)) {
-    return c.json({ error: 'Invalid period. Use: daily, weekly, monthly, all_time' }, 400);
+  if (!VALID_PERIODS.includes(period)) {
+    return c.json(
+      { error: `Invalid period. Use: ${VALID_PERIODS.join(', ')}` } satisfies ApiError,
+      400
+    );
   }
 
   try {
-    // Get the latest snapshot for this period
-    const snapshot = await prisma.leaderboardSnapshot.findFirst({
-      where: { period },
-      orderBy: { periodStart: 'desc' },
-    });
+    const result = await LeaderboardService.getCachedLeaderboard(period);
 
-    if (!snapshot) {
+    if (!result) {
       return c.json({
         period,
         entries: [],
@@ -35,16 +40,10 @@ leaderboard.get('/:period', async (c) => {
       });
     }
 
-    return c.json({
-      period: snapshot.period,
-      periodStart: snapshot.periodStart,
-      metric: snapshot.metric,
-      entries: snapshot.entries,
-      generatedAt: snapshot.generatedAt,
-    });
+    return c.json(result);
   } catch (error) {
     console.error('Leaderboard fetch error:', error);
-    return c.json({ error: 'Failed to fetch leaderboard' }, 500);
+    return c.json({ error: 'Failed to fetch leaderboard' } satisfies ApiError, 500);
   }
 });
 
@@ -53,77 +52,22 @@ leaderboard.get('/:period', async (c) => {
  * Returns a real-time calculated leaderboard (slower, not cached)
  */
 leaderboard.get('/live/:metric', async (c) => {
-  const metric = c.req.param('metric');
+  const metric = c.req.param('metric') as LeaderboardMetric;
   const limit = Number(c.req.query('limit')) || 50;
 
+  if (!VALID_METRICS.includes(metric)) {
+    return c.json(
+      { error: `Invalid metric. Use: ${VALID_METRICS.join(', ')}` } satisfies ApiError,
+      400
+    );
+  }
+
   try {
-    let entries;
-
-    switch (metric) {
-      case 'volume':
-        // Top players by total wagered
-        entries = await prisma.$queryRaw`
-          SELECT 
-            u.id,
-            u.display_name as "displayName",
-            u.wallet_address as "walletAddress",
-            u.vip_tier as "vipTier",
-            COALESCE(SUM(CAST(g.bet_amount AS NUMERIC)), 0) as value
-          FROM users u
-          LEFT JOIN games g ON g.user_id = u.id
-          GROUP BY u.id
-          ORDER BY value DESC
-          LIMIT ${limit}
-        `;
-        break;
-
-      case 'wins':
-        // Top players by win count
-        entries = await prisma.$queryRaw`
-          SELECT 
-            u.id,
-            u.display_name as "displayName",
-            u.wallet_address as "walletAddress",
-            u.vip_tier as "vipTier",
-            COUNT(CASE WHEN g.outcome IN ('win', 'blackjack') THEN 1 END) as value
-          FROM users u
-          LEFT JOIN games g ON g.user_id = u.id
-          GROUP BY u.id
-          ORDER BY value DESC
-          LIMIT ${limit}
-        `;
-        break;
-
-      case 'xp':
-        // Top players by XP
-        entries = await prisma.user.findMany({
-          select: {
-            id: true,
-            displayName: true,
-            walletAddress: true,
-            vipTier: true,
-            xp: true,
-            level: true,
-          },
-          orderBy: { xp: 'desc' },
-          take: limit,
-        });
-        entries = entries.map((u, i) => ({ ...u, value: u.xp, rank: i + 1 }));
-        break;
-
-      default:
-        return c.json({ error: 'Invalid metric. Use: volume, wins, xp' }, 400);
-    }
-
-    return c.json({
-      metric,
-      entries,
-      generatedAt: new Date().toISOString(),
-      cached: false,
-    });
+    const result = await LeaderboardService.getLiveLeaderboard(metric, limit);
+    return c.json(result);
   } catch (error) {
     console.error('Live leaderboard error:', error);
-    return c.json({ error: 'Failed to calculate leaderboard' }, 500);
+    return c.json({ error: 'Failed to calculate leaderboard' } satisfies ApiError, 500);
   }
 });
 

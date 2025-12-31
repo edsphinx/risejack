@@ -50,11 +50,12 @@ model User {
   lastSeenAt DateTime? @map("last_seen_at")
 
   // Relations
-  games            Game[]
-  referralEarnings ReferralEarning[] @relation("ReferrerEarnings")
-  refereeEarnings  ReferralEarning[] @relation("RefereeEarnings")
-  sessions         Session[]
+  games             Game[]
+  referralEarnings  ReferralEarning[] @relation("ReferrerEarnings")
+  refereeEarnings   ReferralEarning[] @relation("RefereeEarnings")
+  sessions          Session[]
   emailSubscription EmailSubscription?
+  eventLogs         EventLog[]
 
   @@index([walletAddress])
   @@index([referrerId])
@@ -190,4 +191,30 @@ model LeaderboardSnapshot {
 
   @@index([period, periodStart(sort: Desc)])
   @@map("leaderboard_snapshots")
+}
+
+// ==================== EVENT LOG ====================
+// High-value events for analytics and funnel tracking
+
+model EventLog {
+  id            String  @id @default(uuid())
+  userId        String? @map("user_id")
+  user          User?   @relation(fields: [userId], references: [id])
+  walletAddress String? @map("wallet_address") @db.VarChar(42) // For events before user exists
+
+  // Event info
+  eventType String @map("event_type") @db.VarChar(32) // 'wallet_connect', 'game_start', 'referral_click'
+  eventData Json?  @map("event_data") // Flexible payload
+
+  // Context
+  sessionId    String? @map("session_id") @db.Uuid
+  deviceType   String? @map("device_type") @db.VarChar(16) // 'mobile', 'desktop', 'tablet'
+  ipGeoCountry String? @map("ip_geo_country") @db.VarChar(2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt(sort: Desc)])
+  @@map("event_log")
 }

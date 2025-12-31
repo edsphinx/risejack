@@ -64,6 +64,18 @@ Rise Blackjack is a fully on-chain casino game that leverages Rise Chain's ultra
 4. Contract executes game logic and payouts
 5. Frontend updates via WebSocket events
 
+### VRF Timeout Handling
+
+The system includes robust handling for VRF delays:
+
+| Time Elapsed | UI State           | Available Actions                 |
+| ------------ | ------------------ | --------------------------------- |
+| 0-60s        | "Dealing cards..." | Waiting spinner                   |
+| 60s-5min     | "VRF Delayed"      | Retry option, countdown to cancel |
+| >5min        | "Game Stuck"       | Cancel & Full Refund button       |
+
+Players are never stuck - after 5 minutes they can cancel any pending game and receive a full refund.
+
 ---
 
 ## Technical Stack
@@ -121,10 +133,11 @@ Rise Blackjack is a fully on-chain casino game that leverages Rise Chain's ultra
 | Measure            | Implementation                                                  |
 | ------------------ | --------------------------------------------------------------- |
 | P256 Cryptography  | WebAuthn-compatible elliptic curve signing                      |
-| Time-Bounded Keys  | Session keys expire after configured duration (default: 7 days) |
+| Time-Bounded Keys  | Session keys expire after configured duration (default: 1 hour) |
 | Permission Scoping | Keys can only call whitelisted contract functions               |
 | Spend Limits       | Configurable maximum spend per time period                      |
 | Local Key Storage  | Private keys never leave the client device                      |
+| Auth Fallback      | Automatic passkey fallback if session key fails                 |
 
 ### Permitted Contract Calls
 
@@ -143,6 +156,34 @@ The Rise VRF (Verifiable Random Function) ensures:
 1. **Unpredictability**: Randomness generated after player commits to action
 2. **Unbiasability**: Neither party can influence the outcome
 3. **Verifiability**: All randomness proofs are on-chain and auditable
+4. **Timeout Protection**: Games can be cancelled after 5 minutes if VRF fails
+
+### Mobile Wallet Support
+
+The frontend includes a WebAuthn polyfill for enhanced mobile compatibility:
+
+| Feature              | Implementation                                         |
+| -------------------- | ------------------------------------------------------ |
+| CSP Compliant        | Polyfill loaded as external TypeScript module          |
+| Minimal Interference | Only modifies requests with missing `pubKeyCredParams` |
+| Algorithm Support    | Ensures ES256 (-7) and RS256 (-257) are available      |
+| Graceful Fallback    | Falls back to original behavior on any error           |
+| Firefox/Mobile Fix   | Fixes "publicKey.pubKeyCredParams is missing" error    |
+
+### Production Logging
+
+The application uses an environment-aware logging system to prevent sensitive data exposure:
+
+| Environment | `logger.log` | `logger.warn` | `logger.error` |
+| ----------- | ------------ | ------------- | -------------- |
+| Development | ✅ Outputs   | ✅ Outputs    | ✅ Outputs     |
+| Production  | ❌ Silent    | ❌ Silent     | ✅ Outputs     |
+
+This ensures:
+
+- **No debug logs in production** - Session keys, public keys, and internal state are not exposed
+- **Errors always logged** - Critical issues are still captured for monitoring
+- **Simple API** - Import `logger` from `@/lib/logger` instead of `console`
 
 ### Security Testing
 
@@ -175,6 +216,9 @@ risejack/
 │   │   │   ├── components/     # UI components
 │   │   │   ├── hooks/          # Custom Preact hooks
 │   │   │   ├── lib/            # Utilities and helpers
+│   │   │   │   ├── logger.ts   # Environment-aware logging
+│   │   │   │   └── webauthn-polyfill.ts  # Mobile wallet fix
+│   │   │   ├── services/       # Business logic services
 │   │   │   └── styles/         # CSS and animations
 │   │   ├── vite.config.ts      # Build configuration
 │   │   └── tailwind.config.js  # Design system

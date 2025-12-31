@@ -8,6 +8,7 @@
 import { createPublicClient, webSocket, type Log } from 'viem';
 import { shredActions } from 'shreds/viem';
 import { riseTestnet, RISEJACK_ABI, RISEJACK_ADDRESS } from '@/lib/contract';
+import { logger } from '@/lib/logger';
 import type { GameResult } from '@risejack/shared';
 
 // Rise Chain Testnet WebSocket URL
@@ -47,10 +48,10 @@ export function initWebSocketClient(): typeof wsClient {
       transport: webSocket(WSS_URL),
     }).extend(shredActions) as any;
 
-    console.log('[WS] WebSocket client initialized');
+    logger.log('[WS] WebSocket client initialized');
     return wsClient;
   } catch (error) {
-    console.error('[WS] Failed to initialize WebSocket client:', error);
+    logger.error('[WS] Failed to initialize WebSocket client:', error);
     return null;
   }
 }
@@ -75,11 +76,11 @@ export function startGameEventMonitoring(
   const client = getWebSocketClient();
 
   if (!client) {
-    console.error('[WS] Cannot start monitoring - no WebSocket client');
+    logger.error('[WS] Cannot start monitoring - no WebSocket client');
     return () => {};
   }
 
-  console.log('[WS] Starting GameEnded event monitoring for:', playerAddress);
+  logger.log('[WS] Starting GameEnded event monitoring for:', playerAddress);
 
   try {
     const unwatch = client.watchContractEvent({
@@ -90,7 +91,7 @@ export function startGameEventMonitoring(
         player: playerAddress,
       },
       onLogs: (logs: Log[]) => {
-        console.log('[WS] GameEnded events received:', logs.length);
+        logger.log('[WS] GameEnded events received:', logs.length);
 
         for (const log of logs) {
           try {
@@ -102,7 +103,7 @@ export function startGameEventMonitoring(
             const result = GameStateToResult[args.result];
 
             if (result && args.player.toLowerCase() === playerAddress.toLowerCase()) {
-              console.log('[WS] GameEnded for player:', { result, payout: args.payout });
+              logger.log('[WS] GameEnded for player:', { result, payout: args.payout });
               onGameEnd({
                 player: args.player,
                 result,
@@ -110,20 +111,20 @@ export function startGameEventMonitoring(
               });
             }
           } catch (error) {
-            console.error('[WS] Error parsing GameEnded event:', error);
+            logger.error('[WS] Error parsing GameEnded event:', error);
           }
         }
       },
       onError: (error: Error) => {
-        console.error('[WS] Event monitoring error:', error);
+        logger.error('[WS] Event monitoring error:', error);
       },
     });
 
     eventUnwatch = unwatch;
-    console.log('[WS] Event monitoring started successfully');
+    logger.log('[WS] Event monitoring started successfully');
     return unwatch;
   } catch (error) {
-    console.error('[WS] Failed to start event monitoring:', error);
+    logger.error('[WS] Failed to start event monitoring:', error);
     return () => {};
   }
 }
@@ -135,7 +136,7 @@ export function stopEventMonitoring(): void {
   if (eventUnwatch) {
     eventUnwatch();
     eventUnwatch = null;
-    console.log('[WS] Event monitoring stopped');
+    logger.log('[WS] Event monitoring stopped');
   }
 }
 
@@ -145,7 +146,7 @@ export function stopEventMonitoring(): void {
 export function disconnectWebSocket(): void {
   stopEventMonitoring();
   wsClient = null;
-  console.log('[WS] WebSocket disconnected');
+  logger.log('[WS] WebSocket disconnected');
 }
 
 export const WebSocketService = {

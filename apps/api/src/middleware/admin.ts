@@ -73,7 +73,7 @@ function timingSafeEqual(a: string, b: string): boolean {
   bufferA.copy(paddedA);
   bufferB.copy(paddedB);
 
-  return cryptoTimingSafeEqual(paddedA, paddedB) && bufferA.length === bufferB.length;
+  return bufferA.length === bufferB.length && cryptoTimingSafeEqual(paddedA, paddedB);
 }
 
 /**

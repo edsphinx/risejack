@@ -6,9 +6,20 @@
 
 import prisma from '../db/client';
 import type { GameType, GameOutcome } from '@risejack/shared';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 const DEFAULT_CHAIN_ID = 713715; // Rise Testnet
+
+// Maximum limit for pagination to prevent DoS
+const MAX_LIMIT = 100;
+
+/**
+ * Sanitize and bound a limit parameter
+ */
+function sanitizeLimit(limit: number, defaultLimit: number = 20): number {
+  const parsed = Math.floor(Number(limit) || defaultLimit);
+  return Math.min(Math.max(1, parsed), MAX_LIMIT);
+}
 
 // ==================== READ OPERATIONS ====================
 
@@ -16,7 +27,8 @@ export async function getGamesByUser(
   userId: string,
   options: { limit?: number; offset?: number } = {}
 ) {
-  const { limit = 20, offset = 0 } = options;
+  const limit = sanitizeLimit(options.limit || 20);
+  const offset = Math.max(0, Math.floor(options.offset || 0));
 
   return prisma.game.findMany({
     where: { userId },
@@ -34,6 +46,7 @@ export async function countGamesByUser(userId: string): Promise<number> {
 
 export async function getGameStats(userId: string) {
   // Since betAmount and pnl are strings (for BigInt compatibility), we use raw SQL
+  // Prisma's $queryRaw with template literals automatically uses parameterized queries
   const result = await prisma.$queryRaw<
     Array<{
       total_games: bigint;
@@ -41,7 +54,7 @@ export async function getGameStats(userId: string) {
       total_pnl: string | null;
       wins: bigint;
     }>
-  >`
+  >(Prisma.sql`
     SELECT 
       COUNT(*)::bigint as total_games,
       COALESCE(SUM(CAST(bet_amount AS NUMERIC)), 0)::text as total_wagered,
@@ -49,7 +62,7 @@ export async function getGameStats(userId: string) {
       COUNT(CASE WHEN outcome IN ('win', 'blackjack') THEN 1 END)::bigint as wins
     FROM games
     WHERE user_id = ${userId}
-  `;
+  `);
 
   const stats = result[0];
   const totalGames = Number(stats?.total_games || 0);
@@ -107,6 +120,8 @@ export async function createGame(data: {
 // ==================== AGGREGATIONS ====================
 
 export async function getVolumeLeaderboard(limit: number = 50) {
+  const safeLimit = sanitizeLimit(limit, 50);
+
   return prisma.$queryRaw<
     Array<{
       id: string;
@@ -115,7 +130,7 @@ export async function getVolumeLeaderboard(limit: number = 50) {
       vipTier: string;
       value: string;
     }>
-  >`
+  >(Prisma.sql`
     SELECT 
       u.id,
       u.display_name as "displayName",
@@ -126,11 +141,13 @@ export async function getVolumeLeaderboard(limit: number = 50) {
     LEFT JOIN games g ON g.user_id = u.id
     GROUP BY u.id
     ORDER BY COALESCE(SUM(CAST(g.bet_amount AS NUMERIC)), 0) DESC
-    LIMIT ${limit}
-  `;
+    LIMIT ${safeLimit}
+  `);
 }
 
 export async function getBiggestWinLeaderboard(limit: number = 50) {
+  const safeLimit = sanitizeLimit(limit, 50);
+
   return prisma.$queryRaw<
     Array<{
       id: string;
@@ -139,7 +156,7 @@ export async function getBiggestWinLeaderboard(limit: number = 50) {
       vipTier: string;
       value: string;
     }>
-  >`
+  >(Prisma.sql`
     SELECT 
       u.id,
       u.display_name as "displayName",
@@ -151,11 +168,13 @@ export async function getBiggestWinLeaderboard(limit: number = 50) {
     GROUP BY u.id
     HAVING MAX(CAST(g.payout AS NUMERIC)) > 0
     ORDER BY MAX(CAST(g.payout AS NUMERIC)) DESC
-    LIMIT ${limit}
-  `;
+    LIMIT ${safeLimit}
+  `);
 }
 
 export async function getWinStreakLeaderboard(limit: number = 50) {
+  const safeLimit = sanitizeLimit(limit, 50);
+
   // Calculate best win streak using SQL - counts consecutive wins
   // This is a simplified version that counts total wins as a proxy for "streak potential"
   // For true streak tracking, we'd need to add a winStreak field to the user table
@@ -167,7 +186,7 @@ export async function getWinStreakLeaderboard(limit: number = 50) {
       vipTier: string;
       value: string;
     }>
-  >`
+  >(Prisma.sql`
     SELECT 
       u.id,
       u.display_name as "displayName",
@@ -179,11 +198,13 @@ export async function getWinStreakLeaderboard(limit: number = 50) {
     GROUP BY u.id
     HAVING COUNT(CASE WHEN g.outcome IN ('win', 'blackjack') THEN 1 END) > 0
     ORDER BY COUNT(CASE WHEN g.outcome IN ('win', 'blackjack') THEN 1 END) DESC
-    LIMIT ${limit}
-  `;
+    LIMIT ${safeLimit}
+  `);
 }
 
 export async function getXpLeaderboard(limit: number = 50) {
+  const safeLimit = sanitizeLimit(limit, 50);
+
   const users = await prisma.user.findMany({
     select: {
       id: true,
@@ -194,7 +215,7 @@ export async function getXpLeaderboard(limit: number = 50) {
       level: true,
     },
     orderBy: { xp: 'desc' },
-    take: limit,
+    take: safeLimit,
   });
 
   return users.map((u) => ({

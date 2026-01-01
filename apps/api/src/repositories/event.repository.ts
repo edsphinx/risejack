@@ -6,7 +6,7 @@
 
 import prisma from '../db/client';
 import type { EventType } from '@risejack/shared';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 // ==================== WRITE OPERATIONS ====================
 
@@ -52,10 +52,13 @@ export async function getEventCountsByType(since: Date) {
 }
 
 export async function getUniqueUsersByEventType(since: Date) {
-  return prisma.$queryRaw<Array<{ event_type: string; unique_users: bigint }>>`
-    SELECT event_type, COUNT(DISTINCT COALESCE(user_id, wallet_address)) as unique_users
-    FROM event_log
-    WHERE created_at >= ${since}
-    GROUP BY event_type
-  `;
+  // Using Prisma.sql for explicit parameterized query
+  return prisma.$queryRaw<Array<{ event_type: string; unique_users: bigint }>>(
+    Prisma.sql`
+      SELECT event_type, COUNT(DISTINCT COALESCE(user_id, wallet_address)) as unique_users
+      FROM event_log
+      WHERE created_at >= ${since}
+      GROUP BY event_type
+    `
+  );
 }

@@ -1,4 +1,5 @@
 import { Route, Switch } from 'wouter-preact';
+import { useState } from 'preact/hooks';
 import { Home } from './pages/Home';
 import { RiseJack } from './pages/RiseJack';
 import { Swap } from './pages/Swap';
@@ -7,91 +8,280 @@ import { WalletConnect } from './components/wallet/WalletConnect';
 import { Logo } from './components/brand/Logo';
 import { useLocation } from 'wouter-preact';
 import { WalletProvider, useWallet } from './context/WalletContext';
+import { FastModeOnboarding, SessionExpiryModal } from './components/wallet/SessionModals';
+import './components/wallet/styles/mobile-header.css';
 
 function Header() {
   const [location, setLocation] = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
   const isGame = location === '/risejack';
 
   // Use global wallet context
   const wallet = useWallet();
 
   return (
-    <header className="p-2 sm:p-4 border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
-        {/* Left Side: Logo + Nav */}
-        <div className="flex items-center gap-6">
+    <>
+      {/* Ultra-compact mobile header */}
+      <header className="mobile-header-compact sm:hidden">
+        <div className="mobile-header-inner">
           <div className="cursor-pointer" onClick={() => setLocation('/')}>
-            {/* Logo - responsive adaptation from RiseJack */}
-            <div className="sm:hidden">
-              <Logo size="compact" variant={isGame ? 'risejack' : 'risecasino'} />
-            </div>
-            <div className="hidden sm:block">
-              <Logo size="full" variant={isGame ? 'risejack' : 'risecasino'} />
-            </div>
+            <Logo size="compact" variant={isGame ? 'risejack' : 'risecasino'} />
           </div>
 
-          {/* Navigation - Subtle integration */}
-          <nav className="hidden md:flex gap-4 text-xs font-bold text-gray-400 tracking-wider">
+          {/* Right side: balance preview + hamburger */}
+          <div className="mobile-header-right">
+            {wallet.isConnected && wallet.balance !== null && (
+              <div className="mobile-balance">
+                <span className="mobile-balance-icon">💰</span>
+                <span>{Number(wallet.formatBalance()).toFixed(4)}</span>
+              </div>
+            )}
+            {wallet.isConnected && !wallet.balance && (
+              <span className="mobile-connected-dot" title="Connected" />
+            )}
             <button
-              type="button"
-              onClick={() => setLocation('/')}
-              className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/' ? 'text-purple-400' : ''}`}
+              className="hamburger-btn"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
             >
-              LOBBY
+              <span className={`hamburger-icon ${menuOpen ? 'open' : ''}`} />
             </button>
-            <button
-              type="button"
-              onClick={() => setLocation('/swap')}
-              className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/swap' ? 'text-purple-400' : ''}`}
-            >
-              SWAP
-            </button>
-            <button
-              type="button"
-              onClick={() => setLocation('/stake')}
-              className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/stake' ? 'text-purple-400' : ''}`}
-            >
-              STAKE
-            </button>
-          </nav>
+          </div>
         </div>
 
-        {/* Right Side: WalletConnect */}
-        <WalletConnect
-          account={wallet.address}
-          isConnected={wallet.isConnected}
-          isConnecting={wallet.isConnecting}
-          error={wallet.error}
-          onConnect={wallet.connect}
-          onDisconnect={wallet.disconnect}
-          hasSessionKey={wallet.hasSessionKey}
-          sessionExpiry={wallet.sessionExpiry}
-          onCreateSession={wallet.createSessionKey}
-          onRevokeSession={wallet.revokeSessionKey}
+        {/* Overlay menu - opens OVER content */}
+        {menuOpen && (
+          <>
+            {/* Backdrop */}
+            <div className="mobile-menu-overlay" onClick={() => setMenuOpen(false)} />
+
+            {/* Menu panel */}
+            <div className="mobile-menu-panel">
+              {!wallet.isConnected ? (
+                /* Not connected - show connect button */
+                <button
+                  className="mobile-connect-btn"
+                  onClick={() => {
+                    wallet.connect();
+                    setMenuOpen(false);
+                  }}
+                  disabled={wallet.isConnecting}
+                >
+                  {wallet.isConnecting ? <>⏳ Connecting...</> : <>⚡ Connect Wallet</>}
+                </button>
+              ) : (
+                /* Connected - show wallet info */
+                <>
+                  {/* Wallet Info Card */}
+                  <div className="wallet-info-card">
+                    <div className="wallet-info-header">
+                      <div className="wallet-status">
+                        <span className="wallet-status-dot" />
+                        <span className="wallet-status-text">Connected</span>
+                      </div>
+                      <button
+                        className="wallet-disconnect-btn"
+                        onClick={() => {
+                          wallet.disconnect();
+                          setMenuOpen(false);
+                        }}
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+
+                    <div className="wallet-address-row">
+                      <span className="wallet-address">
+                        {wallet.address?.slice(0, 8)}...{wallet.address?.slice(-6)}
+                      </span>
+                      <button
+                        className="wallet-copy-btn"
+                        onClick={() => navigator.clipboard.writeText(wallet.address || '')}
+                      >
+                        Copy
+                      </button>
+                    </div>
+
+                    <div className="wallet-balance-row">
+                      <span className="wallet-balance-label">Balance</span>
+                      <span className="wallet-balance-value">
+                        {wallet.balance !== null
+                          ? `${Number(wallet.formatBalance()).toFixed(5)} ETH`
+                          : '-- ETH'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Session Key Card */}
+                  <div className="session-key-card">
+                    <div className="session-key-header">
+                      <div className="session-key-info">
+                        <span className="session-key-icon">🔑</span>
+                        <div>
+                          <div className="session-key-label">Fast Mode</div>
+                          <div className="session-key-status">
+                            {wallet.hasSessionKey
+                              ? 'Active - no popups!'
+                              : 'Enable for instant gameplay'}
+                          </div>
+                        </div>
+                      </div>
+                      {wallet.hasSessionKey ? (
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          {wallet.sessionExpiry && !wallet.sessionExpiry.expired && (
+                            <span className="session-key-time">
+                              {wallet.sessionExpiry.hours}h {wallet.sessionExpiry.minutes}m
+                            </span>
+                          )}
+                          <button
+                            className="session-key-btn revoke"
+                            onClick={wallet.revokeSessionKey}
+                          >
+                            Revoke
+                          </button>
+                        </div>
+                      ) : (
+                        <button className="session-key-btn" onClick={wallet.createSessionKey}>
+                          Enable
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Navigation */}
+              <nav className="mobile-nav-links">
+                <button
+                  onClick={() => {
+                    setLocation('/');
+                    setMenuOpen(false);
+                  }}
+                  className={location === '/' ? 'active' : ''}
+                >
+                  🎲 LOBBY
+                </button>
+                <button
+                  onClick={() => {
+                    setLocation('/swap');
+                    setMenuOpen(false);
+                  }}
+                  className={location === '/swap' ? 'active' : ''}
+                >
+                  🔄 SWAP
+                </button>
+                <button
+                  onClick={() => {
+                    setLocation('/stake');
+                    setMenuOpen(false);
+                  }}
+                  className={location === '/stake' ? 'active' : ''}
+                >
+                  📈 STAKE
+                </button>
+              </nav>
+            </div>
+          </>
+        )}
+      </header>
+
+      {/* Desktop header - unchanged */}
+      <header className="hidden sm:block p-4 border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-6">
+            <div className="cursor-pointer" onClick={() => setLocation('/')}>
+              <Logo size="full" variant={isGame ? 'risejack' : 'risecasino'} />
+            </div>
+            <nav className="hidden md:flex gap-4 text-xs font-bold text-gray-400 tracking-wider">
+              <button
+                type="button"
+                onClick={() => setLocation('/')}
+                className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/' ? 'text-purple-400' : ''}`}
+              >
+                🎲 LOBBY
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocation('/swap')}
+                className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/swap' ? 'text-purple-400' : ''}`}
+              >
+                🔄 SWAP
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocation('/stake')}
+                className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/stake' ? 'text-purple-400' : ''}`}
+              >
+                📈 STAKE
+              </button>
+            </nav>
+          </div>
+          <WalletConnect
+            account={wallet.address}
+            isConnected={wallet.isConnected}
+            isConnecting={wallet.isConnecting}
+            error={wallet.error}
+            onConnect={wallet.connect}
+            onDisconnect={wallet.disconnect}
+            hasSessionKey={wallet.hasSessionKey}
+            sessionExpiry={wallet.sessionExpiry}
+            onCreateSession={wallet.createSessionKey}
+            onRevokeSession={wallet.revokeSessionKey}
+          />
+        </div>
+      </header>
+    </>
+  );
+}
+// Session Modal Manager - handles onboarding and expiry modals
+function SessionModalManager({ children }: { children: preact.ComponentChildren }) {
+  const wallet = useWallet();
+
+  return (
+    <>
+      {children}
+
+      {/* Onboarding Modal - first time users */}
+      {wallet.showOnboarding && (
+        <FastModeOnboarding
+          onEnable={async () => await wallet.dismissOnboarding(true)}
+          onSkip={() => wallet.dismissOnboarding(false)}
+          isLoading={wallet.isCreatingSession}
         />
-      </div>
-    </header>
+      )}
+
+      {/* Session Expiry Modal - when session expires */}
+      {wallet.showExpiryModal && (
+        <SessionExpiryModal
+          onExtend={async () => await wallet.dismissExpiryModal(true)}
+          onSkip={() => wallet.dismissExpiryModal(false)}
+          isLoading={wallet.isCreatingSession}
+        />
+      )}
+    </>
   );
 }
 
 export function App() {
   return (
     <WalletProvider>
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 font-sans selection:bg-purple-500/30 text-white">
-        <Header />
+      <SessionModalManager>
+        <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 font-sans selection:bg-purple-500/30 text-white">
+          <Header />
 
-        <main>
-          <Switch>
-            <Route path="/" component={Home} />
-            <Route path="/risejack" component={RiseJack} />
-            <Route path="/swap" component={Swap} />
-            <Route path="/stake" component={Stake} />
+          <main>
+            <Switch>
+              <Route path="/" component={Home} />
+              <Route path="/risejack" component={RiseJack} />
+              <Route path="/swap" component={Swap} />
+              <Route path="/stake" component={Stake} />
 
-            {/* Fallback to Home */}
-            <Route component={Home} />
-          </Switch>
-        </main>
-      </div>
+              {/* Fallback to Home */}
+              <Route component={Home} />
+            </Switch>
+          </main>
+        </div>
+      </SessionModalManager>
     </WalletProvider>
   );
 }

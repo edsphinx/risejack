@@ -312,31 +312,31 @@
 
 @media (max-width: 640px) {
   .hand-container {
-    gap: 0.5rem;
-    padding: 0.25rem;
+    gap: 0.25rem;
+    padding: 0.15rem;
   }
 
   .hand-card {
-    margin-left: calc(var(--card-index, 0) * -30px);
+    margin-left: calc(var(--card-index, 0) * -18px);
   }
 
   .hand-cards:hover .hand-card {
-    margin-left: calc(var(--card-index, 0) * -25px);
+    margin-left: calc(var(--card-index, 0) * -15px);
   }
 
-  /* Bigger standalone value */
+  /* Compact standalone value */
   .hand-value-standalone {
-    width: 58px;
-    height: 58px;
-    padding: 0.35rem;
+    width: 42px;
+    height: 42px;
+    padding: 0.2rem;
   }
 
   .hand-value-standalone .value-number {
-    font-size: 1.3rem;
+    font-size: 0.95rem;
   }
 
   .hand-value-standalone .value-type {
-    font-size: 0.5rem;
+    font-size: 0.4rem;
   }
 
   .hand-value-standalone .value-badge {
@@ -346,15 +346,15 @@
 
 @media (max-width: 400px) {
   .hand-card {
-    margin-left: calc(var(--card-index, 0) * -28px);
+    margin-left: calc(var(--card-index, 0) * -15px);
   }
 
   .hand-value-standalone {
-    width: 52px;
-    height: 52px;
+    width: 36px;
+    height: 36px;
   }
 
   .hand-value-standalone .value-number {
-    font-size: 1.1rem;
+    font-size: 0.85rem;
   }
 }

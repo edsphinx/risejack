@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { formatEther } from 'viem';
 import { getProvider } from '@/lib/riseWallet';
 import type { WalletConnectProps, TimeRemaining } from '@risejack/shared';
 import './styles/header.css';
+import './styles/desktop-dropdown.css';
 
 export function WalletConnect({
   account,
@@ -19,6 +20,19 @@ export function WalletConnect({
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [copied, setCopied] = useState(false);
   const [balance, setBalance] = useState<bigint | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Fetch balance using direct provider call
   useEffect(() => {
@@ -41,7 +55,6 @@ export function WalletConnect({
     };
 
     fetchBalance();
-    // Poll every 10 seconds
     const interval = setInterval(fetchBalance, 10000);
     return () => clearInterval(interval);
   }, [account]);
@@ -94,54 +107,93 @@ export function WalletConnect({
     );
   }
 
-  // Connected state
+  // Connected state with dropdown
   return (
-    <div className="wallet-section">
-      {/* Session Key */}
-      {hasSessionKey ? (
-        <div className="header-badge session-active">
-          <span>🔑</span>
-          <span className="badge-text badge-time">{formatTime(sessionExpiry)}</span>
-          <span className="badge-separator">|</span>
-          <span onClick={onRevokeSession} className="badge-disconnect" title="Revoke session">
-            ✕
+    <div className="wallet-section" ref={dropdownRef}>
+      {/* Clickable wallet button */}
+      <button className="wallet-trigger" onClick={() => setDropdownOpen(!dropdownOpen)}>
+        <div className="wallet-trigger-left">
+          <span className="wallet-trigger-dot" />
+          <span className="wallet-trigger-balance">
+            {balance !== null ? `${Number(formatEther(balance)).toFixed(4)} ETH` : '...'}
           </span>
         </div>
-      ) : (
-        <button
-          onClick={handleCreateSession}
-          disabled={isCreatingSession}
-          className="header-badge create-session"
-        >
-          <span>🔑</span>
-          <span className="badge-text">{isCreatingSession ? '...' : 'Fast Mode'}</span>
-        </button>
-      )}
+        <div className="wallet-trigger-right">
+          <span className="wallet-trigger-address">{shortenAddress(account!)}</span>
+          <span className={`wallet-trigger-arrow ${dropdownOpen ? 'open' : ''}`}>▼</span>
+        </div>
+        {hasSessionKey && <span className="wallet-trigger-session">🔑</span>}
+      </button>
 
-      {/* Balance */}
-      {balance !== null && (
-        <div className="header-badge balance">
-          <span className="badge-balance">{Number(formatEther(balance)).toFixed(5)} ETH</span>
+      {/* Dropdown panel */}
+      {dropdownOpen && (
+        <div className="wallet-dropdown">
+          {/* Wallet Info */}
+          <div className="dropdown-section">
+            <div className="dropdown-section-header">
+              <span className="dropdown-status-dot" />
+              <span className="dropdown-status-text">Connected</span>
+            </div>
+
+            <div className="dropdown-address-row">
+              <span className="dropdown-address">{account}</span>
+              <button className="dropdown-copy-btn" onClick={copyAddress}>
+                {copied ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+
+            <div className="dropdown-balance-row">
+              <span className="dropdown-balance-label">Balance</span>
+              <span className="dropdown-balance-value">
+                {balance !== null ? `${Number(formatEther(balance)).toFixed(6)} ETH` : '-- ETH'}
+              </span>
+            </div>
+          </div>
+
+          {/* Session Key */}
+          <div className="dropdown-section session-section">
+            <div className="dropdown-session-header">
+              <div className="dropdown-session-info">
+                <span className="dropdown-session-icon">🔑</span>
+                <div>
+                  <div className="dropdown-session-label">Fast Mode</div>
+                  <div className="dropdown-session-desc">
+                    {hasSessionKey ? 'Active - no popups!' : 'Enable for instant gameplay'}
+                  </div>
+                </div>
+              </div>
+
+              {hasSessionKey ? (
+                <div className="dropdown-session-actions">
+                  <span className="dropdown-session-time">{formatTime(sessionExpiry)}</span>
+                  <button className="dropdown-btn-revoke" onClick={onRevokeSession}>
+                    Revoke
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className="dropdown-btn-enable"
+                  onClick={handleCreateSession}
+                  disabled={isCreatingSession}
+                >
+                  {isCreatingSession ? '...' : 'Enable'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Disconnect */}
+          <button
+            className="dropdown-disconnect"
+            onClick={() => {
+              onDisconnect();
+              setDropdownOpen(false);
+            }}
+          >
+            🚪 Disconnect Wallet
+          </button>
         </div>
       )}
-
-      {/* Address + Disconnect (integrated like session key) */}
-      <button onClick={copyAddress} className="header-badge" title="Copy address">
-        <div className="status-dot" />
-        <span className="badge-address">{shortenAddress(account!)}</span>
-        <span className="text-slate-500">{copied ? '✓' : '⧉'}</span>
-        <span className="badge-separator">|</span>
-        <span
-          onClick={(e) => {
-            e.stopPropagation();
-            onDisconnect();
-          }}
-          className="badge-disconnect"
-          title="Disconnect"
-        >
-          ✕
-        </span>
-      </button>
     </div>
   );
 }

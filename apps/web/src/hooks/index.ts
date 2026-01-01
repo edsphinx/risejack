@@ -7,6 +7,7 @@ export { useWalletConnection, type UseWalletConnectionReturn } from './useWallet
 export { useSessionKey, type UseSessionKeyReturn } from './useSessionKey';
 export { useContractState, type UseContractStateReturn } from './useContractState';
 export { useGameActions, type UseGameActionsReturn } from './useGameActions';
+export { useEventLogger } from './useEventLogger';
 
 // Compositor hooks (recommended for components)
 export { useRiseWallet } from './useRiseWallet';

@@ -11,6 +11,7 @@ import { signWithSessionKey, getActiveSessionKey } from '@/services/sessionKeyMa
 import { ErrorService } from '@/services';
 import { RISEJACK_ABI, getRiseJackAddress } from '@/lib/contract';
 import { logger } from '@/lib/logger';
+import { logEvent } from '@/lib/api';
 import type { BetLimits, GameResult } from '@risejack/shared';
 
 // Valid game action types
@@ -296,18 +297,40 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
         return false;
       }
 
+      // Log game_start event
+      logEvent('game_start', address || undefined, {
+        betAmount: betAmount,
+        currency: 'ETH',
+      }).catch(() => {});
+
       return executeAction('placeBet', betWei);
     },
-    [executeAction, betLimits]
+    [executeAction, betLimits, address]
   );
 
-  const hit = useCallback(() => executeAction('hit'), [executeAction]);
-  const stand = useCallback(() => executeAction('stand'), [executeAction]);
+  const hit = useCallback(() => {
+    logEvent('game_action', address || undefined, { action: 'hit' }).catch(() => {});
+    return executeAction('hit');
+  }, [executeAction, address]);
+
+  const stand = useCallback(() => {
+    logEvent('game_action', address || undefined, { action: 'stand' }).catch(() => {});
+    return executeAction('stand');
+  }, [executeAction, address]);
+
   const double = useCallback(
-    (currentBet: bigint) => executeAction('double', currentBet),
-    [executeAction]
+    (currentBet: bigint) => {
+      logEvent('game_action', address || undefined, { action: 'double' }).catch(() => {});
+      return executeAction('double', currentBet);
+    },
+    [executeAction, address]
   );
-  const surrender = useCallback(() => executeAction('surrender'), [executeAction]);
+
+  const surrender = useCallback(() => {
+    logEvent('game_action', address || undefined, { action: 'surrender' }).catch(() => {});
+    return executeAction('surrender');
+  }, [executeAction, address]);
+
   const formatBet = useCallback((value: bigint): string => formatEther(value), []);
 
   // Cancel a timed out game using session key + passkey fallback for consistency

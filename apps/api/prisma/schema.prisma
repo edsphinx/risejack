@@ -56,7 +56,7 @@ model User {
 
   // Profile
   displayName String? @map("display_name") @db.VarChar(64)
-  avatarUrl   String? @map("avatar_url")
+  avatarUrl   String? @map("avatar_url") @db.VarChar(512) // URL length constraint
 
   // Gamification
   xp      Int    @default(0)

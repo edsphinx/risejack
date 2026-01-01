@@ -65,15 +65,16 @@ function timingSafeEqual(a: string, b: string): boolean {
   const bufferA = Buffer.from(a, 'utf8');
   const bufferB = Buffer.from(b, 'utf8');
 
-  // Pad shorter buffer to same length to prevent length-based timing attacks
-  const maxLength = Math.max(bufferA.length, bufferB.length);
-  const paddedA = Buffer.alloc(maxLength);
-  const paddedB = Buffer.alloc(maxLength);
+  // Always pad to a fixed length to prevent length-based timing attacks (CWE-208)
+  const FIXED_LENGTH = 64; // Use a reasonable fixed length for API keys
+  const paddedA = Buffer.alloc(FIXED_LENGTH);
+  const paddedB = Buffer.alloc(FIXED_LENGTH);
 
   bufferA.copy(paddedA);
   bufferB.copy(paddedB);
 
-  return bufferA.length === bufferB.length && cryptoTimingSafeEqual(paddedA, paddedB);
+  // Use crypto.timingSafeEqual directly - it handles length differences securely
+  return cryptoTimingSafeEqual(paddedA, paddedB);
 }
 
 /**

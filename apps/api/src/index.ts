@@ -87,6 +87,10 @@ app.get('/api/stats', async (c) => {
 
 // 404 handler - CWE-209: Don't expose path to prevent info disclosure
 app.notFound((c) => {
+  // Log the 404 for monitoring but don't expose path to client
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(`404 Not Found: ${c.req.path}`);
+  }
   return c.json({ error: 'Not found' }, 404);
 });
 

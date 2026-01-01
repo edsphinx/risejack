@@ -475,10 +475,8 @@ Use Playwright to capture screenshots at each breakpoint and compare with baseli
 6. **Remove legacy CSS** - Once migration is verified
 7. **Document** - API reference and examples
 
----
-
 ## Related Documents
 
-- [ROADMAP.md](../roadmap/ROADMAP.md) - Phase 4: Card Engine
-- [PLANNED_FEATURES.md](../roadmap/PLANNED_FEATURES.md) - Feature backlog
 - [FRONTEND.md](./FRONTEND.md) - Current frontend architecture
+- [SMART_CONTRACTS.md](./SMART_CONTRACTS.md) - Contract architecture
+- [BACKEND_EVALUATION.md](./BACKEND_EVALUATION.md) - Backend stack decisions

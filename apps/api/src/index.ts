@@ -14,6 +14,7 @@ import users from './routes/users';
 import referrals from './routes/referrals';
 import leaderboard from './routes/leaderboard';
 import events from './routes/events';
+import activity from './routes/activity';
 
 const app = new Hono();
 
@@ -74,6 +75,7 @@ app.route('/api/users', users);
 app.route('/api/referrals', referrals);
 app.route('/api/leaderboard', leaderboard);
 app.route('/api/events', events);
+app.route('/api/activity', activity);
 
 // Global stats endpoint
 app.get('/api/stats', async (c) => {

@@ -12,7 +12,7 @@ import { useContractState } from './useContractState';
 import { useGameActions, type GameEndData } from './useGameActions';
 import { useGameEvents, type GameEndEvent, type CardDealtEvent } from './useGameEvents';
 import { logger } from '@/lib/logger';
-import type { UseRiseWalletReturn } from './useRiseWallet';
+import type { UseRiseWalletReturn } from '@risejack/shared';
 import type { GameData, HandValue, BetLimits, GameResult } from '@risejack/shared';
 
 // Card accumulator for smooth display

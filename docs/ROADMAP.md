@@ -26,6 +26,18 @@ Implement an on-chain referral system where users earn a percentage of house edg
 - **On-chain mechanics**: Referral registry contract.
 - **Frontend**: Dashboard to copy invite links and view earnings.
 - **Incentive**: 10% of house edge share to referrer.
+- **Go Indexer**: ✅ Accumulates earnings in `referral_earnings` table.
+
+#### 🎁 Merkle Drop (Pending)
+
+**Monthly airdrop for accumulated referral earnings:**
+
+- Go service generates Merkle tree from pending earnings.
+- `MerkleDrop.sol` contract for trustless claims.
+- Random day each month to prevent gaming.
+- Users claim via proof on frontend.
+
+> **Status**: Earnings accumulation ✅ | Merkle Drop ⏳ Pending
 
 ### 🏆 2. Leaderboards
 

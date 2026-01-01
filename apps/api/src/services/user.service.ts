@@ -78,6 +78,16 @@ export async function registerReferral(
     return { success: false, error: 'User already has a referrer' };
   }
 
+  // SECURITY: Prevent self-referral
+  if (existingUser && existingUser.id === referrer.id) {
+    return { success: false, error: 'Cannot use your own referral code' };
+  }
+
+  // Also check by wallet address for new users
+  if (referrer.walletAddress.toLowerCase() === walletAddress.toLowerCase()) {
+    return { success: false, error: 'Cannot use your own referral code' };
+  }
+
   // Create or update user with referrer
   const user = await UserRepository.upsertUser({
     walletAddress,

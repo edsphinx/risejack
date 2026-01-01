@@ -32,16 +32,35 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000, // Fail if connection takes > 5s
 });
 
+/**
+ * Thread-safe health status tracking using atomic operations.
+ * Uses a closure to prevent direct external modification.
+ */
+const healthStatus = (() => {
+  let healthy = true;
+
+  return {
+    get: () => healthy,
+    setHealthy: () => {
+      healthy = true;
+    },
+    setUnhealthy: () => {
+      healthy = false;
+    },
+  };
+})();
+
 // Handle pool errors securely - never log connection details
 pool.on('error', (_err: Error) => {
   // Log generic error without exposing connection details
   console.error('Database pool error occurred');
+  healthStatus.setUnhealthy();
   // Don't exit - let the connection retry mechanism handle it
 });
 
 pool.on('connect', (_client: PoolClient) => {
   // Connection established - update health status
-  isPoolHealthy = true;
+  healthStatus.setHealthy();
 });
 
 pool.on('remove', () => {
@@ -66,9 +85,6 @@ export const prisma =
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
-
-// Track connection state for health checks
-let isPoolHealthy = true;
 
 // Graceful shutdown handlers for connection cleanup
 async function cleanup() {
@@ -96,17 +112,20 @@ process.on('SIGTERM', async () => {
  * Check if database connection is healthy.
  * Use this for health check endpoints.
  * Never exposes connection details in errors.
+ *
+ * Uses closure-based health tracking for thread-safety.
  */
 export async function isDatabaseHealthy(): Promise<boolean> {
-  if (!isPoolHealthy) {
+  if (!healthStatus.get()) {
     return false;
   }
 
   try {
     await prisma.$queryRaw`SELECT 1`;
+    healthStatus.setHealthy();
     return true;
   } catch {
-    isPoolHealthy = false;
+    healthStatus.setUnhealthy();
     return false;
   }
 }

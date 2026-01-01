@@ -1,8 +1,10 @@
 ---
-description: Load project context and preferences before starting work
+description: ALWAYS run this first - Load project context and preferences before starting work
 ---
 
 # Context Loading Workflow
+
+> ⚠️ **IMPORTANT**: Run `/load-context` at the START of EVERY session to load project preferences and context.
 
 Before starting any work on RiseCasino, read the following files to understand the project:
 

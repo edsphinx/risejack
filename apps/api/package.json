@@ -19,6 +19,7 @@
     "@prisma/client": "^7.2.0",
     "@risejack/shared": "workspace:*",
     "hono": "^4.6.14",
+    "hono-rate-limiter": "^0.5.3",
     "pg": "^8.16.3",
     "prisma": "^7.2.0"
   },

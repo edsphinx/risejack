@@ -11,10 +11,10 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
 /**
- * Get database URL securely from environment.
+ * Get database configuration securely from environment.
  * Throws a generic error to prevent connection string exposure.
  */
-function getDatabaseUrl(): string {
+function getDbConfig(): string {
   const url = process.env.DATABASE_URL;
   if (!url) {
     // Generic error - never expose that DATABASE_URL is the issue
@@ -25,7 +25,7 @@ function getDatabaseUrl(): string {
 
 // Create PostgreSQL connection pool with secure configuration
 const pool = new Pool({
-  connectionString: getDatabaseUrl(),
+  connectionString: getDbConfig(),
   // Connection pool configuration for production
   max: 10, // Maximum pool size
   idleTimeoutMillis: 30000, // Close idle connections after 30s

@@ -75,33 +75,45 @@ events.post('/', async (c) => {
       // Check depth and property count to prevent DoS (JSON bombs, wide objects)
       const maxDepth = 10;
       const maxProperties = 100;
-      let propertyCount = 0;
 
-      const checkDepth = (obj: unknown, depth = 0): boolean => {
-        if (depth > maxDepth) return false;
-        if (propertyCount > maxProperties) return false;
+      const checkDepth = (
+        obj: unknown,
+        depth = 0,
+        currentCount = 0
+      ): { valid: boolean; count: number } => {
+        if (depth > maxDepth) return { valid: false, count: currentCount };
+        if (currentCount > maxProperties) return { valid: false, count: currentCount };
 
         if (obj && typeof obj === 'object') {
           if (Array.isArray(obj)) {
             // Handle arrays with depth tracking
             for (let i = 0; i < obj.length; i++) {
-              propertyCount++;
-              if (propertyCount > maxProperties) return false;
-              if (!checkDepth(obj[i], depth + 1)) return false;
+              currentCount++;
+              if (currentCount > maxProperties) return { valid: false, count: currentCount };
+              const result = checkDepth(obj[i], depth + 1, currentCount);
+              if (!result.valid) return result;
+              currentCount = result.count;
             }
           } else {
             // Handle objects
             for (const key in obj as Record<string, unknown>) {
-              propertyCount++;
-              if (propertyCount > maxProperties) return false;
-              if (!checkDepth((obj as Record<string, unknown>)[key], depth + 1)) return false;
+              currentCount++;
+              if (currentCount > maxProperties) return { valid: false, count: currentCount };
+              const result = checkDepth(
+                (obj as Record<string, unknown>)[key],
+                depth + 1,
+                currentCount
+              );
+              if (!result.valid) return result;
+              currentCount = result.count;
             }
           }
         }
-        return true;
+        return { valid: true, count: currentCount };
       };
 
-      if (!checkDepth(eventData)) {
+      const depthCheckResult = checkDepth(eventData);
+      if (!depthCheckResult.valid) {
         return c.json({ error: 'Event data too complex' } satisfies ApiError, 400);
       }
 

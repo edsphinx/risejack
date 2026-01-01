@@ -130,6 +130,14 @@ export async function createUser(data: {
     throw new Error('Invalid referrer ID format');
   }
 
+  // Validate displayName if provided (max 64 chars to prevent XSS/DB issues)
+  if (data.displayName !== undefined) {
+    if (typeof data.displayName !== 'string' || data.displayName.length > 64) {
+      throw new Error('Invalid display name format or length');
+    }
+    data.displayName = data.displayName.trim();
+  }
+
   return prisma.user.create({
     data: {
       walletAddress: data.walletAddress.toLowerCase(),

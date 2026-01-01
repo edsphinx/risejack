@@ -8,8 +8,10 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { prettyJSON } from 'hono/pretty-json';
+import { rateLimiter } from 'hono-rate-limiter';
 import path from 'path';
 import fs from 'fs';
+import { randomBytes } from 'crypto';
 
 // Route imports
 import users from './routes/users';
@@ -20,6 +22,13 @@ import activity from './routes/activity';
 import health from './routes/health';
 
 const app = new Hono();
+
+// Request ID middleware for debugging without exposing sensitive data
+app.use('*', async (c, next) => {
+  const requestId = randomBytes(8).toString('hex');
+  c.res.headers.set('X-Request-ID', requestId);
+  await next();
+});
 
 // Middleware
 app.use('*', logger());
@@ -32,38 +41,25 @@ app.use(
 );
 app.use('*', prettyJSON());
 
-// Root endpoint
+// Rate limiting: 100 requests per minute per IP (prevents abuse)
+app.use(
+  '*',
+  rateLimiter({
+    windowMs: 60 * 1000, // 1 minute
+    limit: 100, // 100 requests per window
+    standardHeaders: 'draft-6',
+    keyGenerator: (c) =>
+      c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown',
+    message: { error: 'Too many requests, please try again later' },
+  })
+);
+
+// Root endpoint - minimal info to prevent API reconnaissance
 app.get('/', (c) => {
   return c.json({
     name: 'Rise Casino API',
     version: '1.0.0',
-    description: 'Backend for Rise Casino - Leaderboards, Referrals, User Stats',
-    endpoints: {
-      health: {
-        status: 'GET /health',
-        live: 'GET /health/live',
-        ready: 'GET /health/ready',
-      },
-      users: {
-        profile: 'GET /api/users/:walletAddress',
-        register: 'POST /api/users/register',
-        games: 'GET /api/users/:walletAddress/games',
-      },
-      referrals: {
-        stats: 'GET /api/referrals/:walletAddress',
-        history: 'GET /api/referrals/:walletAddress/history',
-        register: 'POST /api/referrals/register',
-      },
-      leaderboard: {
-        cached: 'GET /api/leaderboard/:period',
-        live: 'GET /api/leaderboard/live/:metric',
-      },
-      events: {
-        log: 'POST /api/events',
-        types: 'GET /api/events/types',
-        funnel: 'GET /api/events/funnel',
-      },
-    },
+    status: 'operational',
   });
 });
 

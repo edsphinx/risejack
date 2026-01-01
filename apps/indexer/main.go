@@ -258,19 +258,118 @@ func processLog(db *sql.DB, contractABI abi.ABI, vLog types.Log) {
 		return
 	}
 
-	// Update user XP (10 XP per game)
+	// Calculate XP based on outcome
+	baseXP := 10
+	bonusXP := 0
+	switch outcome {
+	case "win":
+		bonusXP = 25
+	case "blackjack":
+		bonusXP = 50
+	case "push":
+		bonusXP = 5
+	case "surrender":
+		bonusXP = 2
+	}
+	totalXP := baseXP + bonusXP
+
+	// Update user XP and level
 	_, err = db.Exec(`
 		UPDATE users SET 
-			xp = xp + 10,
-			level = CASE WHEN xp + 10 >= level * 100 THEN level + 1 ELSE level END,
+			xp = xp + $1,
+			level = FLOOR((xp + $1) / 100) + 1,
 			updated_at = NOW(),
 			last_seen_at = NOW()
-		WHERE wallet_address = $1
-	`, strings.ToLower(event.Player.Hex()))
+		WHERE wallet_address = $2
+	`, totalXP, strings.ToLower(event.Player.Hex()))
 
 	if err != nil {
 		log.Printf("Failed to update user XP: %v", err)
+	} else {
+		fmt.Printf("   ⭐ XP awarded: +%d (base: %d, bonus: %d)\n", totalXP, baseXP, bonusXP)
 	}
 
-	// TODO: Process referral earnings here
+	// Process referral earnings (10% of house edge to referrer)
+	processReferralEarnings(db, event, outcome, vLog.TxHash.Hex())
+}
+
+// processReferralEarnings calculates and stores referral earnings
+// Referrer earns 10% of house edge from each game their referees play
+func processReferralEarnings(db *sql.DB, event GameEndedEvent, outcome string, txHash string) {
+	playerAddress := strings.ToLower(event.Player.Hex())
+
+	// Skip if player lost (no house edge to share)
+	if outcome == "lose" || outcome == "surrender" {
+		return
+	}
+
+	// Calculate house edge: betAmount - payout for wins, or betAmount for losses
+	// For wins/blackjack/push, house still takes a small edge on average
+	// We use a fixed 1% of bet as approximation
+	houseEdge := new(big.Int).Div(event.BetAmount, big.NewInt(100)) // 1% of bet
+
+	// Referrer earns 10% of house edge
+	referrerEarning := new(big.Int).Div(houseEdge, big.NewInt(10))
+
+	if referrerEarning.Cmp(big.NewInt(0)) <= 0 {
+		return // No earnings to distribute
+	}
+
+	// Find player's referrer
+	var referrerId, referrerWallet string
+	err := db.QueryRow(`
+		SELECT u2.id, u2.wallet_address
+		FROM users u1
+		JOIN users u2 ON u1.referrer_id = u2.id
+		WHERE u1.wallet_address = $1 AND u1.referrer_id IS NOT NULL
+	`, playerAddress).Scan(&referrerId, &referrerWallet)
+
+	if err != nil {
+		// No referrer found - this is normal for users without referrals
+		return
+	}
+
+	// Get player's user ID for the earning record
+	var playerId, gameId string
+	err = db.QueryRow(`SELECT id FROM users WHERE wallet_address = $1`, playerAddress).Scan(&playerId)
+	if err != nil {
+		log.Printf("Failed to get player ID: %v", err)
+		return
+	}
+
+	// Get game ID from the tx just inserted
+	err = db.QueryRow(`SELECT id FROM games WHERE tx_hash = $1`, txHash).Scan(&gameId)
+	if err != nil {
+		log.Printf("Failed to get game ID: %v", err)
+		return
+	}
+
+	// Insert referral earning (Tier 1)
+	_, err = db.Exec(`
+		INSERT INTO referral_earnings (
+			referrer_id, referee_id, game_id,
+			tier, house_edge, earned, currency,
+			claimed, created_at
+		) VALUES ($1, $2, $3, 1, $4, $5, 'ETH', false, NOW())
+		ON CONFLICT DO NOTHING
+	`,
+		referrerId,
+		playerId,
+		gameId,
+		houseEdge.String(),
+		referrerEarning.String(),
+	)
+
+	if err != nil {
+		log.Printf("Failed to insert referral earning: %v", err)
+		return
+	}
+
+	fmt.Printf("   💰 Referral earning: %s -> %s (+%s wei)\n",
+		playerAddress[:10]+"...",
+		referrerWallet[:10]+"...",
+		referrerEarning.String(),
+	)
+
+	// TODO (Phase 2): Implement Tier 2 earnings (referrer's referrer gets 2%)
 }

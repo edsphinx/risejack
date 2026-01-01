@@ -34,10 +34,7 @@ export async function requireAdmin(c: Context, next: Next) {
 
   // Always require API key - no development bypass for security
   if (!adminApiKey) {
-    // Log only in development for debugging, never expose in response
-    if (process.env.NODE_ENV === 'development') {
-      console.error('ADMIN_API_KEY not configured - set it in .env to access admin endpoints');
-    }
+    // Never log configuration details, even in development
     return c.json({ error: 'Service unavailable' } satisfies ApiError, 503);
   }
 

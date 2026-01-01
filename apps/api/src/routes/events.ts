@@ -29,7 +29,12 @@ events.post('/', async (c) => {
     return c.json({ error: 'Request too large' } satisfies ApiError, 413);
   }
 
-  const body = await c.req.json<LogEventRequest>();
+  let body: LogEventRequest;
+  try {
+    body = await c.req.json<LogEventRequest>();
+  } catch {
+    return c.json({ error: 'Invalid JSON payload' } satisfies ApiError, 400);
+  }
   const { walletAddress, eventType, eventData, sessionId, deviceType } = body;
 
   // INPUT VALIDATION: Validate wallet address if provided

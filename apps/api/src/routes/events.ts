@@ -69,12 +69,32 @@ events.post('/', async (c) => {
     );
   }
 
-  // INPUT VALIDATION: Validate eventData size to prevent DoS attacks
+  // INPUT VALIDATION: Validate eventData size and depth to prevent DoS attacks
   if (eventData) {
-    const eventDataStr = JSON.stringify(eventData);
-    if (eventDataStr.length > 10000) {
-      // 10KB limit
-      return c.json({ error: 'Event data too large' } satisfies ApiError, 400);
+    try {
+      // Check depth to prevent deeply nested objects (JSON bomb)
+      const maxDepth = 10;
+      const checkDepth = (obj: unknown, depth = 0): boolean => {
+        if (depth > maxDepth) return false;
+        if (obj && typeof obj === 'object') {
+          for (const key in obj as Record<string, unknown>) {
+            if (!checkDepth((obj as Record<string, unknown>)[key], depth + 1)) return false;
+          }
+        }
+        return true;
+      };
+
+      if (!checkDepth(eventData)) {
+        return c.json({ error: 'Event data too complex' } satisfies ApiError, 400);
+      }
+
+      const eventDataStr = JSON.stringify(eventData);
+      if (eventDataStr.length > 10000) {
+        // 10KB limit
+        return c.json({ error: 'Event data too large' } satisfies ApiError, 400);
+      }
+    } catch {
+      return c.json({ error: 'Invalid event data format' } satisfies ApiError, 400);
     }
   }
 

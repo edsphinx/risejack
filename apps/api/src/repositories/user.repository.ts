@@ -148,6 +148,21 @@ export async function upsertUser(data: {
   referralCode?: string;
   chainId?: number;
 }): Promise<User> {
+  // Validate wallet address format
+  if (!/^0x[0-9a-fA-F]{40}$/.test(data.walletAddress)) {
+    throw new Error('Invalid wallet address format');
+  }
+
+  // Validate referrerId if provided
+  if (
+    data.referrerId &&
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      data.referrerId
+    )
+  ) {
+    throw new Error('Invalid referrer ID format');
+  }
+
   const normalizedWallet = data.walletAddress.toLowerCase();
   const chainId = data.chainId || DEFAULT_CHAIN_ID;
 

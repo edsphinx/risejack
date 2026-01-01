@@ -9,6 +9,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { prettyJSON } from 'hono/pretty-json';
 import path from 'path';
+import fs from 'fs';
 
 // Route imports
 import users from './routes/users';
@@ -120,14 +121,14 @@ const getTlsConfig = () => {
     const keyPath = path.join(process.cwd(), 'localhost+2-key.pem');
     const certPath = path.join(process.cwd(), 'localhost+2.pem');
 
+    // Check if files exist before returning
+    if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
+      throw new Error('Certificates not found');
+    }
+
     // Use Bun's native file reading with absolute paths
     const key = Bun.file(keyPath);
     const cert = Bun.file(certPath);
-
-    // Check if files exist before returning
-    if (!key.size || !cert.size) {
-      throw new Error('Certificates not found');
-    }
 
     return { key, cert };
   } catch {

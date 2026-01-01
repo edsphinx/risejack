@@ -5,6 +5,7 @@ import { Hand, HandValue } from './Hand';
 import { ActionButtons } from './ActionButtons';
 import { CardDeck } from './CardDeck';
 import { GameHistory } from './GameHistory';
+import { MobileHistory } from './MobileHistory';
 import { VRFWaitingOverlay } from './VRFWaitingOverlay';
 import { ContractService } from '@/services';
 import { StorageService } from '@/services/storage.service';
@@ -450,9 +451,14 @@ export function GameBoard() {
               )}
             </div>
 
-            {/* History Panel - always beside controls */}
+            {/* History Panel - desktop only (hidden on mobile via CSS) */}
             <div className="history-panel">
               <GameHistory />
+            </div>
+
+            {/* Mobile History - compact horizontal, visible on mobile only */}
+            <div className="mobile-history-wrapper">
+              <MobileHistory />
             </div>
           </div>
 

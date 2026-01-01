@@ -215,6 +215,7 @@
 }
 
 @keyframes pulse-badge {
+
   0%,
   100% {
     transform: scale(1);
@@ -328,9 +329,15 @@
   align-items: center;
   gap: 2rem;
   padding: 1.5rem;
-  background: rgba(30, 41, 59, 0.5);
+  background: rgba(30, 41, 59, 0.95);
   border-top: 1px solid rgba(71, 85, 105, 0.3);
   border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+  /* Sticky on scroll */
+  position: sticky;
+  top: 40px;
+  /* Height of mobile header */
+  z-index: 45;
+  backdrop-filter: blur(10px);
 }
 
 @media (max-width: 640px) {

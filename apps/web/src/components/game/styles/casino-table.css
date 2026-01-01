@@ -961,3 +961,15 @@
     padding-bottom: 0.35rem !important;
   }
 }
+
+/* Mobile History Wrapper - Shows only on mobile where full history is hidden */
+.mobile-history-wrapper {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .mobile-history-wrapper {
+    display: block;
+    margin-top: 0;
+  }
+}

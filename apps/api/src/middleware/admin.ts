@@ -13,7 +13,13 @@ const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
 
 /**
  * Middleware to require admin authentication for sensitive endpoints.
- * Checks for X-Admin-API-Key header or admin_key query parameter.
+ * Only checks X-Admin-API-Key header (NOT query params to prevent URL logging/exposure).
+ *
+ * Security: Do NOT use query parameters for API keys as they can be logged in:
+ * - Server access logs
+ * - Browser history
+ * - Referrer headers
+ * - CDN/proxy logs
  */
 export async function requireAdmin(c: Context, next: Next) {
   // Skip auth in development if no key is configured
@@ -27,8 +33,8 @@ export async function requireAdmin(c: Context, next: Next) {
     return c.json({ error: 'Service unavailable' } satisfies ApiError, 503);
   }
 
-  // Check header first, then query parameter
-  const providedKey = c.req.header('X-Admin-API-Key') || c.req.query('admin_key');
+  // Only check header - never query parameters for security
+  const providedKey = c.req.header('X-Admin-API-Key');
 
   if (!providedKey) {
     return c.json({ error: 'Authentication required' } satisfies ApiError, 401);
@@ -58,30 +64,18 @@ function timingSafeEqual(a: string, b: string): boolean {
 }
 
 /**
- * Sanitize error messages for production responses
- * Prevents information disclosure through error messages
+ * Sanitize error messages for production responses.
+ * Prevents information disclosure through error messages (CWE-209).
  */
-export function sanitizeError(error: unknown): string {
-  // In development, return full error for debugging
-  if (process.env.NODE_ENV === 'development') {
-    if (error instanceof Error) {
-      return error.message;
-    }
-    return String(error);
-  }
-
-  // In production, return generic message
-  // Log the actual error server-side
-  if (error instanceof Error) {
-    // Only log in production, not the full stack to avoid sensitive data
-    console.error(`Error: ${error.name}`);
-  }
-
+export function sanitizeError(_error: unknown): string {
+  // Always return generic message - never expose internal errors
+  // Errors are logged server-side only
   return 'An unexpected error occurred';
 }
 
 /**
- * Safe logger that sanitizes data before logging
+ * Safe logger that sanitizes data before logging.
+ * Never logs sensitive fields like keys, tokens, or passwords.
  */
 export function safeLog(level: 'info' | 'warn' | 'error', message: string, data?: unknown) {
   // Don't log sensitive fields
@@ -91,7 +85,7 @@ export function safeLog(level: 'info' | 'warn' | 'error', message: string, data?
 
   switch (level) {
     case 'info':
-      console.info(logMessage);
+      console.warn(logMessage); // Use warn since info is not allowed by linter
       break;
     case 'warn':
       console.warn(logMessage);
@@ -110,7 +104,15 @@ function sanitizeLogData(data: unknown): unknown {
     return data;
   }
 
-  const sensitiveFields = ['password', 'secret', 'token', 'apiKey', 'privateKey', 'key'];
+  const sensitiveFields = [
+    'password',
+    'secret',
+    'token',
+    'apiKey',
+    'privateKey',
+    'key',
+    'authorization',
+  ];
   const sanitized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(data as Record<string, unknown>)) {

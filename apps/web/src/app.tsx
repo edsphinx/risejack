@@ -3,6 +3,7 @@ import { Home } from './pages/Home';
 import { RiseJack } from './pages/RiseJack';
 import { Swap } from './pages/Swap';
 import { Stake } from './pages/Stake';
+import { LeaderboardPage } from './pages/LeaderboardPage';
 import { WalletConnect } from './components/wallet/WalletConnect';
 import { Logo } from './components/brand/Logo';
 import { useLocation } from 'wouter-preact';
@@ -53,6 +54,13 @@ function Header() {
             >
               STAKE
             </button>
+            <button
+              type="button"
+              onClick={() => setLocation('/leaderboard')}
+              className={`cursor-pointer hover:text-yellow-400 transition-colors bg-transparent border-none ${location === '/leaderboard' ? 'text-yellow-400' : ''}`}
+            >
+              🏆 RANKS
+            </button>
           </nav>
         </div>
 
@@ -86,6 +94,7 @@ export function App() {
             <Route path="/risejack" component={RiseJack} />
             <Route path="/swap" component={Swap} />
             <Route path="/stake" component={Stake} />
+            <Route path="/leaderboard" component={LeaderboardPage} />
 
             {/* Fallback to Home */}
             <Route component={Home} />

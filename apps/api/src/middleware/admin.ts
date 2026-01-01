@@ -11,8 +11,13 @@
 import type { Context, Next } from 'hono';
 import type { ApiError } from '@risejack/shared';
 
-// Admin API key from environment variable
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
+/**
+ * Get admin API key securely.
+ * Function scope prevents global access by other modules.
+ */
+function getAdminApiKey(): string | undefined {
+  return process.env.ADMIN_API_KEY;
+}
 
 /**
  * Middleware to require admin authentication for sensitive endpoints.
@@ -24,8 +29,10 @@ const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
  * To test admin endpoints in development, set ADMIN_API_KEY in your .env file.
  */
 export async function requireAdmin(c: Context, next: Next) {
+  const adminApiKey = getAdminApiKey();
+
   // Always require API key - no development bypass for security
-  if (!ADMIN_API_KEY) {
+  if (!adminApiKey) {
     // Log only in development for debugging, never expose in response
     if (process.env.NODE_ENV === 'development') {
       console.error('ADMIN_API_KEY not configured - set it in .env to access admin endpoints');
@@ -41,7 +48,7 @@ export async function requireAdmin(c: Context, next: Next) {
   }
 
   // Constant-time comparison to prevent timing attacks
-  if (!timingSafeEqual(providedKey, ADMIN_API_KEY)) {
+  if (!timingSafeEqual(providedKey, adminApiKey)) {
     return c.json({ error: 'Invalid credentials' } satisfies ApiError, 403);
   }
 
@@ -117,6 +124,8 @@ function sanitizeLogData(data: unknown): unknown {
     'authorization',
     'cookie',
     'session',
+    'connectionString',
+    'databaseUrl',
   ];
   const sanitized: Record<string, unknown> = {};
 

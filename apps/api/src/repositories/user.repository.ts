@@ -132,6 +132,8 @@ export async function upsertUser(data: {
 /**
  * Update user XP with proper validation and level calculation.
  * Level is calculated from TOTAL XP, not incremented per update.
+ *
+ * SECURITY: Uses atomic UPDATE to prevent race conditions from concurrent calls.
  */
 export async function updateUserXp(userId: string, xpToAdd: number): Promise<void> {
   // Validate XP bounds to prevent manipulation
@@ -141,28 +143,16 @@ export async function updateUserXp(userId: string, xpToAdd: number): Promise<voi
     return; // No XP to add
   }
 
-  // First get current user XP to calculate correct level
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { xp: true },
-  });
-
-  if (!user) {
-    return; // User not found
-  }
-
-  const newTotalXp = user.xp + validatedXp;
-  const newLevel = Math.floor(newTotalXp / XP_PER_LEVEL);
-
-  // Update with calculated values
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      xp: newTotalXp,
-      level: newLevel,
-      lastSeenAt: new Date(),
-    },
-  });
+  // Atomic update using single SQL statement to prevent race conditions
+  // This calculates new XP and level in one operation
+  await prisma.$executeRaw`
+    UPDATE "User"
+    SET 
+      xp = xp + ${validatedXp},
+      level = FLOOR((xp + ${validatedXp}) / ${XP_PER_LEVEL}),
+      "lastSeenAt" = NOW()
+    WHERE id = ${userId}
+  `;
 }
 
 export async function setUserReferrer(userId: string, referrerId: string): Promise<void> {

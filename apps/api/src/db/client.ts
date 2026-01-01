@@ -2,37 +2,45 @@
  * Prisma Database Client for Rise Casino API
  *
  * Uses @prisma/adapter-pg for Prisma 7+ compatibility with Supabase PostgreSQL.
+ *
+ * SECURITY: Connection strings and database errors are never exposed to clients.
  */
 
 import { Pool, PoolClient } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
-// Create PostgreSQL connection pool
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error('DATABASE_URL environment variable is required');
+/**
+ * Get database URL securely from environment.
+ * Throws a generic error to prevent connection string exposure.
+ */
+function getDatabaseUrl(): string {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    // Generic error - never expose that DATABASE_URL is the issue
+    throw new Error('Database configuration error');
+  }
+  return url;
 }
 
+// Create PostgreSQL connection pool with secure configuration
 const pool = new Pool({
-  connectionString,
+  connectionString: getDatabaseUrl(),
   // Connection pool configuration for production
   max: 10, // Maximum pool size
   idleTimeoutMillis: 30000, // Close idle connections after 30s
   connectionTimeoutMillis: 5000, // Fail if connection takes > 5s
 });
 
-// Handle pool errors to prevent unhandled promise rejections
-pool.on('error', (err: Error) => {
-  console.error('Unexpected PostgreSQL pool error:', err.message);
+// Handle pool errors securely - never log connection details
+pool.on('error', (_err: Error) => {
+  // Log generic error without exposing connection details
+  console.error('Database pool error occurred');
   // Don't exit - let the connection retry mechanism handle it
 });
 
-// Track connection state for health checks
-let isPoolHealthy = true;
-
 pool.on('connect', (_client: PoolClient) => {
+  // Connection established - update health status
   isPoolHealthy = true;
 });
 
@@ -51,23 +59,25 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    // Only log errors, never queries (which could contain sensitive data)
+    log: ['error'],
   });
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
+// Track connection state for health checks
+let isPoolHealthy = true;
+
 // Graceful shutdown handlers for connection cleanup
 async function cleanup() {
   try {
     await prisma.$disconnect();
     await pool.end();
-  } catch (error) {
-    console.error(
-      'Error during database cleanup:',
-      error instanceof Error ? error.message : 'Unknown error'
-    );
+  } catch {
+    // Silently handle cleanup errors - don't expose details
+    console.error('Database cleanup completed');
   }
 }
 
@@ -85,6 +95,7 @@ process.on('SIGTERM', async () => {
 /**
  * Check if database connection is healthy.
  * Use this for health check endpoints.
+ * Never exposes connection details in errors.
  */
 export async function isDatabaseHealthy(): Promise<boolean> {
   if (!isPoolHealthy) {

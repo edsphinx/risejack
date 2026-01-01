@@ -85,9 +85,9 @@ app.get('/api/stats', async (c) => {
   });
 });
 
-// 404 handler
+// 404 handler - CWE-209: Don't expose path to prevent info disclosure
 app.notFound((c) => {
-  return c.json({ error: 'Not found', path: c.req.path }, 404);
+  return c.json({ error: 'Not found' }, 404);
 });
 
 // Error handler

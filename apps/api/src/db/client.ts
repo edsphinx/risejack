@@ -88,12 +88,23 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Graceful shutdown handlers for connection cleanup
 async function cleanup() {
+  // Handle each cleanup step separately to ensure both are attempted (CWE-404)
   try {
     await prisma.$disconnect();
+  } catch (error) {
+    console.error(
+      'Failed to disconnect Prisma client:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
+  }
+
+  try {
     await pool.end();
-  } catch {
-    // Silently handle cleanup errors - don't expose details
-    console.error('Database cleanup completed');
+  } catch (error) {
+    console.error(
+      'Failed to close connection pool:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
   }
 }
 

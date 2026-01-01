@@ -55,19 +55,26 @@ export async function requireAdmin(c: Context, next: Next) {
   return next();
 }
 
+import { timingSafeEqual as cryptoTimingSafeEqual } from 'crypto';
+
 /**
- * Constant-time string comparison to prevent timing attacks
+ * Constant-time string comparison to prevent timing attacks (CWE-208)
+ * Uses Node.js built-in crypto.timingSafeEqual for proper implementation
  */
 function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
+  // Convert strings to buffers for crypto.timingSafeEqual
+  const bufferA = Buffer.from(a, 'utf8');
+  const bufferB = Buffer.from(b, 'utf8');
 
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
+  // Pad shorter buffer to same length to prevent length-based timing attacks
+  const maxLength = Math.max(bufferA.length, bufferB.length);
+  const paddedA = Buffer.alloc(maxLength);
+  const paddedB = Buffer.alloc(maxLength);
+
+  bufferA.copy(paddedA);
+  bufferB.copy(paddedB);
+
+  return cryptoTimingSafeEqual(paddedA, paddedB) && bufferA.length === bufferB.length;
 }
 
 /**

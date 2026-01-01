@@ -8,6 +8,7 @@ import { WalletProvider, useWallet } from './context/WalletContext';
 import { FastModeOnboarding, SessionExpiryModal } from './components/wallet/SessionModals';
 import { ModalErrorBoundary } from './components/common/ErrorBoundary';
 import { PageLoader } from './components/common/PageLoader';
+import { AppLoader } from './components/common/AppLoader';
 import { safeParseNumber } from './lib/formatters';
 import './components/wallet/styles/mobile-header.css';
 
@@ -281,6 +282,13 @@ function SessionModalManager({ children }: { children: preact.ComponentChildren 
 }
 
 export function App() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Show splash screen while preloading heavy deps
+  if (isLoading) {
+    return <AppLoader onLoadComplete={() => setIsLoading(false)} />;
+  }
+
   return (
     <WalletProvider>
       <SessionModalManager>

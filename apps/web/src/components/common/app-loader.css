@@ -1,0 +1,210 @@
+/* AppLoader - Premium animated splash screen */
+
+.app-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a0a2e 50%, #0f0f1a 100%);
+    overflow: hidden;
+}
+
+.app-loader-content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animated Logo - Cards */
+.app-loader-logo {
+    position: relative;
+    height: 100px;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loader-card {
+    position: absolute;
+    font-size: 3rem;
+    filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.5));
+    animation: cardFloat 3s ease-in-out infinite;
+}
+
+.loader-card.card-1 {
+    transform: translateX(-50px) rotate(-15deg);
+    animation-delay: 0s;
+}
+
+.loader-card.card-2 {
+    transform: translateY(-10px);
+    animation-delay: 0.3s;
+    font-size: 4rem;
+}
+
+.loader-card.card-3 {
+    transform: translateX(50px) rotate(15deg);
+    animation-delay: 0.6s;
+}
+
+@keyframes cardFloat {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(var(--rotate, 0deg));
+    }
+
+    50% {
+        transform: translateY(-15px) rotate(var(--rotate, 0deg));
+    }
+}
+
+.card-1 {
+    --rotate: -15deg;
+}
+
+.card-2 {
+    --rotate: 0deg;
+}
+
+.card-3 {
+    --rotate: 15deg;
+}
+
+/* Title */
+.app-loader-title {
+    font-size: 2.5rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    margin-bottom: 2rem;
+}
+
+.title-rise {
+    background: linear-gradient(135deg, #a855f7, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.title-casino {
+    color: white;
+    margin-left: 0.3em;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+}
+
+/* Progress bar */
+.app-loader-progress {
+    width: 200px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin: 0 auto 1.5rem;
+    overflow: hidden;
+}
+
+.app-loader-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #a855f7, #ec4899);
+    border-radius: 2px;
+    transition: width 0.3s ease-out;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+}
+
+/* Status text */
+.app-loader-status {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
+    margin: 0;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Background particles */
+.app-loader-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.loader-particle {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+    animation: particleFloat 8s ease-in-out infinite;
+}
+
+.loader-particle.p1 {
+    top: -150px;
+    left: -100px;
+    animation-delay: 0s;
+}
+
+.loader-particle.p2 {
+    bottom: -100px;
+    right: -100px;
+    animation-delay: 2s;
+}
+
+.loader-particle.p3 {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation-delay: 4s;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%);
+}
+
+@keyframes particleFloat {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: translate(30px, -30px) scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* Fade out animation when loading complete */
+.app-loader.fade-out {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}

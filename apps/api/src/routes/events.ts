@@ -82,10 +82,20 @@ events.post('/', async (c) => {
         if (propertyCount > maxProperties) return false;
 
         if (obj && typeof obj === 'object') {
-          for (const key in obj as Record<string, unknown>) {
-            propertyCount++;
-            if (propertyCount > maxProperties) return false;
-            if (!checkDepth((obj as Record<string, unknown>)[key], depth + 1)) return false;
+          if (Array.isArray(obj)) {
+            // Handle arrays with depth tracking
+            for (let i = 0; i < obj.length; i++) {
+              propertyCount++;
+              if (propertyCount > maxProperties) return false;
+              if (!checkDepth(obj[i], depth + 1)) return false;
+            }
+          } else {
+            // Handle objects
+            for (const key in obj as Record<string, unknown>) {
+              propertyCount++;
+              if (propertyCount > maxProperties) return false;
+              if (!checkDepth((obj as Record<string, unknown>)[key], depth + 1)) return false;
+            }
           }
         }
         return true;

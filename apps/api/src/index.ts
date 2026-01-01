@@ -121,16 +121,22 @@ const getTlsConfig = () => {
   if (!isHttps) return undefined;
 
   try {
-    // Use path.join to prevent path traversal attacks
-    const keyPath = path.join(process.cwd(), 'localhost+2-key.pem');
-    const certPath = path.join(process.cwd(), 'localhost+2.pem');
+    // Use absolute paths to prevent path traversal
+    const baseDir = process.cwd();
+    const keyPath = path.resolve(baseDir, 'localhost+2-key.pem');
+    const certPath = path.resolve(baseDir, 'localhost+2.pem');
+
+    // Validate paths are within expected directory
+    if (!keyPath.startsWith(baseDir) || !certPath.startsWith(baseDir)) {
+      throw new Error('Invalid certificate path');
+    }
 
     // Check if files exist before returning
     if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
       throw new Error('Certificates not found');
     }
 
-    // Use Bun's native file reading with absolute paths
+    // Use Bun's native file reading with validated absolute paths
     const key = Bun.file(keyPath);
     const cert = Bun.file(certPath);
 

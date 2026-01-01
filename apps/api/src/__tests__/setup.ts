@@ -17,9 +17,9 @@ afterEach(() => {
   // Any cleanup needed
 });
 
-// Test utilities
-export const TEST_WALLET = '0x1234567890123456789012345678901234567890' as const;
-export const TEST_WALLET_2 = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd' as const;
+// Test utilities - Use obviously fake addresses
+export const TEST_WALLET = '0x0000000000000000000000000000000000000001' as const;
+export const TEST_WALLET_2 = '0x0000000000000000000000000000000000000002' as const;
 
 export function createMockUser(overrides = {}) {
   return {

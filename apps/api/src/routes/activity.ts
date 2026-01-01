@@ -15,7 +15,8 @@ const activity = new Hono();
  * Returns recent wins for the live activity ticker
  */
 activity.get('/recent', async (c) => {
-  const limit = Math.min(Number(c.req.query('limit')) || 10, 20);
+  const rawLimit = c.req.query('limit');
+  const limit = Math.min(Math.max(1, Number(rawLimit) || 10), 20);
 
   try {
     // Get recent wins (blackjack and win outcomes)

@@ -7,7 +7,8 @@
 
 import { createContext } from 'preact';
 import { useContext } from 'preact/hooks';
-import { useRiseWallet, type UseRiseWalletReturn } from '@/hooks/useRiseWallet';
+import { useRiseWallet } from '@/hooks/useRiseWallet';
+import type { UseRiseWalletReturn } from '@risejack/shared';
 
 // Create context with undefined default (will be provided by WalletProvider)
 const WalletContext = createContext<UseRiseWalletReturn | undefined>(undefined);

@@ -200,7 +200,7 @@ export function GameBoard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen game-board-mobile bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       <main className="max-w-6xl mx-auto p-2 sm:p-4 py-4 sm:py-8">
         {/* Error Display */}
         {error && (

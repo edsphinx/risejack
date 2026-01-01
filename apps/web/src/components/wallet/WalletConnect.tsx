@@ -1,8 +1,15 @@
-import { useState, useEffect } from 'preact/hooks';
-import { formatEther } from 'viem';
-import { getProvider } from '@/lib/riseWallet';
-import type { WalletConnectProps, TimeRemaining } from '@risejack/shared';
+/**
+ * WalletConnect - Main wallet connection component
+ * Composes WalletTrigger and WalletDropdown subcomponents
+ * Contains only state management and event handlers
+ */
+
+import { useState, useEffect, useRef } from 'preact/hooks';
+import type { WalletConnectProps } from '@risejack/shared';
+import { WalletTrigger } from './WalletTrigger';
+import { WalletDropdown } from './WalletDropdown';
 import './styles/header.css';
+import './styles/desktop-dropdown.css';
 
 export function WalletConnect({
   account,
@@ -11,50 +18,40 @@ export function WalletConnect({
   hasSessionKey,
   sessionExpiry,
   error,
+  balance,
+  formatBalance,
   onConnect,
   onDisconnect,
   onCreateSession,
   onRevokeSession,
 }: WalletConnectProps) {
+  // Local UI state
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [balance, setBalance] = useState<bigint | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch balance using direct provider call
+  // Close dropdown when clicking outside
   useEffect(() => {
-    if (!account) {
-      setBalance(null);
-      return;
-    }
-
-    const fetchBalance = async () => {
-      try {
-        const provider = getProvider();
-        const result = await provider.request({
-          method: 'eth_getBalance',
-          params: [account, 'latest'],
-        });
-        setBalance(BigInt(result as string));
-      } catch {
-        setBalance(null);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
       }
     };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-    fetchBalance();
-    // Poll every 10 seconds
-    const interval = setInterval(fetchBalance, 10000);
-    return () => clearInterval(interval);
-  }, [account]);
-
-  const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-
-  const formatTime = (time: TimeRemaining | null) => {
-    if (!time || time.expired) return 'Expired';
-    const parts = [];
-    if (time.hours > 0) parts.push(`${time.hours}h`);
-    if (time.minutes > 0) parts.push(`${time.minutes}m`);
-    if (time.hours === 0) parts.push(`${time.seconds}s`);
-    return parts.join(' ');
+  // Event handlers
+  const handleCopyAddress = async () => {
+    if (!account) return;
+    try {
+      await navigator.clipboard.writeText(account);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API not available
+    }
   };
 
   const handleCreateSession = async () => {
@@ -66,11 +63,13 @@ export function WalletConnect({
     }
   };
 
-  const copyAddress = async () => {
-    await navigator.clipboard.writeText(account!);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleDisconnect = () => {
+    onDisconnect();
+    setDropdownOpen(false);
   };
+
+  // Get formatted balance string
+  const balanceString = balance !== null ? formatBalance() : null;
 
   // Not connected state
   if (!isConnected) {
@@ -96,52 +95,29 @@ export function WalletConnect({
 
   // Connected state
   return (
-    <div className="wallet-section">
-      {/* Session Key */}
-      {hasSessionKey ? (
-        <div className="header-badge session-active">
-          <span>🔑</span>
-          <span className="badge-text badge-time">{formatTime(sessionExpiry)}</span>
-          <span className="badge-separator">|</span>
-          <span onClick={onRevokeSession} className="badge-disconnect" title="Revoke session">
-            ✕
-          </span>
-        </div>
-      ) : (
-        <button
-          onClick={handleCreateSession}
-          disabled={isCreatingSession}
-          className="header-badge create-session"
-        >
-          <span>🔑</span>
-          <span className="badge-text">{isCreatingSession ? '...' : 'Fast Mode'}</span>
-        </button>
-      )}
+    <div className="wallet-section" ref={dropdownRef}>
+      <WalletTrigger
+        balance={balanceString || ''}
+        address={account || ''}
+        hasSessionKey={hasSessionKey}
+        isOpen={dropdownOpen}
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+      />
 
-      {/* Balance */}
-      {balance !== null && (
-        <div className="header-badge balance">
-          <span className="badge-balance">{Number(formatEther(balance)).toFixed(5)} ETH</span>
-        </div>
+      {dropdownOpen && (
+        <WalletDropdown
+          address={account || ''}
+          balance={balanceString || ''}
+          hasSessionKey={hasSessionKey}
+          sessionExpiry={sessionExpiry}
+          copied={copied}
+          isCreatingSession={isCreatingSession}
+          onCopyAddress={handleCopyAddress}
+          onCreateSession={handleCreateSession}
+          onRevokeSession={onRevokeSession}
+          onDisconnect={handleDisconnect}
+        />
       )}
-
-      {/* Address + Disconnect (integrated like session key) */}
-      <button onClick={copyAddress} className="header-badge" title="Copy address">
-        <div className="status-dot" />
-        <span className="badge-address">{shortenAddress(account!)}</span>
-        <span className="text-slate-500">{copied ? '✓' : '⧉'}</span>
-        <span className="badge-separator">|</span>
-        <span
-          onClick={(e) => {
-            e.stopPropagation();
-            onDisconnect();
-          }}
-          className="badge-disconnect"
-          title="Disconnect"
-        >
-          ✕
-        </span>
-      </button>
     </div>
   );
 }

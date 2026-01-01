@@ -1,0 +1,80 @@
+/**
+ * Formatters - Pure utility functions for formatting data
+ * No side effects, no state, just data transformation
+ */
+
+/**
+ * Shorten an Ethereum address for display
+ * @example shortenAddress('0x1234567890abcdef...', 6, 4) => '0x1234...cdef'
+ */
+export function shortenAddress(
+    address: string,
+    prefixLength = 6,
+    suffixLength = 4
+): string {
+    if (!address) return '';
+    if (address.length <= prefixLength + suffixLength) return address;
+    return `${address.slice(0, prefixLength)}...${address.slice(-suffixLength)}`;
+}
+
+/**
+ * Format ETH balance for display
+ * @param balance - Balance in wei as bigint or formatted string
+ * @param decimals - Number of decimal places to show
+ */
+export function formatEthBalance(
+    balance: string | null,
+    decimals = 4
+): string {
+    if (!balance) return '...';
+    try {
+        const num = Number(balance);
+        if (isNaN(num)) return '-- ETH';
+        return `${num.toFixed(decimals)} ETH`;
+    } catch {
+        return '-- ETH';
+    }
+}
+
+/**
+ * Format session time remaining
+ */
+export function formatSessionTime(time: {
+    hours: number;
+    minutes: number;
+    seconds: number;
+    expired: boolean;
+} | null): string {
+    if (!time || time.expired) return 'Expired';
+    const parts: string[] = [];
+    if (time.hours > 0) parts.push(`${time.hours}h`);
+    if (time.minutes > 0) parts.push(`${time.minutes}m`);
+    if (time.hours === 0) parts.push(`${time.seconds}s`);
+    return parts.join(' ') || '0s';
+}
+
+/**
+ * Format time elapsed (for game history)
+ */
+export function formatTimeAgo(timestamp: number): string {
+    const now = Date.now();
+    const diff = now - timestamp;
+
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return `${Math.floor(diff / 86400000)}d ago`;
+}
+
+/**
+ * Format crypto amount with symbol
+ */
+export function formatCryptoAmount(
+    amount: number | string,
+    symbol = 'ETH',
+    decimals = 4
+): string {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(num)) return `-- ${symbol}`;
+    return `${num.toFixed(decimals)} ${symbol}`;
+}

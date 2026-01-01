@@ -1,5 +1,13 @@
+/**
+ * WalletConnect - Main wallet connection component
+ * Composes WalletTrigger and WalletDropdown subcomponents
+ * Contains only state management and event handlers
+ */
+
 import { useState, useEffect, useRef } from 'preact/hooks';
-import type { WalletConnectProps, TimeRemaining } from '@risejack/shared';
+import type { WalletConnectProps } from '@risejack/shared';
+import { WalletTrigger } from './WalletTrigger';
+import { WalletDropdown } from './WalletDropdown';
 import './styles/header.css';
 import './styles/desktop-dropdown.css';
 
@@ -17,6 +25,7 @@ export function WalletConnect({
   onCreateSession,
   onRevokeSession,
 }: WalletConnectProps) {
+  // Local UI state
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [copied, setCopied] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -33,36 +42,16 @@ export function WalletConnect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Format balance with fallback
-  const displayBalance = () => {
+  // Event handlers
+  const handleCopyAddress = async () => {
+    if (!account) return;
     try {
-      if (balance === null) return '...';
-      const formatted = formatBalance();
-      return `${Number(formatted).toFixed(4)} ETH`;
+      await navigator.clipboard.writeText(account);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
-      return '-- ETH';
+      // Clipboard API not available
     }
-  };
-
-  const displayBalanceFull = () => {
-    try {
-      if (balance === null) return '-- ETH';
-      const formatted = formatBalance();
-      return `${Number(formatted).toFixed(6)} ETH`;
-    } catch {
-      return '-- ETH';
-    }
-  };
-
-  const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-
-  const formatTime = (time: TimeRemaining | null) => {
-    if (!time || time.expired) return 'Expired';
-    const parts = [];
-    if (time.hours > 0) parts.push(`${time.hours}h`);
-    if (time.minutes > 0) parts.push(`${time.minutes}m`);
-    if (time.hours === 0) parts.push(`${time.seconds}s`);
-    return parts.join(' ');
   };
 
   const handleCreateSession = async () => {
@@ -74,15 +63,13 @@ export function WalletConnect({
     }
   };
 
-  const copyAddress = async () => {
-    try {
-      await navigator.clipboard.writeText(account!);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard API not available
-    }
+  const handleDisconnect = () => {
+    onDisconnect();
+    setDropdownOpen(false);
   };
+
+  // Get formatted balance string
+  const balanceString = balance !== null ? formatBalance() : null;
 
   // Not connected state
   if (!isConnected) {
@@ -106,88 +93,30 @@ export function WalletConnect({
     );
   }
 
-  // Connected state with dropdown
+  // Connected state
   return (
     <div className="wallet-section" ref={dropdownRef}>
-      {/* Clickable wallet button */}
-      <button className="wallet-trigger" onClick={() => setDropdownOpen(!dropdownOpen)}>
-        <div className="wallet-trigger-left">
-          <span className="wallet-trigger-dot" />
-          <span className="wallet-trigger-balance">{displayBalance()}</span>
-        </div>
-        <div className="wallet-trigger-right">
-          <span className="wallet-trigger-address">{shortenAddress(account!)}</span>
-          <span className={`wallet-trigger-arrow ${dropdownOpen ? 'open' : ''}`}>▼</span>
-        </div>
-        {hasSessionKey && <span className="wallet-trigger-session">🔑</span>}
-      </button>
+      <WalletTrigger
+        balance={balanceString || ''}
+        address={account || ''}
+        hasSessionKey={hasSessionKey}
+        isOpen={dropdownOpen}
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+      />
 
-      {/* Dropdown panel */}
       {dropdownOpen && (
-        <div className="wallet-dropdown">
-          {/* Wallet Info */}
-          <div className="dropdown-section">
-            <div className="dropdown-section-header">
-              <span className="dropdown-status-dot" />
-              <span className="dropdown-status-text">Connected</span>
-            </div>
-
-            <div className="dropdown-address-row">
-              <span className="dropdown-address">{account}</span>
-              <button className="dropdown-copy-btn" onClick={copyAddress}>
-                {copied ? '✓ Copied' : 'Copy'}
-              </button>
-            </div>
-
-            <div className="dropdown-balance-row">
-              <span className="dropdown-balance-label">Balance</span>
-              <span className="dropdown-balance-value">{displayBalanceFull()}</span>
-            </div>
-          </div>
-
-          {/* Session Key */}
-          <div className="dropdown-section session-section">
-            <div className="dropdown-session-header">
-              <div className="dropdown-session-info">
-                <span className="dropdown-session-icon">🔑</span>
-                <div>
-                  <div className="dropdown-session-label">Fast Mode</div>
-                  <div className="dropdown-session-desc">
-                    {hasSessionKey ? 'Active - no popups!' : 'Enable for instant gameplay'}
-                  </div>
-                </div>
-              </div>
-
-              {hasSessionKey ? (
-                <div className="dropdown-session-actions">
-                  <span className="dropdown-session-time">{formatTime(sessionExpiry)}</span>
-                  <button className="dropdown-btn-revoke" onClick={onRevokeSession}>
-                    Revoke
-                  </button>
-                </div>
-              ) : (
-                <button
-                  className="dropdown-btn-enable"
-                  onClick={handleCreateSession}
-                  disabled={isCreatingSession}
-                >
-                  {isCreatingSession ? '...' : 'Enable'}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Disconnect */}
-          <button
-            className="dropdown-disconnect"
-            onClick={() => {
-              onDisconnect();
-              setDropdownOpen(false);
-            }}
-          >
-            🚪 Disconnect Wallet
-          </button>
-        </div>
+        <WalletDropdown
+          address={account || ''}
+          balance={balanceString || ''}
+          hasSessionKey={hasSessionKey}
+          sessionExpiry={sessionExpiry}
+          copied={copied}
+          isCreatingSession={isCreatingSession}
+          onCopyAddress={handleCopyAddress}
+          onCreateSession={handleCreateSession}
+          onRevokeSession={onRevokeSession}
+          onDisconnect={handleDisconnect}
+        />
       )}
     </div>
   );

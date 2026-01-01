@@ -68,11 +68,9 @@ activity.get('/stats', async (c) => {
     today.setHours(0, 0, 0, 0);
 
     const [todayStats, biggestWin, topPlayer] = await Promise.all([
-      // Today's volume
-      prisma.game.aggregate({
+      // Today's games count (betAmount is string, can't sum directly)
+      prisma.game.count({
         where: { startedAt: { gte: today } },
-        _sum: { betAmount: true },
-        _count: { _all: true },
       }),
       // Biggest win today
       prisma.game.findFirst({
@@ -94,8 +92,8 @@ activity.get('/stats', async (c) => {
     ]);
 
     return c.json({
-      todayVolume: todayStats._sum.betAmount || '0',
-      todayGames: todayStats._count._all,
+      todayVolume: '0', // TODO: Use raw SQL for BigInt sum
+      todayGames: todayStats,
       biggestWinToday: biggestWin
         ? {
             payout: biggestWin.payout,

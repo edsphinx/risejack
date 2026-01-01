@@ -84,6 +84,8 @@ function Header() {
           sessionExpiry={wallet.sessionExpiry}
           onCreateSession={wallet.createSessionKey}
           onRevokeSession={wallet.revokeSessionKey}
+          balance={wallet.balance}
+          formatBalance={wallet.formatBalance}
         />
       </div>
     </header>

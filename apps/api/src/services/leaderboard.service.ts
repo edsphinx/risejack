@@ -13,6 +13,7 @@ import type {
   LeaderboardMetric,
   VipTier,
 } from '@risejack/shared';
+import type { Prisma } from '@prisma/client';
 
 export async function getCachedLeaderboard(
   period: LeaderboardPeriod
@@ -28,7 +29,7 @@ export async function getCachedLeaderboard(
     period: snapshot.period as LeaderboardPeriod,
     periodStart: snapshot.periodStart.toISOString(),
     metric: snapshot.metric as LeaderboardMetric,
-    entries: snapshot.entries as LeaderboardEntry[],
+    entries: snapshot.entries as unknown as LeaderboardEntry[],
     generatedAt: snapshot.generatedAt.toISOString(),
     cached: true,
   };
@@ -91,7 +92,7 @@ export async function saveLeaderboardSnapshot(
     data: {
       period,
       metric,
-      entries,
+      entries: entries as unknown as Prisma.InputJsonValue,
       periodStart,
     },
   });

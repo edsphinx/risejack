@@ -17,7 +17,7 @@ mock.module('../../services/user.service', () => ({
     }
     return Promise.resolve(null);
   }),
-  registerUser: mock((wallet: string, displayName?: string) =>
+  registerUser: mock((_wallet: string, displayName?: string) =>
     Promise.resolve(createMockUser({ displayName: displayName || 'NewUser' }))
   ),
   registerReferral: mock(() => Promise.resolve({ success: true, userReferralCode: 'NEWCODE' })),

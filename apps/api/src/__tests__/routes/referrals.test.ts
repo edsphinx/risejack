@@ -43,7 +43,7 @@ mock.module('../../services/referral.service', () => ({
 
 // Mock UserService
 mock.module('../../services/user.service', () => ({
-  registerReferral: mock((wallet: string, code: string) => {
+  registerReferral: mock((_wallet: string, code: string) => {
     if (code === 'VALIDCODE') {
       return Promise.resolve({ success: true, userReferralCode: 'NEWUSERCODE' });
     }

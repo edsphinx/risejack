@@ -74,7 +74,7 @@ referrals.post('/register', async (c) => {
     const result = await UserService.registerReferral(walletAddress, referralCode);
 
     if (!result.success) {
-      return c.json({ error: result.error } satisfies ApiError, 400);
+      return c.json({ error: result.error || 'Registration failed' } satisfies ApiError, 400);
     }
 
     return c.json({

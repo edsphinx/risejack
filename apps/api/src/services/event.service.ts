@@ -6,6 +6,7 @@
 
 import { UserRepository, EventRepository } from '../repositories';
 import type { EventType, FunnelEntry, FunnelResponse } from '@risejack/shared';
+import type { Prisma } from '@prisma/client';
 
 const VALID_EVENT_TYPES: EventType[] = [
   'wallet_connect',
@@ -29,7 +30,7 @@ export function getValidEventTypes(): EventType[] {
 export async function logEvent(data: {
   walletAddress?: string;
   eventType: EventType;
-  eventData?: Record<string, unknown>;
+  eventData?: Prisma.InputJsonValue;
   sessionId?: string;
   deviceType?: string;
   ipGeoCountry?: string;

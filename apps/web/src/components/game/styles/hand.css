@@ -281,12 +281,13 @@
     padding: 0.25rem;
   }
 
+  /* Tablet: moderate overlap, ~30px visible per card */
   .hand-card {
-    margin-left: calc(var(--card-index, 0) * -25px);
+    margin-left: calc(var(--card-index, 0) * -75px);
   }
 
   .hand-cards:hover .hand-card {
-    margin-left: calc(var(--card-index, 0) * -20px);
+    margin-left: calc(var(--card-index, 0) * -60px);
   }
 
   /* Smaller standalone value */
@@ -316,12 +317,13 @@
     padding: 0.15rem;
   }
 
+  /* Mobile: poker-style, ~28px visible per card (corner only) */
   .hand-card {
-    margin-left: calc(var(--card-index, 0) * -18px);
+    margin-left: calc(var(--card-index, 0) * -98px);
   }
 
   .hand-cards:hover .hand-card {
-    margin-left: calc(var(--card-index, 0) * -15px);
+    margin-left: calc(var(--card-index, 0) * -80px);
   }
 
   /* Compact standalone value */
@@ -345,8 +347,13 @@
 }
 
 @media (max-width: 400px) {
+  /* Small mobile: aggressive poker-style, ~25px visible per card */
   .hand-card {
-    margin-left: calc(var(--card-index, 0) * -15px);
+    margin-left: calc(var(--card-index, 0) * -82px);
+  }
+
+  .hand-cards:hover .hand-card {
+    margin-left: calc(var(--card-index, 0) * -65px);
   }
 
   .hand-value-standalone {

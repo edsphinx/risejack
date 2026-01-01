@@ -17,6 +17,7 @@ const Home = lazy(() => import('./pages/Home'));
 const RiseJack = lazy(() => import('./pages/RiseJack'));
 const Swap = lazy(() => import('./pages/Swap'));
 const Stake = lazy(() => import('./pages/Stake'));
+const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
 
 function Header() {
   const [location, setLocation] = useLocation();
@@ -192,6 +193,15 @@ function Header() {
                 >
                   📈 STAKE
                 </button>
+                <button
+                  onClick={() => {
+                    setLocation('/leaderboard');
+                    setMenuOpen(false);
+                  }}
+                  className={location === '/leaderboard' ? 'active' : ''}
+                >
+                  🏆 RANKS
+                </button>
               </nav>
             </div>
           </>
@@ -226,6 +236,13 @@ function Header() {
                 className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/stake' ? 'text-purple-400' : ''}`}
               >
                 📈 STAKE
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocation('/leaderboard')}
+                className={`cursor-pointer hover:text-yellow-400 transition-colors bg-transparent border-none ${location === '/leaderboard' ? 'text-yellow-400' : ''}`}
+              >
+                🏆 RANKS
               </button>
             </nav>
           </div>
@@ -302,6 +319,7 @@ export function App() {
                 <Route path="/risejack" component={RiseJack} />
                 <Route path="/swap" component={Swap} />
                 <Route path="/stake" component={Stake} />
+                <Route path="/leaderboard" component={LeaderboardPage} />
 
                 {/* Fallback to Home */}
                 <Route component={Home} />

@@ -128,3 +128,5 @@ function HeroCTA({ isConnected, isConnecting, onConnect, onPlay }: HeroCTAProps)
     </button>
   );
 }
+
+export default Home;

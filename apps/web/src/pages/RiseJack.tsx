@@ -30,3 +30,5 @@ export function RiseJack() {
     </div>
   );
 }
+
+export default RiseJack;

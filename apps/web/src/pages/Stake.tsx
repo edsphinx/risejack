@@ -18,3 +18,5 @@ export function Stake() {
     </div>
   );
 }
+
+export default Stake;

@@ -1,17 +1,21 @@
 import { Route, Switch } from 'wouter-preact';
 import { useState } from 'preact/hooks';
-import { Home } from './pages/Home';
-import { RiseJack } from './pages/RiseJack';
-import { Swap } from './pages/Swap';
-import { Stake } from './pages/Stake';
+import { lazy, Suspense } from 'preact/compat';
 import { WalletConnect } from './components/wallet/WalletConnect';
 import { Logo } from './components/brand/Logo';
 import { useLocation } from 'wouter-preact';
 import { WalletProvider, useWallet } from './context/WalletContext';
 import { FastModeOnboarding, SessionExpiryModal } from './components/wallet/SessionModals';
 import { ModalErrorBoundary } from './components/common/ErrorBoundary';
+import { PageLoader } from './components/common/PageLoader';
 import { safeParseNumber } from './lib/formatters';
 import './components/wallet/styles/mobile-header.css';
+
+// Lazy-loaded pages - each becomes a separate chunk
+const Home = lazy(() => import('./pages/Home'));
+const RiseJack = lazy(() => import('./pages/RiseJack'));
+const Swap = lazy(() => import('./pages/Swap'));
+const Stake = lazy(() => import('./pages/Stake'));
 
 function Header() {
   const [location, setLocation] = useLocation();
@@ -284,15 +288,17 @@ export function App() {
           <Header />
 
           <main>
-            <Switch>
-              <Route path="/" component={Home} />
-              <Route path="/risejack" component={RiseJack} />
-              <Route path="/swap" component={Swap} />
-              <Route path="/stake" component={Stake} />
+            <Suspense fallback={<PageLoader />}>
+              <Switch>
+                <Route path="/" component={Home} />
+                <Route path="/risejack" component={RiseJack} />
+                <Route path="/swap" component={Swap} />
+                <Route path="/stake" component={Stake} />
 
-              {/* Fallback to Home */}
-              <Route component={Home} />
-            </Switch>
+                {/* Fallback to Home */}
+                <Route component={Home} />
+              </Switch>
+            </Suspense>
           </main>
         </div>
       </SessionModalManager>

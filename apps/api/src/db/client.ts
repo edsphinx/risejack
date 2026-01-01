@@ -87,7 +87,14 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Graceful shutdown handlers for connection cleanup
+let isShuttingDown = false;
+
 async function cleanup() {
+  if (isShuttingDown) {
+    return; // Prevent concurrent cleanup
+  }
+  isShuttingDown = true;
+
   // Handle each cleanup step separately to ensure both are attempted (CWE-404)
   try {
     await prisma.$disconnect();

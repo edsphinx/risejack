@@ -118,9 +118,13 @@ const getTlsConfig = () => {
   if (!isHttps) return undefined;
 
   try {
-    // Use Bun's native file reading
-    const key = Bun.file('./localhost+2-key.pem');
-    const cert = Bun.file('./localhost+2.pem');
+    // Use absolute paths to prevent path traversal
+    const keyPath = process.cwd() + '/localhost+2-key.pem';
+    const certPath = process.cwd() + '/localhost+2.pem';
+
+    // Use Bun's native file reading with absolute paths
+    const key = Bun.file(keyPath);
+    const cert = Bun.file(certPath);
 
     // Check if files exist before returning
     if (!key.size || !cert.size) {

@@ -22,6 +22,11 @@ export async function findUserByWallet(
   walletAddress: string,
   chainId: number = DEFAULT_CHAIN_ID
 ): Promise<User | null> {
+  // Validate wallet address format (42 chars, starts with 0x, hex)
+  if (!/^0x[0-9a-fA-F]{40}$/.test(walletAddress)) {
+    return null; // Invalid format, return null
+  }
+
   return prisma.user.findUnique({
     where: {
       walletAddress_chainId: {
@@ -33,12 +38,22 @@ export async function findUserByWallet(
 }
 
 export async function findUserById(id: string): Promise<User | null> {
+  // Validate UUID format to prevent injection
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+    return null; // Invalid format, return null
+  }
+
   return prisma.user.findUnique({
     where: { id },
   });
 }
 
 export async function findUserByReferralCode(referralCode: string): Promise<User | null> {
+  // Validate referral code format (8 alphanumeric characters)
+  if (!/^[A-Z0-9]{8}$/.test(referralCode)) {
+    return null; // Invalid format, return null
+  }
+
   return prisma.user.findUnique({
     where: { referralCode },
   });
@@ -212,8 +227,9 @@ function generateReferralCode(): string {
 
   let code = '';
   let bytesNeeded = 8;
+  let maxIterations = 1000; // Prevent infinite loops
 
-  while (bytesNeeded > 0) {
+  while (bytesNeeded > 0 && maxIterations > 0) {
     const batch = randomBytes(bytesNeeded * 2); // Get extra bytes for rejections
 
     for (let i = 0; i < batch.length && bytesNeeded > 0; i++) {
@@ -223,6 +239,11 @@ function generateReferralCode(): string {
       }
       // Reject bytes >= 252 to avoid bias
     }
+    maxIterations--;
+  }
+
+  if (bytesNeeded > 0) {
+    throw new Error('Failed to generate referral code');
   }
 
   return code;

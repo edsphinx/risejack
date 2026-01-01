@@ -1,6 +1,11 @@
 {
-    "buildCommand": "cd ../.. && bun run build --filter=@risejack/web",
-    "outputDirectory": "dist",
-    "installCommand": "cd ../.. && bun install",
-    "framework": "vite"
+  "buildCommand": "cd ../.. && bun run build --filter=@risejack/web",
+  "outputDirectory": "dist",
+  "installCommand": "cd ../.. && bun install",
+  "framework": "vite",
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
 }

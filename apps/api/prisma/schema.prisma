@@ -99,11 +99,13 @@ model User {
 model Game {
   id     String @id @default(uuid())
   userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id])
+  // DATA RETENTION: SetNull preserves game history for audit/analytics when user is deleted
+  user   User   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   // Chain (multichain support)
   chainId Int   @default(713715) @map("chain_id")
-  chain   Chain @relation(fields: [chainId], references: [id])
+  // DATA RETENTION: Restrict - chains with games cannot be deleted
+  chain   Chain @relation(fields: [chainId], references: [id], onDelete: Restrict)
 
   // Game info
   gameType    String @map("game_type") @db.VarChar(32) // 'blackjack', 'roulette', 'poker'
@@ -142,11 +144,13 @@ model Game {
 model ReferralEarning {
   id         String @id @default(uuid())
   referrerId String @map("referrer_id")
-  referrer   User   @relation("ReferrerEarnings", fields: [referrerId], references: [id])
+  // DATA RETENTION: SetNull preserves earning records when users are deleted
+  referrer   User   @relation("ReferrerEarnings", fields: [referrerId], references: [id], onDelete: SetNull)
   refereeId  String @map("referee_id")
-  referee    User   @relation("RefereeEarnings", fields: [refereeId], references: [id])
+  referee    User   @relation("RefereeEarnings", fields: [refereeId], references: [id], onDelete: SetNull)
   gameId     String @map("game_id")
-  game       Game   @relation(fields: [gameId], references: [id])
+  // DATA RETENTION: Cascade - if game is deleted, earnings are also removed
+  game       Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   // Earnings
   tier      Int    @default(1) // 1 = direct, 2 = second-level
@@ -170,7 +174,8 @@ model ReferralEarning {
 model EmailSubscription {
   id     String  @id @default(uuid())
   userId String? @unique @map("user_id")
-  user   User?   @relation(fields: [userId], references: [id])
+  // DATA RETENTION: SetNull preserves subscription for marketing preferences
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   email  String  @unique @db.VarChar(255)
 
   status String  @default("subscribed") @db.VarChar(16) // subscribed, unsubscribed, bounced
@@ -190,7 +195,8 @@ model EmailSubscription {
 model Session {
   id     String @id @default(uuid())
   userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id])
+  // DATA RETENTION: Cascade - sessions are deleted with user (no audit value)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   startedAt    DateTime  @default(now()) @map("started_at")
   endedAt      DateTime? @map("ended_at")
@@ -240,12 +246,13 @@ model LeaderboardSnapshot {
 model EventLog {
   id            String  @id @default(uuid())
   userId        String? @map("user_id")
-  user          User?   @relation(fields: [userId], references: [id])
+  // DATA RETENTION: SetNull preserves event logs for analytics when user is deleted
+  user          User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   walletAddress String? @map("wallet_address") @db.VarChar(42) // For events before user exists
 
   // Chain (optional for legacy events)
   chainId Int?   @map("chain_id")
-  chain   Chain? @relation(fields: [chainId], references: [id])
+  chain   Chain? @relation(fields: [chainId], references: [id], onDelete: SetNull)
 
   // Event info
   eventType String @map("event_type") @db.VarChar(32) // 'wallet_connect', 'game_start', 'referral_click'

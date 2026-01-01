@@ -60,6 +60,11 @@ export async function findUserByReferralCode(referralCode: string): Promise<User
 }
 
 export async function getUserWithStats(walletAddress: string, chainId: number = DEFAULT_CHAIN_ID) {
+  // Validate wallet address format (42 chars, starts with 0x, hex)
+  if (!/^0x[0-9a-fA-F]{40}$/.test(walletAddress)) {
+    return null; // Invalid format, return null
+  }
+
   return prisma.user.findUnique({
     where: {
       walletAddress_chainId: {
@@ -79,6 +84,11 @@ export async function getUserWithStats(walletAddress: string, chainId: number = 
 }
 
 export async function getReferees(userId: string) {
+  // Validate userId format (UUID) to prevent SQL injection
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
+    return []; // Invalid format, return empty array
+  }
+
   return prisma.user.findMany({
     where: { referrerId: userId },
     select: {
@@ -176,6 +186,17 @@ export async function updateUserXp(userId: string, xpToAdd: number): Promise<voi
 }
 
 export async function setUserReferrer(userId: string, referrerId: string): Promise<void> {
+  // Validate userId format (UUID) to prevent SQL injection
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
+    throw new Error('Invalid user ID format');
+  }
+  // Validate referrerId format (UUID) to prevent SQL injection
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(referrerId)
+  ) {
+    throw new Error('Invalid referrer ID format');
+  }
+
   await prisma.user.update({
     where: { id: userId },
     data: { referrerId },

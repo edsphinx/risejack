@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { prettyJSON } from 'hono/pretty-json';
+import path from 'path';
 
 // Route imports
 import users from './routes/users';
@@ -118,9 +119,9 @@ const getTlsConfig = () => {
   if (!isHttps) return undefined;
 
   try {
-    // Use absolute paths to prevent path traversal
-    const keyPath = process.cwd() + '/localhost+2-key.pem';
-    const certPath = process.cwd() + '/localhost+2.pem';
+    // Use path.join to prevent path traversal attacks
+    const keyPath = path.join(process.cwd(), 'localhost+2-key.pem');
+    const certPath = path.join(process.cwd(), 'localhost+2.pem');
 
     // Use Bun's native file reading with absolute paths
     const key = Bun.file(keyPath);

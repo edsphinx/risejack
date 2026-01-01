@@ -90,10 +90,13 @@ if (process.env.NODE_ENV !== 'production') {
 let isShuttingDown = false;
 
 async function cleanup() {
-  if (isShuttingDown) {
+  // Use atomic compare-and-swap to prevent race conditions
+  const wasShuttingDown = isShuttingDown;
+  isShuttingDown = true;
+
+  if (wasShuttingDown) {
     return; // Prevent concurrent cleanup
   }
-  isShuttingDown = true;
 
   // Handle each cleanup step separately to ensure both are attempted (CWE-404)
   try {

@@ -57,3 +57,4 @@ docs/
 - **Current Status**: See [ROADMAP.md](./roadmap/ROADMAP.md)
 - **Release History**: See [CHANGELOG.md](./roadmap/CHANGELOG.md)
 - **Upcoming Features**: See [PLANNED_FEATURES.md](./roadmap/PLANNED_FEATURES.md)
+- **Casino RPG Vision**: See [MINIMAL_RPG_PLAN.md](./roadmap/MINIMAL_RPG_PLAN.md)

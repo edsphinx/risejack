@@ -4,6 +4,7 @@ import { RiseJack } from './pages/RiseJack';
 import { Swap } from './pages/Swap';
 import { Stake } from './pages/Stake';
 import { LeaderboardPage } from './pages/LeaderboardPage';
+import { ReferralsPage } from './pages/ReferralsPage';
 import { WalletConnect } from './components/wallet/WalletConnect';
 import { Logo } from './components/brand/Logo';
 import { useLocation } from 'wouter-preact';
@@ -61,6 +62,13 @@ function Header() {
             >
               🏆 RANKS
             </button>
+            <button
+              type="button"
+              onClick={() => setLocation('/referrals')}
+              className={`cursor-pointer hover:text-pink-400 transition-colors bg-transparent border-none ${location === '/referrals' ? 'text-pink-400' : ''}`}
+            >
+              🎁 INVITE
+            </button>
           </nav>
         </div>
 
@@ -95,6 +103,7 @@ export function App() {
             <Route path="/swap" component={Swap} />
             <Route path="/stake" component={Stake} />
             <Route path="/leaderboard" component={LeaderboardPage} />
+            <Route path="/referrals" component={ReferralsPage} />
 
             {/* Fallback to Home */}
             <Route component={Home} />

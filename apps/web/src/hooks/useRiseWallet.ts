@@ -71,7 +71,8 @@ export function useRiseWallet(): UseRiseWalletReturn {
       }
 
       // If returning user and doesn't have session key, auto-create
-      if (hasSeenOnboarding && !sessionKey.hasSessionKey && !skipFastMode) {
+      // Check isCreating to prevent race condition / duplicate attempts
+      if (hasSeenOnboarding && !sessionKey.hasSessionKey && !skipFastMode && !sessionKey.isCreating) {
         sessionKey.create();
       }
     }

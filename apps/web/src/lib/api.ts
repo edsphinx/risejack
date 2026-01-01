@@ -105,7 +105,7 @@ export async function getLeaderboard(period: 'daily' | 'weekly' | 'monthly' | 'a
 }
 
 export async function getLiveLeaderboard(
-    metric: 'volume' | 'wins' | 'pnl' | 'xp',
+    metric: 'volume' | 'biggest_win' | 'streak' | 'xp',
     limit = 50
 ) {
     return apiRequest(`/api/leaderboard/live/${metric}?limit=${limit}`);

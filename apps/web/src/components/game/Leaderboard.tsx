@@ -1,14 +1,14 @@
 /**
  * Leaderboard Component
  *
- * Displays top players by different metrics (XP, Volume, Wins, PnL)
+ * Displays top players by different metrics (XP, Volume, Biggest Win, Win Streak)
  */
 
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import { getLiveLeaderboard } from '@/lib/api';
 import { formatEther } from 'viem';
 
-type LeaderboardMetric = 'xp' | 'volume' | 'wins' | 'pnl';
+type LeaderboardMetric = 'xp' | 'volume' | 'biggest_win' | 'streak';
 
 interface LeaderboardEntry {
   rank: number;
@@ -37,18 +37,15 @@ const METRIC_LABELS: Record<
     icon: '💰',
     format: (v) => `${parseFloat(formatEther(BigInt(v))).toFixed(2)} ETH`,
   },
-  wins: {
-    label: 'Wins',
-    icon: '🏆',
-    format: (v) => `${Number(v)} wins`,
+  biggest_win: {
+    label: 'Biggest Win',
+    icon: '🎰',
+    format: (v) => `${parseFloat(formatEther(BigInt(v))).toFixed(3)} ETH`,
   },
-  pnl: {
-    label: 'Profit',
-    icon: '📈',
-    format: (v) => {
-      const eth = parseFloat(formatEther(BigInt(v)));
-      return `${eth >= 0 ? '+' : ''}${eth.toFixed(3)} ETH`;
-    },
+  streak: {
+    label: 'Win Streak',
+    icon: '🔥',
+    format: (v) => `${Number(v)} in a row`,
   },
 };
 
@@ -185,13 +182,7 @@ export function Leaderboard() {
                       )}
                     </div>
                   </div>
-                  <div
-                    className={`font-mono font-semibold ${
-                      metric === 'pnl' && BigInt(entry.value) < 0n
-                        ? 'text-red-400'
-                        : 'text-green-400'
-                    }`}
-                  >
+                  <div className="font-mono font-semibold text-green-400">
                     {metricConfig.format(entry.value)}
                   </div>
                 </div>

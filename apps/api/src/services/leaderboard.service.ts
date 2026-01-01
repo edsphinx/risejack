@@ -50,8 +50,11 @@ export async function getLiveLeaderboard(
     case 'volume':
       rawEntries = await GameRepository.getVolumeLeaderboard(limit);
       break;
-    case 'wins':
-      rawEntries = await GameRepository.getWinsLeaderboard(limit);
+    case 'biggest_win':
+      rawEntries = await GameRepository.getBiggestWinLeaderboard(limit);
+      break;
+    case 'streak':
+      rawEntries = await GameRepository.getWinStreakLeaderboard(limit);
       break;
     case 'xp':
       rawEntries = await GameRepository.getXpLeaderboard(limit);

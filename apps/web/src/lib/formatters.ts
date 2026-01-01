@@ -19,10 +19,13 @@ export function shortenAddress(
 
 /**
  * Safely parse a string to number, returning fallback on NaN
+ * Strips common suffixes like ETH, USD, etc before parsing
  */
 export function safeParseNumber(value: string | null | undefined, fallback = 0): number {
     if (!value) return fallback;
-    const num = Number(value);
+    // Remove any non-numeric suffix (e.g., " ETH", " USD")
+    const cleanValue = value.replace(/\s*[A-Za-z]+$/, '').trim();
+    const num = Number(cleanValue);
     return isNaN(num) ? fallback : num;
 }
 

@@ -2,6 +2,7 @@
  * SessionModals - Onboarding and Expiry modals for Fast Mode
  */
 
+import { useEffect } from 'preact/hooks';
 import type {
   SessionExpiryModalProps,
   FastModeOnboardingProps,
@@ -10,11 +11,27 @@ import type {
 import './styles/session-modal.css';
 
 export function SessionExpiryModal({ onExtend, onSkip, isLoading }: SessionExpiryModalProps) {
+  // Handle escape key to dismiss modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isLoading) {
+        onSkip();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onSkip, isLoading]);
+
   return (
-    <div className="session-modal-backdrop">
+    <div
+      className="session-modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="session-expiry-title"
+    >
       <div className="session-modal-content">
         <div className="session-modal-icon">⏰</div>
-        <h2 className="session-modal-title">Session Expired</h2>
+        <h2 id="session-expiry-title" className="session-modal-title">Session Expired</h2>
         <p className="session-modal-subtitle">
           Your Fast Mode session has ended. Extend it to continue playing without transaction
           popups.
@@ -40,12 +57,28 @@ export function SessionExpiryModal({ onExtend, onSkip, isLoading }: SessionExpir
 }
 
 export function FastModeOnboarding({ onEnable, onSkip, isLoading }: FastModeOnboardingProps) {
+  // Handle escape key to dismiss modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isLoading) {
+        onSkip();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onSkip, isLoading]);
+
   return (
-    <div className="session-modal-backdrop">
+    <div
+      className="session-modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="onboarding-title"
+    >
       <div className="onboarding-modal-content">
         <div className="onboarding-header">
           <div className="onboarding-icon">🚀</div>
-          <h2 className="onboarding-title">Enable Fast Mode</h2>
+          <h2 id="onboarding-title" className="onboarding-title">Enable Fast Mode</h2>
           <p className="onboarding-subtitle">Play without interruptions</p>
         </div>
 

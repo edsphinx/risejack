@@ -8,11 +8,21 @@
 import prisma from '../db/client';
 import type { User } from '@prisma/client';
 
+const DEFAULT_CHAIN_ID = 713715; // Rise Testnet
+
 // ==================== READ OPERATIONS ====================
 
-export async function findUserByWallet(walletAddress: string): Promise<User | null> {
+export async function findUserByWallet(
+  walletAddress: string,
+  chainId: number = DEFAULT_CHAIN_ID
+): Promise<User | null> {
   return prisma.user.findUnique({
-    where: { walletAddress: walletAddress.toLowerCase() },
+    where: {
+      walletAddress_chainId: {
+        walletAddress: walletAddress.toLowerCase(),
+        chainId,
+      },
+    },
   });
 }
 
@@ -28,20 +38,15 @@ export async function findUserByReferralCode(referralCode: string): Promise<User
   });
 }
 
-export async function getUserWithStats(walletAddress: string) {
+export async function getUserWithStats(walletAddress: string, chainId: number = DEFAULT_CHAIN_ID) {
   return prisma.user.findUnique({
-    where: { walletAddress: walletAddress.toLowerCase() },
-    select: {
-      id: true,
-      walletAddress: true,
-      displayName: true,
-      avatarUrl: true,
-      xp: true,
-      level: true,
-      vipTier: true,
-      referralCode: true,
-      createdAt: true,
-      lastSeenAt: true,
+    where: {
+      walletAddress_chainId: {
+        walletAddress: walletAddress.toLowerCase(),
+        chainId,
+      },
+    },
+    include: {
       _count: {
         select: {
           games: true,
@@ -71,6 +76,7 @@ export async function createUser(data: {
   displayName?: string;
   referrerId?: string;
   referralCode: string;
+  chainId?: number;
 }): Promise<User> {
   return prisma.user.create({
     data: {
@@ -78,6 +84,7 @@ export async function createUser(data: {
       displayName: data.displayName,
       referrerId: data.referrerId,
       referralCode: data.referralCode,
+      chainId: data.chainId || DEFAULT_CHAIN_ID,
     },
   });
 }
@@ -87,11 +94,18 @@ export async function upsertUser(data: {
   displayName?: string;
   referrerId?: string;
   referralCode?: string;
+  chainId?: number;
 }): Promise<User> {
   const normalizedWallet = data.walletAddress.toLowerCase();
+  const chainId = data.chainId || DEFAULT_CHAIN_ID;
 
   return prisma.user.upsert({
-    where: { walletAddress: normalizedWallet },
+    where: {
+      walletAddress_chainId: {
+        walletAddress: normalizedWallet,
+        chainId,
+      },
+    },
     update: {
       lastSeenAt: new Date(),
       ...(data.displayName && { displayName: data.displayName }),
@@ -101,6 +115,7 @@ export async function upsertUser(data: {
       displayName: data.displayName,
       referrerId: data.referrerId,
       referralCode: data.referralCode || generateReferralCode(),
+      chainId,
     },
   });
 }

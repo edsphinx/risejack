@@ -40,22 +40,28 @@ export async function getReferralEarnings(
 }
 
 export async function getEarningsSummary(referrerId: string) {
-  const [total, unclaimed] = await Promise.all([
-    prisma.referralEarning.aggregate({
-      where: { referrerId },
-      _sum: { earned: true },
-      _count: true,
-    }),
-    prisma.referralEarning.aggregate({
-      where: { referrerId, claimed: false },
-      _sum: { earned: true },
-    }),
-  ]);
+  // Since 'earned' is a string field, we need to use raw SQL for aggregation
+  const result = await prisma.$queryRaw<
+    Array<{
+      total_earnings: string | null;
+      total_transactions: bigint;
+      unclaimed_earnings: string | null;
+    }>
+  >`
+    SELECT 
+      COALESCE(SUM(CAST(earned AS NUMERIC)), 0)::text as total_earnings,
+      COUNT(*)::bigint as total_transactions,
+      COALESCE(SUM(CASE WHEN claimed = false THEN CAST(earned AS NUMERIC) ELSE 0 END), 0)::text as unclaimed_earnings
+    FROM referral_earnings
+    WHERE referrer_id = ${referrerId}
+  `;
+
+  const stats = result[0];
 
   return {
-    totalEarnings: total._sum.earned || '0',
-    totalTransactions: total._count,
-    unclaimedEarnings: unclaimed._sum.earned || '0',
+    totalEarnings: stats?.total_earnings || '0',
+    totalTransactions: Number(stats?.total_transactions || 0),
+    unclaimedEarnings: stats?.unclaimed_earnings || '0',
   };
 }
 

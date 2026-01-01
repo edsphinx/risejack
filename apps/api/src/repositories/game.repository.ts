@@ -6,6 +6,9 @@
 
 import prisma from '../db/client';
 import type { GameType, GameOutcome } from '@risejack/shared';
+import type { Prisma } from '@prisma/client';
+
+const DEFAULT_CHAIN_ID = 713715; // Rise Testnet
 
 // ==================== READ OPERATIONS ====================
 
@@ -30,31 +33,34 @@ export async function countGamesByUser(userId: string): Promise<number> {
 }
 
 export async function getGameStats(userId: string) {
-  const [aggregate, winCount] = await Promise.all([
-    prisma.game.aggregate({
-      where: { userId },
-      _sum: {
-        betAmount: true,
-        pnl: true,
-      },
-      _count: {
-        _all: true,
-      },
-    }),
-    prisma.game.count({
-      where: {
-        userId,
-        outcome: { in: ['win', 'blackjack'] },
-      },
-    }),
-  ]);
+  // Since betAmount and pnl are strings (for BigInt compatibility), we use raw SQL
+  const result = await prisma.$queryRaw<
+    Array<{
+      total_games: bigint;
+      total_wagered: string | null;
+      total_pnl: string | null;
+      wins: bigint;
+    }>
+  >`
+    SELECT 
+      COUNT(*)::bigint as total_games,
+      COALESCE(SUM(CAST(bet_amount AS NUMERIC)), 0)::text as total_wagered,
+      COALESCE(SUM(CAST(pnl AS NUMERIC)), 0)::text as total_pnl,
+      COUNT(CASE WHEN outcome IN ('win', 'blackjack') THEN 1 END)::bigint as wins
+    FROM games
+    WHERE user_id = ${userId}
+  `;
+
+  const stats = result[0];
+  const totalGames = Number(stats?.total_games || 0);
+  const wins = Number(stats?.wins || 0);
 
   return {
-    totalGames: aggregate._count._all,
-    totalWagered: aggregate._sum.betAmount || '0',
-    totalPnL: aggregate._sum.pnl || '0',
-    wins: winCount,
-    losses: aggregate._count._all - winCount,
+    totalGames,
+    totalWagered: stats?.total_wagered || '0',
+    totalPnL: stats?.total_pnl || '0',
+    wins,
+    losses: totalGames - wins,
   };
 }
 
@@ -76,12 +82,14 @@ export async function createGame(data: {
   payout: string;
   pnl: string;
   outcome: GameOutcome;
-  gameData?: Record<string, unknown>;
+  gameData?: Prisma.InputJsonValue;
   startedAt: Date;
+  chainId?: number;
 }) {
   return prisma.game.create({
     data: {
-      userId: data.userId,
+      user: { connect: { id: data.userId } },
+      chain: { connect: { id: data.chainId || DEFAULT_CHAIN_ID } },
       gameType: data.gameType,
       txHash: data.txHash,
       blockNumber: data.blockNumber,

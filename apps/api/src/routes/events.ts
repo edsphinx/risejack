@@ -8,6 +8,7 @@
 import { Hono } from 'hono';
 import { EventService } from '../services';
 import type { LogEventRequest, ApiError } from '@risejack/shared';
+import type { Prisma } from '@prisma/client';
 
 const events = new Hono();
 
@@ -35,7 +36,7 @@ events.post('/', async (c) => {
     const eventId = await EventService.logEvent({
       walletAddress,
       eventType,
-      eventData,
+      eventData: eventData as Prisma.InputJsonValue | undefined,
       sessionId,
       deviceType,
       ipGeoCountry,

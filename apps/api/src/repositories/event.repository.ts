@@ -6,6 +6,7 @@
 
 import prisma from '../db/client';
 import type { EventType } from '@risejack/shared';
+import type { Prisma } from '@prisma/client';
 
 // ==================== WRITE OPERATIONS ====================
 
@@ -13,20 +14,22 @@ export async function createEvent(data: {
   userId?: string;
   walletAddress?: string;
   eventType: EventType;
-  eventData?: Record<string, unknown>;
+  eventData?: Prisma.InputJsonValue;
   sessionId?: string;
   deviceType?: string;
   ipGeoCountry?: string;
+  chainId?: number;
 }) {
   return prisma.eventLog.create({
     data: {
-      userId: data.userId,
+      ...(data.userId && { user: { connect: { id: data.userId } } }),
       walletAddress: data.walletAddress?.toLowerCase(),
       eventType: data.eventType,
-      eventData: data.eventData || {},
+      eventData: data.eventData,
       sessionId: data.sessionId,
       deviceType: data.deviceType,
       ipGeoCountry: data.ipGeoCountry,
+      ...(data.chainId && { chain: { connect: { id: data.chainId } } }),
     },
   });
 }

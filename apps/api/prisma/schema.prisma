@@ -10,11 +10,42 @@ datasource db {
   provider = "postgresql"
 }
 
+// ==================== CHAIN (Multichain Support) ====================
+
+model Chain {
+  id          Int      @id // Chain ID (713715 = Rise Testnet, 42161 = Arbitrum)
+  name        String   @db.VarChar(32) // "Rise Testnet"
+  slug        String   @unique @db.VarChar(16) // "rise", "arbitrum"
+  rpcUrl      String   @map("rpc_url")
+  explorerUrl String   @map("explorer_url")
+  currency    String   @default("ETH") @db.VarChar(8)
+  isActive    Boolean  @default(true) @map("is_active")
+
+  // Aggregate metrics (updated by cron/indexer)
+  totalVolume  String @default("0") @map("total_volume") @db.VarChar(78)
+  totalGames   Int    @default(0) @map("total_games")
+  totalPlayers Int    @default(0) @map("total_players")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  users               User[]
+  games               Game[]
+  eventLogs           EventLog[]
+  leaderboardSnapshots LeaderboardSnapshot[]
+
+  @@map("chains")
+}
+
 // ==================== USERS ====================
 
 model User {
   id            String   @id @default(uuid())
-  walletAddress String   @unique @map("wallet_address") @db.VarChar(42)
+  walletAddress String   @map("wallet_address") @db.VarChar(42)
+
+  // Chain (multichain support)
+  chainId Int   @default(713715) @map("chain_id") // Rise Testnet
+  chain   Chain @relation(fields: [chainId], references: [id])
 
   // Off-chain identity (optional, for marketing)
   email         String?  @unique @db.VarChar(255)
@@ -55,7 +86,9 @@ model User {
   emailSubscription EmailSubscription?
   eventLogs         EventLog[]
 
+  @@unique([walletAddress, chainId]) // Same wallet can exist on multiple chains
   @@index([walletAddress])
+  @@index([chainId])
   @@index([referrerId])
   @@index([vipTier])
   @@map("users")
@@ -67,6 +100,10 @@ model Game {
   id     String @id @default(uuid())
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id])
+
+  // Chain (multichain support)
+  chainId Int   @default(713715) @map("chain_id")
+  chain   Chain @relation(fields: [chainId], references: [id])
 
   // Game info
   gameType    String @map("game_type") @db.VarChar(32) // 'blackjack', 'roulette', 'poker'
@@ -93,6 +130,7 @@ model Game {
   referralEarnings ReferralEarning[]
 
   @@index([userId])
+  @@index([chainId])
   @@index([gameType])
   @@index([blockNumber])
   @@index([endedAt(sort: Desc)])
@@ -182,11 +220,16 @@ model LeaderboardSnapshot {
   period      String   @db.VarChar(16) // 'daily', 'weekly', 'monthly', 'all_time'
   periodStart DateTime @map("period_start")
 
+  // Chain (null = global leaderboard)
+  chainId Int?   @map("chain_id")
+  chain   Chain? @relation(fields: [chainId], references: [id])
+
   entries Json // [{ rank, userId, displayName, value, ... }]
-  metric  String @db.VarChar(32) // 'volume', 'wins', 'pnl', 'xp'
+  metric  String @db.VarChar(32) // 'volume', 'biggest_win', 'streak', 'xp'
 
   generatedAt DateTime @default(now()) @map("generated_at")
 
+  @@index([chainId])
   @@index([period, periodStart(sort: Desc)])
   @@map("leaderboard_snapshots")
 }
@@ -200,6 +243,10 @@ model EventLog {
   user          User?   @relation(fields: [userId], references: [id])
   walletAddress String? @map("wallet_address") @db.VarChar(42) // For events before user exists
 
+  // Chain (optional for legacy events)
+  chainId Int?   @map("chain_id")
+  chain   Chain? @relation(fields: [chainId], references: [id])
+
   // Event info
   eventType String @map("event_type") @db.VarChar(32) // 'wallet_connect', 'game_start', 'referral_click'
   eventData Json?  @map("event_data") // Flexible payload
@@ -212,7 +259,9 @@ model EventLog {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
+  @@index([chainId])
   @@index([eventType])
   @@index([createdAt(sort: Desc)])
   @@map("event_log")
 }
+

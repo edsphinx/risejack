@@ -95,11 +95,15 @@ app.notFound((c) => {
 
 // Error handler
 app.onError((err, c) => {
-  // CWE-209: Only log error message in production to prevent info disclosure
+  // CWE-209: Only log error message to prevent info disclosure
   if (process.env.NODE_ENV === 'production') {
     console.error('API Error:', err.message);
   } else {
-    console.error('API Error:', err);
+    // In development, still avoid logging full stack trace with sensitive paths
+    console.error('API Error:', {
+      message: err.message,
+      name: err.name,
+    });
   }
   return c.json({ error: 'Internal server error' }, 500);
 });

@@ -61,6 +61,9 @@ function timingSafeEqual(a: string, b: string): boolean {
   // Use fixed maximum length to prevent length leakage
   const FIXED_LENGTH = 256;
 
+  // Verify actual lengths match first (in constant time)
+  const lengthMatch = a.length === b.length;
+
   // Convert strings to buffers and pad to fixed length
   const bufferA = Buffer.alloc(FIXED_LENGTH, 0);
   const bufferB = Buffer.alloc(FIXED_LENGTH, 0);
@@ -70,9 +73,6 @@ function timingSafeEqual(a: string, b: string): boolean {
 
   // Use crypto.timingSafeEqual on fixed-length buffers
   const match = cryptoTimingSafeEqual(bufferA, bufferB);
-
-  // Also verify actual lengths match (in constant time)
-  const lengthMatch = a.length === b.length;
 
   return match && lengthMatch;
 }

@@ -163,6 +163,14 @@ export async function upsertUser(data: {
     throw new Error('Invalid referrer ID format');
   }
 
+  // Validate displayName if provided (max 64 chars to prevent XSS/DB issues)
+  if (data.displayName !== undefined) {
+    if (typeof data.displayName !== 'string' || data.displayName.length > 64) {
+      throw new Error('Invalid display name format or length');
+    }
+    data.displayName = data.displayName.trim();
+  }
+
   const normalizedWallet = data.walletAddress.toLowerCase();
   const chainId = data.chainId || DEFAULT_CHAIN_ID;
 
@@ -263,9 +271,10 @@ async function generateUniqueReferralCode(maxRetries: number = 10): Promise<stri
     }
   }
 
-  // Fallback: use timestamp suffix (extremely rare case)
-  const timestamp = Date.now().toString(36).toUpperCase().slice(-4);
-  return generateReferralCode().slice(0, 4) + timestamp;
+  // Fallback: generate a new secure code by combining two random codes (extremely rare case)
+  // Never use predictable timestamps for security-sensitive codes
+  const fallbackCode = generateReferralCode() + generateReferralCode().slice(0, 4);
+  return fallbackCode.slice(0, 8); // Ensure 8 character limit
 }
 
 /**

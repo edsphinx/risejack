@@ -9,6 +9,7 @@ import { Logo } from './components/brand/Logo';
 import { useLocation } from 'wouter-preact';
 import { WalletProvider, useWallet } from './context/WalletContext';
 import { FastModeOnboarding, SessionExpiryModal } from './components/wallet/SessionModals';
+import { ModalErrorBoundary } from './components/common/ErrorBoundary';
 import { safeParseNumber } from './lib/formatters';
 import './components/wallet/styles/mobile-header.css';
 
@@ -252,20 +253,24 @@ function SessionModalManager({ children }: { children: preact.ComponentChildren 
 
       {/* Onboarding Modal - first time users */}
       {wallet.showOnboarding && (
-        <FastModeOnboarding
-          onEnable={async () => await wallet.dismissOnboarding(true)}
-          onSkip={() => wallet.dismissOnboarding(false)}
-          isLoading={wallet.isCreatingSession}
-        />
+        <ModalErrorBoundary onDismiss={() => wallet.dismissOnboarding(false)}>
+          <FastModeOnboarding
+            onEnable={async () => await wallet.dismissOnboarding(true)}
+            onSkip={() => wallet.dismissOnboarding(false)}
+            isLoading={wallet.isCreatingSession}
+          />
+        </ModalErrorBoundary>
       )}
 
       {/* Session Expiry Modal - when session expires */}
       {wallet.showExpiryModal && (
-        <SessionExpiryModal
-          onExtend={async () => await wallet.dismissExpiryModal(true)}
-          onSkip={() => wallet.dismissExpiryModal(false)}
-          isLoading={wallet.isCreatingSession}
-        />
+        <ModalErrorBoundary onDismiss={() => wallet.dismissExpiryModal(false)}>
+          <SessionExpiryModal
+            onExtend={async () => await wallet.dismissExpiryModal(true)}
+            onSkip={() => wallet.dismissExpiryModal(false)}
+            isLoading={wallet.isCreatingSession}
+          />
+        </ModalErrorBoundary>
       )}
     </>
   );

@@ -11,6 +11,11 @@ import type { User } from '@prisma/client';
 
 const DEFAULT_CHAIN_ID = 713715; // Rise Testnet
 
+// XP configuration constants
+const XP_PER_LEVEL = 100;
+const MAX_XP_PER_UPDATE = 1000; // Prevent XP manipulation
+const MIN_XP_PER_UPDATE = 0;
+
 // ==================== READ OPERATIONS ====================
 
 export async function findUserByWallet(
@@ -100,6 +105,9 @@ export async function upsertUser(data: {
   const normalizedWallet = data.walletAddress.toLowerCase();
   const chainId = data.chainId || DEFAULT_CHAIN_ID;
 
+  // Generate unique referral code with collision detection
+  const referralCode = data.referralCode || (await generateUniqueReferralCode());
+
   return prisma.user.upsert({
     where: {
       walletAddress_chainId: {
@@ -115,21 +123,43 @@ export async function upsertUser(data: {
       walletAddress: normalizedWallet,
       displayName: data.displayName,
       referrerId: data.referrerId,
-      referralCode: data.referralCode || generateReferralCode(),
+      referralCode,
       chainId,
     },
   });
 }
 
+/**
+ * Update user XP with proper validation and level calculation.
+ * Level is calculated from TOTAL XP, not incremented per update.
+ */
 export async function updateUserXp(userId: string, xpToAdd: number): Promise<void> {
+  // Validate XP bounds to prevent manipulation
+  const validatedXp = Math.min(Math.max(MIN_XP_PER_UPDATE, Math.floor(xpToAdd)), MAX_XP_PER_UPDATE);
+
+  if (validatedXp <= 0) {
+    return; // No XP to add
+  }
+
+  // First get current user XP to calculate correct level
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { xp: true },
+  });
+
+  if (!user) {
+    return; // User not found
+  }
+
+  const newTotalXp = user.xp + validatedXp;
+  const newLevel = Math.floor(newTotalXp / XP_PER_LEVEL);
+
+  // Update with calculated values
   await prisma.user.update({
     where: { id: userId },
     data: {
-      xp: { increment: xpToAdd },
-      // Level up every 100 XP
-      level: {
-        increment: Math.floor(xpToAdd / 100),
-      },
+      xp: newTotalXp,
+      level: newLevel,
       lastSeenAt: new Date(),
     },
   });
@@ -145,16 +175,61 @@ export async function setUserReferrer(userId: string, referrerId: string): Promi
 // ==================== HELPERS ====================
 
 /**
- * Generate a cryptographically secure referral code
- * Uses crypto.randomBytes instead of Math.random for security
+ * Generate a unique referral code with collision detection.
+ * Uses rejection sampling to avoid modulo bias.
+ * Retries up to 10 times if collision detected.
+ */
+async function generateUniqueReferralCode(maxRetries: number = 10): Promise<string> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const code = generateReferralCode();
+
+    // Check for collision
+    const existing = await prisma.user.findUnique({
+      where: { referralCode: code },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      return code; // Unique code found
+    }
+  }
+
+  // Fallback: use timestamp suffix (extremely rare case)
+  const timestamp = Date.now().toString(36).toUpperCase().slice(-4);
+  return generateReferralCode().slice(0, 4) + timestamp;
+}
+
+/**
+ * Generate a cryptographically secure referral code.
+ * Uses rejection sampling to avoid modulo bias.
+ *
+ * With 36 characters (A-Z, 0-9) and 8-char codes:
+ * - Total combinations: 36^8 = 2.8 trillion
+ * - Collision probability is negligible
  */
 function generateReferralCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  const bytes = randomBytes(8);
+  const charsLength = chars.length; // 36
+
+  // Use rejection sampling to avoid modulo bias
+  // 256 / 36 = 7.11, so values >= 252 (36*7) are rejected
+  const maxValidByte = Math.floor(256 / charsLength) * charsLength; // 252
+
   let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(bytes[i] % chars.length);
+  let bytesNeeded = 8;
+
+  while (bytesNeeded > 0) {
+    const batch = randomBytes(bytesNeeded * 2); // Get extra bytes for rejections
+
+    for (let i = 0; i < batch.length && bytesNeeded > 0; i++) {
+      if (batch[i] < maxValidByte) {
+        code += chars.charAt(batch[i] % charsLength);
+        bytesNeeded--;
+      }
+      // Reject bytes >= 252 to avoid bias
+    }
   }
+
   return code;
 }
 

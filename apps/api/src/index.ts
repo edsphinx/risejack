@@ -15,6 +15,7 @@ import referrals from './routes/referrals';
 import leaderboard from './routes/leaderboard';
 import events from './routes/events';
 import activity from './routes/activity';
+import health from './routes/health';
 
 const app = new Hono();
 
@@ -29,16 +30,6 @@ app.use(
 );
 app.use('*', prettyJSON());
 
-// Health check
-app.get('/health', (c) => {
-  return c.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'risecasino-api',
-    version: '1.0.0',
-  });
-});
-
 // Root endpoint
 app.get('/', (c) => {
   return c.json({
@@ -46,7 +37,11 @@ app.get('/', (c) => {
     version: '1.0.0',
     description: 'Backend for Rise Casino - Leaderboards, Referrals, User Stats',
     endpoints: {
-      health: 'GET /health',
+      health: {
+        status: 'GET /health',
+        live: 'GET /health/live',
+        ready: 'GET /health/ready',
+      },
       users: {
         profile: 'GET /api/users/:walletAddress',
         register: 'POST /api/users/register',
@@ -71,6 +66,7 @@ app.get('/', (c) => {
 });
 
 // Mount routes
+app.route('/health', health);
 app.route('/api/users', users);
 app.route('/api/referrals', referrals);
 app.route('/api/leaderboard', leaderboard);

@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import { getProvider } from '@/lib/riseWallet';
 import { logger } from '@/lib/logger';
+import { logEvent, registerUser } from '@/lib/api';
 
 // Storage key
 const WALLET_STORAGE_KEY = 'risejack.wallet';
@@ -121,6 +122,10 @@ export function useWalletConnection(): UseWalletConnectionReturn {
       setAddress(walletAddress);
       setIsConnected(true);
       saveWallet(walletAddress);
+
+      // Log event & register user (fire-and-forget)
+      logEvent('wallet_connect', walletAddress, { provider: 'rise_wallet' }).catch(() => {});
+      registerUser(walletAddress).catch(() => {});
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to connect';
       if (message.includes('rejected') || message.includes('cancelled')) {
@@ -134,12 +139,18 @@ export function useWalletConnection(): UseWalletConnectionReturn {
   }, []);
 
   const disconnect = useCallback(() => {
+    const prevAddress = address;
     setAddress(null);
     setIsConnected(false);
     setError(null);
     removeWallet();
     logger.log('🔗 Disconnected');
-  }, []);
+
+    // Log disconnect event (fire-and-forget)
+    if (prevAddress) {
+      logEvent('wallet_disconnect', prevAddress).catch(() => {});
+    }
+  }, [address]);
 
   return {
     address,

@@ -48,4 +48,42 @@ coverage/
 
 # Misc
 *.tsbuildinfo
-*.local
+apps/indexer/indexer
+
+# ==================== SECURITY ====================
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets and credentials
+*.secret
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+*.keystore
+
+# AWS credentials
+.aws/
+credentials
+
+# Docker secrets
+docker-compose.override.yml
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+

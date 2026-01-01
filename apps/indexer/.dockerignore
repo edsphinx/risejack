@@ -1,0 +1,6 @@
+# Ignore everything except what's needed for build
+*
+!go.mod
+!go.sum
+!main.go
+!*.go

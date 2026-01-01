@@ -72,12 +72,19 @@ events.post('/', async (c) => {
   // INPUT VALIDATION: Validate eventData size and depth to prevent DoS attacks
   if (eventData) {
     try {
-      // Check depth to prevent deeply nested objects (JSON bomb)
+      // Check depth and property count to prevent DoS (JSON bombs, wide objects)
       const maxDepth = 10;
+      const maxProperties = 100;
+      let propertyCount = 0;
+
       const checkDepth = (obj: unknown, depth = 0): boolean => {
         if (depth > maxDepth) return false;
+        if (propertyCount > maxProperties) return false;
+
         if (obj && typeof obj === 'object') {
           for (const key in obj as Record<string, unknown>) {
+            propertyCount++;
+            if (propertyCount > maxProperties) return false;
             if (!checkDepth((obj as Record<string, unknown>)[key], depth + 1)) return false;
           }
         }

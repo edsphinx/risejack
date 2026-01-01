@@ -55,20 +55,26 @@ export async function requireAdmin(c: Context, next: Next) {
 
 /**
  * Constant-time string comparison to prevent timing attacks (CWE-208)
- * Uses Node.js built-in crypto.timingSafeEqual for proper implementation
+ * Uses fixed-length padding to prevent length leakage, then crypto.timingSafeEqual
  */
 function timingSafeEqual(a: string, b: string): boolean {
-  // Convert strings to buffers for crypto.timingSafeEqual
-  const bufferA = Buffer.from(a, 'utf8');
-  const bufferB = Buffer.from(b, 'utf8');
+  // Use fixed maximum length to prevent length leakage
+  const FIXED_LENGTH = 256;
 
-  // Return false immediately if lengths differ (no timing attack possible here)
-  if (bufferA.length !== bufferB.length) {
-    return false;
-  }
+  // Convert strings to buffers and pad to fixed length
+  const bufferA = Buffer.alloc(FIXED_LENGTH, 0);
+  const bufferB = Buffer.alloc(FIXED_LENGTH, 0);
 
-  // Use crypto.timingSafeEqual directly for same-length buffers
-  return cryptoTimingSafeEqual(bufferA, bufferB);
+  Buffer.from(a, 'utf8').copy(bufferA);
+  Buffer.from(b, 'utf8').copy(bufferB);
+
+  // Use crypto.timingSafeEqual on fixed-length buffers
+  const match = cryptoTimingSafeEqual(bufferA, bufferB);
+
+  // Also verify actual lengths match (in constant time)
+  const lengthMatch = a.length === b.length;
+
+  return match && lengthMatch;
 }
 
 /**

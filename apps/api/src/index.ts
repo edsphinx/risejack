@@ -99,12 +99,36 @@ app.onError((err, c) => {
 });
 
 // Start server
-const port = Number(process.env.PORT) || 3000;
+const port = Number(process.env.PORT) || 3001;
+const isHttps = process.env.HTTPS === 'true';
+const protocol = isHttps ? 'https' : 'http';
 
 // eslint-disable-next-line no-console
-console.log(`🎰 Rise Casino API running on http://localhost:${port}`);
+console.log(`🎰 Rise Casino API running on ${protocol}://localhost:${port}`);
+
+// TLS configuration for local HTTPS development
+const getTlsConfig = () => {
+  if (!isHttps) return undefined;
+
+  try {
+    // Use Bun's native file reading
+    const key = Bun.file('./localhost+2-key.pem');
+    const cert = Bun.file('./localhost+2.pem');
+
+    // Check if files exist before returning
+    if (!key.size || !cert.size) {
+      throw new Error('Certificates not found');
+    }
+
+    return { key, cert };
+  } catch {
+    console.warn('⚠️  TLS certificates not found. Run: mkcert localhost 127.0.0.1 ::1');
+    return undefined;
+  }
+};
 
 export default {
   port,
   fetch: app.fetch,
+  tls: getTlsConfig(),
 };

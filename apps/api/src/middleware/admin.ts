@@ -109,17 +109,18 @@ export function safeLog(level: 'info' | 'warn' | 'error', message: string, data?
 // Maximum depth for recursive sanitization to prevent stack overflow
 const MAX_SANITIZATION_DEPTH = 10;
 
-// WeakSet to track visited objects and prevent circular reference infinite loops
-const visitedObjects = new WeakSet<object>();
-
 /**
  * Remove sensitive fields from log data.
  *
  * SECURITY: Prevents stack overflow by:
  * 1. Limiting recursion depth to MAX_SANITIZATION_DEPTH
- * 2. Tracking visited objects to handle circular references
+ * 2. Tracking visited objects to handle circular references (per-call WeakSet)
  */
-function sanitizeLogData(data: unknown, depth: number = 0): unknown {
+function sanitizeLogData(
+  data: unknown,
+  depth: number = 0,
+  visitedObjects: WeakSet<object> = new WeakSet()
+): unknown {
   // Prevent stack overflow from deep nesting
   if (depth >= MAX_SANITIZATION_DEPTH) {
     return '[MAX_DEPTH_EXCEEDED]';
@@ -136,40 +137,35 @@ function sanitizeLogData(data: unknown, depth: number = 0): unknown {
 
   visitedObjects.add(data);
 
-  try {
-    // Handle arrays
-    if (Array.isArray(data)) {
-      return data.map((item) => sanitizeLogData(item, depth + 1));
-    }
-
-    const sensitiveFields = [
-      'password',
-      'secret',
-      'token',
-      'apiKey',
-      'privateKey',
-      'key',
-      'authorization',
-      'cookie',
-      'session',
-      'connectionString',
-      'databaseUrl',
-    ];
-    const sanitized: Record<string, unknown> = {};
-
-    for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-      if (sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
-        sanitized[key] = '[REDACTED]';
-      } else if (typeof value === 'object' && value !== null) {
-        sanitized[key] = sanitizeLogData(value, depth + 1);
-      } else {
-        sanitized[key] = value;
-      }
-    }
-
-    return sanitized;
-  } finally {
-    // Clean up visited tracking after processing
-    visitedObjects.delete(data);
+  // Handle arrays
+  if (Array.isArray(data)) {
+    return data.map((item) => sanitizeLogData(item, depth + 1, visitedObjects));
   }
+
+  const sensitiveFields = [
+    'password',
+    'secret',
+    'token',
+    'apiKey',
+    'privateKey',
+    'key',
+    'authorization',
+    'cookie',
+    'session',
+    'connectionString',
+    'databaseUrl',
+  ];
+  const sanitized: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+    if (sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
+      sanitized[key] = '[REDACTED]';
+    } else if (typeof value === 'object' && value !== null) {
+      sanitized[key] = sanitizeLogData(value, depth + 1, visitedObjects);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+
+  return sanitized;
 }

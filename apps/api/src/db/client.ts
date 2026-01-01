@@ -130,7 +130,7 @@ export async function isDatabaseHealthy(): Promise<boolean> {
   }
 }
 
-// Export pool for potential direct access (testing, etc.)
-export { pool };
+// Export pool for testing only - prevents direct DB access in production
+export const testPool = process.env.NODE_ENV === 'test' ? pool : undefined;
 
 export default prisma;

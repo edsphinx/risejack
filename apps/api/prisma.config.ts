@@ -11,6 +11,12 @@ export default defineConfig({
   datasource: {
     // Use DIRECT_URL for migrations if available (bypasses connection pooler)
     // Falls back to DATABASE_URL for regular operations
-    url: process.env.DIRECT_URL || process.env.DATABASE_URL!,
+    // SECURITY: Use generic error to prevent connection string exposure
+    url:
+      process.env.DIRECT_URL ||
+      process.env.DATABASE_URL ||
+      (() => {
+        throw new Error('Database configuration error');
+      })(),
   },
 });

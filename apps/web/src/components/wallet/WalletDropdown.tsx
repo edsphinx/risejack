@@ -1,0 +1,140 @@
+/**
+ * WalletDropdown - The dropdown panel showing wallet details (presentation only)
+ * All event handlers are passed as props
+ */
+
+import { formatEthBalance, formatSessionTime } from '@/lib/formatters';
+import type { TimeRemaining } from '@risejack/shared';
+
+interface WalletDropdownProps {
+  address: string;
+  balance: string;
+  hasSessionKey: boolean;
+  sessionExpiry: TimeRemaining | null;
+  copied: boolean;
+  isCreatingSession: boolean;
+  onCopyAddress: () => void;
+  onCreateSession: () => void;
+  onRevokeSession: () => void;
+  onDisconnect: () => void;
+}
+
+export function WalletDropdown({
+  address,
+  balance,
+  hasSessionKey,
+  sessionExpiry,
+  copied,
+  isCreatingSession,
+  onCopyAddress,
+  onCreateSession,
+  onRevokeSession,
+  onDisconnect,
+}: WalletDropdownProps) {
+  return (
+    <div className="wallet-dropdown">
+      {/* Wallet Info Section */}
+      <WalletInfoSection
+        address={address}
+        balance={balance}
+        copied={copied}
+        onCopyAddress={onCopyAddress}
+      />
+
+      {/* Session Key Section */}
+      <SessionKeySection
+        hasSessionKey={hasSessionKey}
+        sessionExpiry={sessionExpiry}
+        isCreatingSession={isCreatingSession}
+        onCreateSession={onCreateSession}
+        onRevokeSession={onRevokeSession}
+      />
+
+      {/* Disconnect Button */}
+      <button className="dropdown-disconnect" onClick={onDisconnect}>
+        🚪 Disconnect Wallet
+      </button>
+    </div>
+  );
+}
+
+// === Sub-components (private to this module) ===
+
+interface WalletInfoSectionProps {
+  address: string;
+  balance: string;
+  copied: boolean;
+  onCopyAddress: () => void;
+}
+
+function WalletInfoSection({ address, balance, copied, onCopyAddress }: WalletInfoSectionProps) {
+  return (
+    <div className="dropdown-section">
+      <div className="dropdown-section-header">
+        <span className="dropdown-status-dot" />
+        <span className="dropdown-status-text">Connected</span>
+      </div>
+
+      <div className="dropdown-address-row">
+        <span className="dropdown-address">{address}</span>
+        <button className="dropdown-copy-btn" onClick={onCopyAddress}>
+          {copied ? '✓ Copied' : 'Copy'}
+        </button>
+      </div>
+
+      <div className="dropdown-balance-row">
+        <span className="dropdown-balance-label">Balance</span>
+        <span className="dropdown-balance-value">{formatEthBalance(balance, 6)}</span>
+      </div>
+    </div>
+  );
+}
+
+interface SessionKeySectionProps {
+  hasSessionKey: boolean;
+  sessionExpiry: TimeRemaining | null;
+  isCreatingSession: boolean;
+  onCreateSession: () => void;
+  onRevokeSession: () => void;
+}
+
+function SessionKeySection({
+  hasSessionKey,
+  sessionExpiry,
+  isCreatingSession,
+  onCreateSession,
+  onRevokeSession,
+}: SessionKeySectionProps) {
+  return (
+    <div className="dropdown-section session-section">
+      <div className="dropdown-session-header">
+        <div className="dropdown-session-info">
+          <span className="dropdown-session-icon">🔑</span>
+          <div>
+            <div className="dropdown-session-label">Fast Mode</div>
+            <div className="dropdown-session-desc">
+              {hasSessionKey ? 'Active - no popups!' : 'Enable for instant gameplay'}
+            </div>
+          </div>
+        </div>
+
+        {hasSessionKey ? (
+          <div className="dropdown-session-actions">
+            <span className="dropdown-session-time">{formatSessionTime(sessionExpiry)}</span>
+            <button className="dropdown-btn-revoke" onClick={onRevokeSession}>
+              Revoke
+            </button>
+          </div>
+        ) : (
+          <button
+            className="dropdown-btn-enable"
+            onClick={onCreateSession}
+            disabled={isCreatingSession}
+          >
+            {isCreatingSession ? '...' : 'Enable'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

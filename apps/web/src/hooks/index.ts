@@ -9,5 +9,5 @@ export { useContractState, type UseContractStateReturn } from './useContractStat
 export { useGameActions, type UseGameActionsReturn } from './useGameActions';
 
 // Compositor hooks (recommended for components)
-export { useRiseWallet, type UseRiseWalletReturn } from './useRiseWallet';
+export { useRiseWallet } from './useRiseWallet';
 export { useGameState, type UseGameStateReturn } from './useGameState';

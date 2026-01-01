@@ -117,14 +117,14 @@
 
 @media (max-width: 640px) {
   .playing-card {
-    width: 110px;
-    height: 165px;
+    width: 126px;
+    height: 176px;
   }
 
   .playing-card .card-front,
   .playing-card .card-back,
   .card-image {
-    border-radius: 6px;
+    border-radius: 8px;
   }
 
   .playing-card:hover {
@@ -134,13 +134,13 @@
 
 @media (max-width: 400px) {
   .playing-card {
-    width: 80px;
-    height: 112px;
+    width: 107px;
+    height: 150px;
   }
 
   .playing-card .card-front,
   .playing-card .card-back,
   .card-image {
-    border-radius: 5px;
+    border-radius: 6px;
   }
 }

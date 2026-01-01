@@ -11,9 +11,12 @@ docs/
 │   ├── STAKING_MODEL.md       # Staking mechanics and yields
 │   └── LIQUIDITY_POOLS.md     # AMM/DEX design
 ├── architecture/
-│   ├── SYSTEM_OVERVIEW.md     # High-level system architecture
 │   ├── SMART_CONTRACTS.md     # Contract architecture
+│   ├── BACKEND_EVALUATION.md  # Backend stack decisions
 │   └── FRONTEND.md            # Frontend architecture
+├── growth/
+│   ├── GROWTH_STRATEGY.md     # Master growth & monetization plan
+│   └── DATA_SCHEMA.md         # SQL schema for analytics platform
 ├── business/
 │   ├── REVENUE_MODEL.md       # All revenue streams
 │   └── RISK_ANALYSIS.md       # Economic risks and mitigations
@@ -23,18 +26,20 @@ docs/
 
 ## 📋 Documents Overview
 
-| Document         | Purpose                                        | Audience             |
-| ---------------- | ---------------------------------------------- | -------------------- |
-| **Whitepaper**   | Vision, value proposition, high-level overview | Investors, Community |
-| **Tokenomics**   | Token distribution, emissions, utility         | Analysts, Investors  |
-| **Architecture** | Technical design and implementation            | Developers           |
-| **Business**     | Revenue model, sustainability analysis         | Team, Investors      |
-| **Games**        | Individual game specifications                 | Developers, Auditors |
+| Document            | Purpose                                        | Audience             |
+| ------------------- | ---------------------------------------------- | -------------------- |
+| **Whitepaper**      | Vision, value proposition, high-level overview | Investors, Community |
+| **Tokenomics**      | Token distribution, emissions, utility         | Analysts, Investors  |
+| **Architecture**    | Technical design and implementation            | Developers           |
+| **Growth Strategy** | Viral loops, data monetization, AI roadmap     | Team, Investors      |
+| **Business**        | Revenue model, sustainability analysis         | Team, Investors      |
+| **Games**           | Individual game specifications                 | Developers, Auditors |
 
 ## 🚀 Reading Order
 
-1. Whitepaper (vision)
-2. Revenue Model (how we make money)
-3. CHIP Token (token design)
-4. System Overview (how it works)
-5. Individual game specs
+1. [Whitepaper](./whitepaper/WHITEPAPER.md) (vision)
+2. [Growth Strategy](./growth/GROWTH_STRATEGY.md) (how we grow)
+3. [Revenue Model](./business/REVENUE_MODEL.md) (how we make money)
+4. [Data Schema](./growth/DATA_SCHEMA.md) (what we capture)
+5. [CHIP Token](./tokenomics/CHIP_TOKEN.md) (token design)
+6. Individual game specs

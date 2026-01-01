@@ -8,10 +8,14 @@
 import { Hono } from 'hono';
 import { EventService } from '../services';
 import { requireAdmin, sanitizeError } from '../middleware/admin';
+import { isValidWalletAddress, isValidUUID, sanitizeString } from '../middleware';
 import type { LogEventRequest, ApiError } from '@risejack/shared';
 import type { Prisma } from '@prisma/client';
 
 const events = new Hono();
+
+// Valid device types for input validation
+const VALID_DEVICE_TYPES = ['mobile', 'desktop', 'tablet'] as const;
 
 /**
  * POST /events
@@ -21,11 +25,34 @@ events.post('/', async (c) => {
   const body = await c.req.json<LogEventRequest>();
   const { walletAddress, eventType, eventData, sessionId, deviceType } = body;
 
-  // Validate event type
+  // INPUT VALIDATION: Validate wallet address if provided
+  if (walletAddress && !isValidWalletAddress(walletAddress)) {
+    return c.json({ error: 'Invalid wallet address format' } satisfies ApiError, 400);
+  }
+
+  // INPUT VALIDATION: Validate and sanitize event type
   if (!eventType || !EventService.isValidEventType(eventType)) {
     const validTypes = EventService.getValidEventTypes();
     return c.json(
       { error: `Invalid eventType. Valid types: ${validTypes.join(', ')}` } satisfies ApiError,
+      400
+    );
+  }
+
+  // INPUT VALIDATION: Validate session ID format if provided
+  if (sessionId && !isValidUUID(sessionId)) {
+    return c.json({ error: 'Invalid sessionId format' } satisfies ApiError, 400);
+  }
+
+  // INPUT VALIDATION: Validate device type if provided
+  if (
+    deviceType &&
+    !VALID_DEVICE_TYPES.includes(deviceType as (typeof VALID_DEVICE_TYPES)[number])
+  ) {
+    return c.json(
+      {
+        error: `Invalid deviceType. Valid types: ${VALID_DEVICE_TYPES.join(', ')}`,
+      } satisfies ApiError,
       400
     );
   }
@@ -35,12 +62,12 @@ events.post('/', async (c) => {
     const ipGeoCountry = c.req.header('cf-ipcountry') || undefined;
 
     const eventId = await EventService.logEvent({
-      walletAddress,
+      walletAddress: walletAddress ? sanitizeString(walletAddress, 42) : undefined,
       eventType,
       eventData: eventData as Prisma.InputJsonValue | undefined,
       sessionId,
       deviceType,
-      ipGeoCountry,
+      ipGeoCountry: ipGeoCountry ? sanitizeString(ipGeoCountry, 2) : undefined,
     });
 
     return c.json({

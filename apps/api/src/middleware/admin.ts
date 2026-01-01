@@ -10,6 +10,7 @@
 
 import type { Context, Next } from 'hono';
 import type { ApiError } from '@risejack/shared';
+import { timingSafeEqual as cryptoTimingSafeEqual } from 'crypto';
 
 /**
  * Get admin API key securely.
@@ -54,8 +55,6 @@ export async function requireAdmin(c: Context, next: Next) {
 
   return next();
 }
-
-import { timingSafeEqual as cryptoTimingSafeEqual } from 'crypto';
 
 /**
  * Constant-time string comparison to prevent timing attacks (CWE-208)

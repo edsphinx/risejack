@@ -7,6 +7,7 @@
 
 import { Hono } from 'hono';
 import { UserService, GameService } from '../services';
+import { isValidWalletAddress, sanitizeError } from '../middleware';
 import type { ApiError } from '@risejack/shared';
 
 const users = new Hono();
@@ -18,6 +19,11 @@ const users = new Hono();
 users.get('/:walletAddress', async (c) => {
   const walletAddress = c.req.param('walletAddress');
 
+  // Validate wallet address format
+  if (!isValidWalletAddress(walletAddress)) {
+    return c.json({ error: 'Invalid wallet address format' } satisfies ApiError, 400);
+  }
+
   try {
     const result = await UserService.getUserProfile(walletAddress);
 
@@ -28,7 +34,7 @@ users.get('/:walletAddress', async (c) => {
     return c.json(result);
   } catch (error) {
     console.error('User fetch error:', error);
-    return c.json({ error: 'Failed to fetch user' } satisfies ApiError, 500);
+    return c.json({ error: sanitizeError(error) } satisfies ApiError, 500);
   }
 });
 
@@ -40,12 +46,13 @@ users.post('/register', async (c) => {
   const body = await c.req.json<{ walletAddress?: string; displayName?: string }>();
   const { walletAddress, displayName } = body;
 
-  if (!walletAddress) {
-    return c.json({ error: 'walletAddress required' } satisfies ApiError, 400);
+  // Validate wallet address format
+  if (!isValidWalletAddress(walletAddress)) {
+    return c.json({ error: 'Valid walletAddress required' } satisfies ApiError, 400);
   }
 
   try {
-    const user = await UserService.registerUser(walletAddress, displayName);
+    const user = await UserService.registerUser(walletAddress!, displayName);
 
     return c.json({
       success: true,
@@ -53,7 +60,7 @@ users.post('/register', async (c) => {
     });
   } catch (error) {
     console.error('User register error:', error);
-    return c.json({ error: 'Failed to register user' } satisfies ApiError, 500);
+    return c.json({ error: sanitizeError(error) } satisfies ApiError, 500);
   }
 });
 
@@ -63,8 +70,14 @@ users.post('/register', async (c) => {
  */
 users.get('/:walletAddress/games', async (c) => {
   const walletAddress = c.req.param('walletAddress');
-  const limit = Number(c.req.query('limit')) || 20;
-  const offset = Number(c.req.query('offset')) || 0;
+
+  // Validate wallet address format
+  if (!isValidWalletAddress(walletAddress)) {
+    return c.json({ error: 'Invalid wallet address format' } satisfies ApiError, 400);
+  }
+
+  const limit = Math.min(Math.max(1, Number(c.req.query('limit')) || 20), 100);
+  const offset = Math.max(0, Number(c.req.query('offset')) || 0);
 
   try {
     const result = await GameService.getGameHistory(walletAddress, { limit, offset });
@@ -76,7 +89,7 @@ users.get('/:walletAddress/games', async (c) => {
     return c.json(result);
   } catch (error) {
     console.error('User games error:', error);
-    return c.json({ error: 'Failed to fetch games' } satisfies ApiError, 500);
+    return c.json({ error: sanitizeError(error) } satisfies ApiError, 500);
   }
 });
 

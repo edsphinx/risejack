@@ -7,6 +7,7 @@
 
 import { Hono } from 'hono';
 import { ReferralService, UserService } from '../services';
+import { isValidWalletAddress, isValidReferralCode, sanitizeError } from '../middleware';
 import type { ApiError } from '@risejack/shared';
 
 const referrals = new Hono();
@@ -18,6 +19,11 @@ const referrals = new Hono();
 referrals.get('/:walletAddress', async (c) => {
   const walletAddress = c.req.param('walletAddress');
 
+  // Validate wallet address format
+  if (!isValidWalletAddress(walletAddress)) {
+    return c.json({ error: 'Invalid wallet address format' } satisfies ApiError, 400);
+  }
+
   try {
     const stats = await ReferralService.getReferralStats(walletAddress);
 
@@ -28,7 +34,7 @@ referrals.get('/:walletAddress', async (c) => {
     return c.json(stats);
   } catch (error) {
     console.error('Referral stats error:', error);
-    return c.json({ error: 'Failed to fetch referral stats' } satisfies ApiError, 500);
+    return c.json({ error: sanitizeError(error) } satisfies ApiError, 500);
   }
 });
 
@@ -38,8 +44,14 @@ referrals.get('/:walletAddress', async (c) => {
  */
 referrals.get('/:walletAddress/history', async (c) => {
   const walletAddress = c.req.param('walletAddress');
-  const limit = Number(c.req.query('limit')) || 50;
-  const offset = Number(c.req.query('offset')) || 0;
+
+  // Validate wallet address format
+  if (!isValidWalletAddress(walletAddress)) {
+    return c.json({ error: 'Invalid wallet address format' } satisfies ApiError, 400);
+  }
+
+  const limit = Math.min(Math.max(1, Number(c.req.query('limit')) || 50), 100);
+  const offset = Math.max(0, Number(c.req.query('offset')) || 0);
 
   try {
     const history = await ReferralService.getReferralHistory(walletAddress, { limit, offset });
@@ -54,7 +66,7 @@ referrals.get('/:walletAddress/history', async (c) => {
     });
   } catch (error) {
     console.error('Referral history error:', error);
-    return c.json({ error: 'Failed to fetch referral history' } satisfies ApiError, 500);
+    return c.json({ error: sanitizeError(error) } satisfies ApiError, 500);
   }
 });
 
@@ -66,12 +78,18 @@ referrals.post('/register', async (c) => {
   const body = await c.req.json<{ walletAddress?: string; referralCode?: string }>();
   const { walletAddress, referralCode } = body;
 
-  if (!walletAddress || !referralCode) {
-    return c.json({ error: 'walletAddress and referralCode required' } satisfies ApiError, 400);
+  // Validate wallet address format
+  if (!isValidWalletAddress(walletAddress)) {
+    return c.json({ error: 'Valid walletAddress required' } satisfies ApiError, 400);
+  }
+
+  // Validate referral code format (8 alphanumeric chars)
+  if (!isValidReferralCode(referralCode)) {
+    return c.json({ error: 'Invalid referral code format' } satisfies ApiError, 400);
   }
 
   try {
-    const result = await UserService.registerReferral(walletAddress, referralCode);
+    const result = await UserService.registerReferral(walletAddress!, referralCode!);
 
     if (!result.success) {
       return c.json({ error: result.error || 'Registration failed' } satisfies ApiError, 400);
@@ -84,7 +102,7 @@ referrals.post('/register', async (c) => {
     });
   } catch (error) {
     console.error('Referral register error:', error);
-    return c.json({ error: 'Failed to register referral' } satisfies ApiError, 500);
+    return c.json({ error: sanitizeError(error) } satisfies ApiError, 500);
   }
 });
 

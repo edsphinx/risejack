@@ -3,6 +3,9 @@
  *
  * Provides access control for admin-only endpoints like analytics.
  * Uses a simple API key approach for initial implementation.
+ *
+ * SECURITY NOTE: This middleware ALWAYS requires authentication.
+ * There is no development bypass to prevent security vulnerabilities.
  */
 
 import type { Context, Next } from 'hono';
@@ -15,21 +18,18 @@ const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
  * Middleware to require admin authentication for sensitive endpoints.
  * Only checks X-Admin-API-Key header (NOT query params to prevent URL logging/exposure).
  *
- * Security: Do NOT use query parameters for API keys as they can be logged in:
- * - Server access logs
- * - Browser history
- * - Referrer headers
- * - CDN/proxy logs
+ * SECURITY: Authentication is ALWAYS required, even in development.
+ * This prevents attackers from bypassing auth by setting NODE_ENV=development.
+ *
+ * To test admin endpoints in development, set ADMIN_API_KEY in your .env file.
  */
 export async function requireAdmin(c: Context, next: Next) {
-  // Skip auth in development if no key is configured
-  if (process.env.NODE_ENV === 'development' && !ADMIN_API_KEY) {
-    return next();
-  }
-
-  // Require API key in production
+  // Always require API key - no development bypass for security
   if (!ADMIN_API_KEY) {
-    console.error('ADMIN_API_KEY not configured - analytics endpoints disabled');
+    // Log only in development for debugging, never expose in response
+    if (process.env.NODE_ENV === 'development') {
+      console.error('ADMIN_API_KEY not configured - set it in .env to access admin endpoints');
+    }
     return c.json({ error: 'Service unavailable' } satisfies ApiError, 503);
   }
 
@@ -66,10 +66,13 @@ function timingSafeEqual(a: string, b: string): boolean {
 /**
  * Sanitize error messages for production responses.
  * Prevents information disclosure through error messages (CWE-209).
+ *
+ * SECURITY: Never expose internal error details, stack traces, or
+ * system information in error responses. Always return generic messages.
  */
 export function sanitizeError(_error: unknown): string {
   // Always return generic message - never expose internal errors
-  // Errors are logged server-side only
+  // Errors should be logged server-side only in a secure manner
   return 'An unexpected error occurred';
 }
 
@@ -112,6 +115,8 @@ function sanitizeLogData(data: unknown): unknown {
     'privateKey',
     'key',
     'authorization',
+    'cookie',
+    'session',
   ];
   const sanitized: Record<string, unknown> = {};
 

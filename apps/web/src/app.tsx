@@ -9,6 +9,7 @@ import { Logo } from './components/brand/Logo';
 import { useLocation } from 'wouter-preact';
 import { WalletProvider, useWallet } from './context/WalletContext';
 import { FastModeOnboarding, SessionExpiryModal } from './components/wallet/SessionModals';
+import { safeParseNumber } from './lib/formatters';
 import './components/wallet/styles/mobile-header.css';
 
 function Header() {
@@ -33,7 +34,7 @@ function Header() {
             {wallet.isConnected && wallet.balance !== null && (
               <div className="mobile-balance">
                 <span className="mobile-balance-icon">💰</span>
-                <span>{Number(wallet.formatBalance()).toFixed(4)}</span>
+                <span>{safeParseNumber(wallet.formatBalance()).toFixed(4)}</span>
               </div>
             )}
             {wallet.isConnected && !wallet.balance && (
@@ -112,7 +113,7 @@ function Header() {
                       <span className="wallet-balance-label">Balance</span>
                       <span className="wallet-balance-value">
                         {wallet.balance !== null
-                          ? `${Number(wallet.formatBalance()).toFixed(5)} ETH`
+                          ? `${safeParseNumber(wallet.formatBalance()).toFixed(5)} ETH`
                           : '-- ETH'}
                       </span>
                     </div>

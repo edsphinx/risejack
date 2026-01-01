@@ -18,7 +18,16 @@ export function shortenAddress(
 }
 
 /**
- * Format ETH balance for display
+ * Safely parse a string to number, returning fallback on NaN
+ */
+export function safeParseNumber(value: string | null | undefined, fallback = 0): number {
+    if (!value) return fallback;
+    const num = Number(value);
+    return isNaN(num) ? fallback : num;
+}
+
+/**
+ * Format ETH balance for display with safe NaN handling
  * @param balance - Balance in wei as bigint or formatted string
  * @param decimals - Number of decimal places to show
  */
@@ -28,8 +37,7 @@ export function formatEthBalance(
 ): string {
     if (!balance) return '...';
     try {
-        const num = Number(balance);
-        if (isNaN(num)) return '-- ETH';
+        const num = safeParseNumber(balance);
         return `${num.toFixed(decimals)} ETH`;
     } catch {
         return '-- ETH';

@@ -5,6 +5,7 @@
  * All Prisma interactions for users are centralized here.
  */
 
+import { randomBytes } from 'crypto';
 import prisma from '../db/client';
 import type { User } from '@prisma/client';
 
@@ -143,11 +144,16 @@ export async function setUserReferrer(userId: string, referrerId: string): Promi
 
 // ==================== HELPERS ====================
 
+/**
+ * Generate a cryptographically secure referral code
+ * Uses crypto.randomBytes instead of Math.random for security
+ */
 function generateReferralCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const bytes = randomBytes(8);
   let code = '';
   for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+    code += chars.charAt(bytes[i] % chars.length);
   }
   return code;
 }

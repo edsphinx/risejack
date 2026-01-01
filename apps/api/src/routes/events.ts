@@ -7,6 +7,7 @@
 
 import { Hono } from 'hono';
 import { EventService } from '../services';
+import { requireAdmin, sanitizeError } from '../middleware/admin';
 import type { LogEventRequest, ApiError } from '@risejack/shared';
 import type { Prisma } from '@prisma/client';
 
@@ -47,8 +48,9 @@ events.post('/', async (c) => {
       eventId,
     });
   } catch (error) {
-    console.error('Event log error:', error);
-    return c.json({ error: 'Failed to log event' } satisfies ApiError, 500);
+    // Log error server-side without exposing details
+    console.error('Event log error:', process.env.NODE_ENV === 'development' ? error : 'Internal');
+    return c.json({ error: sanitizeError(error) } satisfies ApiError, 500);
   }
 });
 
@@ -64,17 +66,23 @@ events.get('/types', (c) => {
 
 /**
  * GET /events/funnel
- * Returns funnel analytics (admin only in production)
+ * Returns funnel analytics (admin only)
+ * Requires X-Admin-API-Key header or admin_key query parameter
  */
-events.get('/funnel', async (c) => {
-  const days = Number(c.req.query('days')) || 7;
+events.get('/funnel', requireAdmin, async (c) => {
+  // Validate days parameter (bounded input)
+  const rawDays = c.req.query('days');
+  const days = Math.min(Math.max(1, Number(rawDays) || 7), 90); // Bounded between 1-90 days
 
   try {
     const result = await EventService.getFunnelAnalytics(days);
     return c.json(result);
   } catch (error) {
-    console.error('Funnel analytics error:', error);
-    return c.json({ error: 'Failed to get funnel data' } satisfies ApiError, 500);
+    console.error(
+      'Funnel analytics error:',
+      process.env.NODE_ENV === 'development' ? error : 'Internal'
+    );
+    return c.json({ error: sanitizeError(error) } satisfies ApiError, 500);
   }
 });
 

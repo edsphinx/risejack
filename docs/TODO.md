@@ -9,36 +9,51 @@ This document tracks features that are planned but not yet implemented.
 ### Merkle Drop for Referral Earnings
 
 **Status**: Pending  
-**Depends on**: Go Indexer (✅ Complete), MerkleDrop.sol (❌ Not deployed)
+**Depends on**: Go Indexer (✅ Complete), MerkleDistributor.sol (❌ Not deployed), CHIP Token (❌ Not deployed)
 
-**Description**: Monthly airdrop system for referral earnings.
+**Description**: Monthly airdrop system for referral earnings, paid in CHIP token.
+
+**Base Contract**: [Uniswap/merkle-distributor](https://github.com/Uniswap/merkle-distributor) (battle-tested, $1B+ distributed)
 
 **Components needed**:
 
-1. **Go Merkle Generator** (`apps/indexer/merkle/`)
+1. **CHIP Token** (`packages/contracts/src/CHIPToken.sol`)
+   - ERC20 token for Rise Casino ecosystem
+   - Used for referral rewards, staking, governance
+   - Initial supply minted to treasury
+
+2. **MerkleDistributor.sol** (Fork from Uniswap)
+   - Admin sets new Merkle root monthly
+   - Users call `claim(index, account, amount, proof)` to receive CHIP
+   - Tracks claimed status to prevent double-claims
+   - **No modifications needed** - use as-is for ERC20
+
+3. **Go Merkle Generator** (`apps/indexer/merkle/`)
    - Query all unclaimed `referral_earnings` from DB
-   - Generate Merkle tree with (address, totalAmount) leaves
+   - Convert ETH value to CHIP equivalent (use oracle or fixed rate)
+   - Generate Merkle tree with (index, address, amount) leaves
    - Output: Merkle root + proofs JSON file
 
-2. **MerkleDrop.sol** (`packages/contracts/src/MerkleDrop.sol`)
-   - Admin sets new Merkle root monthly
-   - Users call `claim(amount, proof)` to receive ETH
-   - Tracks claimed status to prevent double-claims
-
-3. **Go Scheduler**
+4. **Go Scheduler**
    - Runs on random day between 1st-7th of each month
    - Generates Merkle tree
-   - Calls `setMerkleRoot(root)` on contract
+   - Admin reviews and deploys new MerkleDistributor (or updates root)
    - Marks earnings as `claimed=true` in DB
 
-4. **API Endpoint**
-   - `GET /api/referrals/:wallet/proof` - Returns user's Merkle proof
+5. **API Endpoint**
+   - `GET /api/referrals/:wallet/proof` - Returns user's Merkle proof for current epoch
 
-5. **Frontend UI**
-   - "Claim Rewards" button in referrals dashboard
-   - Shows pending vs claimed amounts
+6. **Frontend UI**
+   - "Claim CHIP Rewards" button in referrals dashboard
+   - Shows pending vs claimed amounts in CHIP
 
-**Estimated effort**: 2-3 days
+**CHIP Token Economics**:
+
+- Referral rewards: 10% of house edge equivalent in CHIP
+- Conversion rate: Set by governance or fixed at launch
+- Utility: Staking, fee discounts, VIP access
+
+**Estimated effort**: 3-4 days (includes CHIP token deploy)
 
 ---
 

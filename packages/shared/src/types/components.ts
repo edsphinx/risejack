@@ -56,6 +56,8 @@ export interface WalletConnectProps {
   hasSessionKey: boolean;
   sessionExpiry: TimeRemaining | null;
   error: string | null;
+  balance: bigint | null;
+  formatBalance: () => string;
   onConnect: () => void;
   onDisconnect: () => void;
   onCreateSession: () => Promise<boolean>;

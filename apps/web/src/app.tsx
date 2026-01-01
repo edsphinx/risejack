@@ -227,6 +227,8 @@ function Header() {
             isConnected={wallet.isConnected}
             isConnecting={wallet.isConnecting}
             error={wallet.error}
+            balance={wallet.balance}
+            formatBalance={wallet.formatBalance}
             onConnect={wallet.connect}
             onDisconnect={wallet.disconnect}
             hasSessionKey={wallet.hasSessionKey}

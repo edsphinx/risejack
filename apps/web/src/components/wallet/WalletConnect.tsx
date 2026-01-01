@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
-import { formatEther } from 'viem';
-import { getProvider } from '@/lib/riseWallet';
 import type { WalletConnectProps, TimeRemaining } from '@risejack/shared';
 import './styles/header.css';
 import './styles/desktop-dropdown.css';
@@ -12,6 +10,8 @@ export function WalletConnect({
   hasSessionKey,
   sessionExpiry,
   error,
+  balance,
+  formatBalance,
   onConnect,
   onDisconnect,
   onCreateSession,
@@ -19,7 +19,6 @@ export function WalletConnect({
 }: WalletConnectProps) {
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [balance, setBalance] = useState<bigint | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -34,30 +33,26 @@ export function WalletConnect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch balance using direct provider call
-  useEffect(() => {
-    if (!account) {
-      setBalance(null);
-      return;
+  // Format balance with fallback
+  const displayBalance = () => {
+    try {
+      if (balance === null) return '...';
+      const formatted = formatBalance();
+      return `${Number(formatted).toFixed(4)} ETH`;
+    } catch {
+      return '-- ETH';
     }
+  };
 
-    const fetchBalance = async () => {
-      try {
-        const provider = getProvider();
-        const result = await provider.request({
-          method: 'eth_getBalance',
-          params: [account, 'latest'],
-        });
-        setBalance(BigInt(result as string));
-      } catch {
-        setBalance(null);
-      }
-    };
-
-    fetchBalance();
-    const interval = setInterval(fetchBalance, 10000);
-    return () => clearInterval(interval);
-  }, [account]);
+  const displayBalanceFull = () => {
+    try {
+      if (balance === null) return '-- ETH';
+      const formatted = formatBalance();
+      return `${Number(formatted).toFixed(6)} ETH`;
+    } catch {
+      return '-- ETH';
+    }
+  };
 
   const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
@@ -118,9 +113,7 @@ export function WalletConnect({
       <button className="wallet-trigger" onClick={() => setDropdownOpen(!dropdownOpen)}>
         <div className="wallet-trigger-left">
           <span className="wallet-trigger-dot" />
-          <span className="wallet-trigger-balance">
-            {balance !== null ? `${Number(formatEther(balance)).toFixed(4)} ETH` : '...'}
-          </span>
+          <span className="wallet-trigger-balance">{displayBalance()}</span>
         </div>
         <div className="wallet-trigger-right">
           <span className="wallet-trigger-address">{shortenAddress(account!)}</span>
@@ -148,9 +141,7 @@ export function WalletConnect({
 
             <div className="dropdown-balance-row">
               <span className="dropdown-balance-label">Balance</span>
-              <span className="dropdown-balance-value">
-                {balance !== null ? `${Number(formatEther(balance)).toFixed(6)} ETH` : '-- ETH'}
-              </span>
+              <span className="dropdown-balance-value">{displayBalanceFull()}</span>
             </div>
           </div>
 

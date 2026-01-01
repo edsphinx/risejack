@@ -1,11 +1,15 @@
 import { Link, useLocation } from 'wouter-preact';
 import { Logo } from '@/components/brand/Logo';
+import { LiveActivityTicker } from '@/components/game/LiveActivityTicker';
 
 export function Home() {
   const [, setLocation] = useLocation();
 
   return (
     <div className="home-page min-h-screen bg-black text-white">
+      {/* Live Activity Ticker - Above the fold */}
+      <LiveActivityTicker />
+
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20 px-4">
         {/* Background gradient/glow */}

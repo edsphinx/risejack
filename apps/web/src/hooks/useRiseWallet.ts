@@ -47,7 +47,12 @@ export function useRiseWallet(): UseRiseWalletReturn {
           method: 'eth_getBalance',
           params: [connection.address!, 'latest'],
         });
-        setBalance(BigInt(result as string));
+        // Validate result before BigInt conversion
+        if (typeof result === 'string' && result.startsWith('0x')) {
+          setBalance(BigInt(result));
+        } else {
+          setBalance(null);
+        }
       } catch {
         setBalance(null);
       }
@@ -89,12 +94,15 @@ export function useRiseWallet(): UseRiseWalletReturn {
     hasSeenOnboarding,
     skipFastMode,
     sessionKey.hasSessionKey,
+    sessionKey.isCreating,
+    sessionKey.create,
   ]);
 
   // Track previous session state to detect expiry
   const [hadSessionKey, setHadSessionKey] = useState(false);
 
   // Update hadSessionKey when session state changes
+  // Reset after expiry modal is dismissed to allow multiple session expirations
   useEffect(() => {
     if (sessionKey.hasSessionKey) {
       setHadSessionKey(true);

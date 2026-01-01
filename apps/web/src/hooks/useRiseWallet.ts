@@ -74,7 +74,7 @@ export function useRiseWallet(): UseRiseWalletReturn {
         const provider = getProvider();
         const result = await provider.request({
           method: 'eth_getBalance',
-          params: [connection.address, 'latest'],
+          params: [connection.address!, 'latest'],
         });
         setBalance(BigInt(result as string));
       } catch {

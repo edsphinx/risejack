@@ -48,8 +48,17 @@ app.use(
     windowMs: 60 * 1000, // 1 minute
     limit: 100, // 100 requests per window
     standardHeaders: 'draft-6',
-    keyGenerator: (c) =>
-      c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown',
+    keyGenerator: (c) => {
+      // Use the most reliable IP source available
+      // CF-Connecting-IP is set by Cloudflare and is trusted
+      const cfConnectingIp = c.req.header('cf-connecting-ip');
+      const realIp = c.req.header('x-real-ip');
+      const forwardedFor = c.req.header('x-forwarded-for');
+
+      return (
+        cfConnectingIp || realIp || (forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown')
+      );
+    },
     message: { error: 'Too many requests, please try again later' },
   })
 );

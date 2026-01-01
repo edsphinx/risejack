@@ -135,7 +135,15 @@ export async function createUser(data: {
     if (typeof data.displayName !== 'string' || data.displayName.length > 64) {
       throw new Error('Invalid display name format or length');
     }
-    data.displayName = data.displayName.trim();
+    // Sanitize display name to prevent XSS
+    data.displayName = data.displayName
+      .trim()
+      .replace(/[<>'"&]/g, '') // Remove potentially dangerous characters
+      .replace(/\s+/g, ' '); // Normalize whitespace
+
+    if (data.displayName.length === 0) {
+      data.displayName = undefined; // Set to undefined if empty after sanitization
+    }
   }
 
   return prisma.user.create({
@@ -279,10 +287,9 @@ async function generateUniqueReferralCode(maxRetries: number = 10): Promise<stri
     }
   }
 
-  // Fallback: generate a new secure code by combining two random codes (extremely rare case)
-  // Never use predictable timestamps for security-sensitive codes
-  const fallbackCode = generateReferralCode() + generateReferralCode().slice(0, 4);
-  return fallbackCode.slice(0, 8); // Ensure 8 character limit
+  // Fallback: if all retries exhausted, throw error instead of generating weak code
+  // This prevents potential collisions from reduced entropy
+  throw new Error('Unable to generate unique referral code after maximum retries');
 }
 
 /**

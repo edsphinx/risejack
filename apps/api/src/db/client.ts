@@ -151,7 +151,8 @@ export async function isDatabaseHealthy(): Promise<boolean> {
   }
 }
 
-// Export pool for testing only - prevents direct DB access in production
-export const testPool = process.env.NODE_ENV === 'test' ? pool : undefined;
+// Export pool for testing only - use more restrictive check
+export const testPool =
+  process.env.NODE_ENV === 'test' && process.env.ENABLE_TEST_POOL === 'true' ? pool : undefined;
 
 export default prisma;

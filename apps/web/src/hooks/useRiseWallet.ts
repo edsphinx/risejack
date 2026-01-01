@@ -9,42 +9,11 @@ import { useWalletConnection } from './useWalletConnection';
 import { useSessionKey } from './useSessionKey';
 import { getProvider } from '@/lib/riseWallet';
 import { logger } from '@/lib/logger';
-import type { TimeRemaining } from '@risejack/shared';
+import type { UseRiseWalletReturn } from '@risejack/shared';
 
 // LocalStorage keys
 const ONBOARDING_SEEN_KEY = 'risejack_fastmode_onboarding_seen';
 const SKIP_FASTMODE_KEY = 'risejack_skip_fastmode';
-
-export interface UseRiseWalletReturn {
-  // Connection
-  address: `0x${string}` | null;
-  isConnected: boolean;
-  isConnecting: boolean;
-  error: string | null;
-  connect: () => Promise<void>;
-  disconnect: () => void;
-
-  // Balance
-  balance: bigint | null;
-  formatBalance: () => string;
-
-  // Session Key
-  hasSessionKey: boolean;
-  sessionExpiry: TimeRemaining | null;
-  createSessionKey: () => Promise<boolean>;
-  revokeSessionKey: () => Promise<void>;
-  isCreatingSession: boolean;
-
-  // Auto Session Flow
-  showOnboarding: boolean;
-  showExpiryModal: boolean;
-  expiryWarningMinutes: number | null;
-  dismissOnboarding: (enableFastMode: boolean) => Promise<void>;
-  dismissExpiryModal: (extend: boolean) => Promise<void>;
-
-  // Internal - for useGameActions
-  keyPair: { publicKey: string; privateKey: string } | null;
-}
 
 export function useRiseWallet(): UseRiseWalletReturn {
   const connection = useWalletConnection();

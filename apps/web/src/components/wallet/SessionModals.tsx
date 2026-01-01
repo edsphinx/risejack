@@ -2,13 +2,12 @@
  * SessionModals - Onboarding and Expiry modals for Fast Mode
  */
 
+import type {
+  SessionExpiryModalProps,
+  FastModeOnboardingProps,
+  SessionWarningProps,
+} from '@risejack/shared';
 import './styles/session-modal.css';
-
-interface SessionExpiryModalProps {
-  onExtend: () => Promise<void>;
-  onSkip: () => void;
-  isLoading: boolean;
-}
 
 export function SessionExpiryModal({ onExtend, onSkip, isLoading }: SessionExpiryModalProps) {
   return (
@@ -38,12 +37,6 @@ export function SessionExpiryModal({ onExtend, onSkip, isLoading }: SessionExpir
       </div>
     </div>
   );
-}
-
-interface FastModeOnboardingProps {
-  onEnable: () => Promise<void>;
-  onSkip: () => void;
-  isLoading: boolean;
 }
 
 export function FastModeOnboarding({ onEnable, onSkip, isLoading }: FastModeOnboardingProps) {
@@ -101,11 +94,6 @@ export function FastModeOnboarding({ onEnable, onSkip, isLoading }: FastModeOnbo
       </div>
     </div>
   );
-}
-
-interface SessionWarningProps {
-  minutesLeft: number;
-  onExtend: () => void;
 }
 
 export function SessionExpiryWarning({ minutesLeft, onExtend }: SessionWarningProps) {

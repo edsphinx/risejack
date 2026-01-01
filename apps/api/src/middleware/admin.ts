@@ -95,7 +95,20 @@ export function safeLog(level: 'info' | 'warn' | 'error', message: string, data?
   // Don't log sensitive fields
   const sanitizedData = data ? sanitizeLogData(data) : undefined;
 
-  const logMessage = sanitizedData ? `${message} ${JSON.stringify(sanitizedData)}` : message;
+  const logMessage = sanitizedData
+    ? (() => {
+        try {
+          const jsonStr = JSON.stringify(sanitizedData);
+          if (jsonStr.length > 10000) {
+            // 10KB limit
+            return `${message} [LOG_DATA_TOO_LARGE]`;
+          }
+          return `${message} ${jsonStr}`;
+        } catch {
+          return `${message} [LOG_DATA_STRINGIFY_ERROR]`;
+        }
+      })()
+    : message;
 
   switch (level) {
     case 'info':

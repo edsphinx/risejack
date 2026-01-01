@@ -7,6 +7,7 @@
 
 import { randomBytes } from 'crypto';
 import prisma from '../db/client';
+import { Prisma } from '@prisma/client';
 import type { User } from '@prisma/client';
 
 const DEFAULT_CHAIN_ID = 713715; // Rise Testnet
@@ -175,14 +176,16 @@ export async function updateUserXp(userId: string, xpToAdd: number): Promise<voi
 
   // Atomic update using single SQL statement to prevent race conditions
   // This calculates new XP and level in one operation
-  await prisma.$executeRaw`
-    UPDATE "User"
-    SET 
-      xp = xp + ${validatedXp},
-      level = FLOOR((xp + ${validatedXp}) / ${XP_PER_LEVEL}),
-      "lastSeenAt" = NOW()
-    WHERE id = ${userId}
-  `;
+  await prisma.$executeRaw(
+    Prisma.sql`
+      UPDATE "User"
+      SET 
+        xp = xp + ${validatedXp},
+        level = FLOOR((xp + ${validatedXp}) / ${XP_PER_LEVEL}),
+        "lastSeenAt" = NOW()
+      WHERE id = ${userId}
+    `
+  );
 }
 
 export async function setUserReferrer(userId: string, referrerId: string): Promise<void> {

@@ -16,8 +16,8 @@ model Chain {
   id          Int      @id // Chain ID (713715 = Rise Testnet, 42161 = Arbitrum)
   name        String   @db.VarChar(32) // "Rise Testnet"
   slug        String   @unique @db.VarChar(16) // "rise", "arbitrum"
-  rpcUrl      String   @map("rpc_url")
-  explorerUrl String   @map("explorer_url")
+  rpcUrl      String   @map("rpc_url") @db.VarChar(512)
+  explorerUrl String   @map("explorer_url") @db.VarChar(512)
   currency    String   @default("ETH") @db.VarChar(8)
   isActive    Boolean  @default(true) @map("is_active")
 

@@ -22,6 +22,13 @@ const VALID_DEVICE_TYPES = ['mobile', 'desktop', 'tablet'] as const;
  * Log a user event
  */
 events.post('/', async (c) => {
+  // Validate request size before parsing to prevent DoS
+  const contentLength = c.req.header('content-length');
+  if (contentLength && parseInt(contentLength) > 50000) {
+    // 50KB limit
+    return c.json({ error: 'Request too large' } satisfies ApiError, 413);
+  }
+
   const body = await c.req.json<LogEventRequest>();
   const { walletAddress, eventType, eventData, sessionId, deviceType } = body;
 

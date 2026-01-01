@@ -96,7 +96,13 @@ function Header() {
                       </span>
                       <button
                         className="wallet-copy-btn"
-                        onClick={() => navigator.clipboard.writeText(wallet.address || '')}
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(wallet.address || '');
+                          } catch {
+                            // Clipboard API not available
+                          }
+                        }}
                       >
                         Copy
                       </button>
@@ -127,7 +133,7 @@ function Header() {
                         </div>
                       </div>
                       {wallet.hasSessionKey ? (
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <div className="session-key-actions">
                           {wallet.sessionExpiry && !wallet.sessionExpiry.expired && (
                             <span className="session-key-time">
                               {wallet.sessionExpiry.hours}h {wallet.sessionExpiry.minutes}m

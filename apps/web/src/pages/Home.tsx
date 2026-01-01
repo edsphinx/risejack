@@ -126,8 +126,16 @@ export function Home() {
         <div className="ticker-label">🎉 RECENT WINS</div>
         <div className="ticker-track">
           <div className="ticker-content">
-            {[...RECENT_WINS, ...RECENT_WINS].map((win, i) => (
-              <span key={i} className="ticker-item">
+            {RECENT_WINS.map((win, i) => (
+              <span key={`win-a-${i}`} className="ticker-item">
+                <span className="ticker-address">{win.address}</span>
+                <span className="ticker-won">won</span>
+                <span className="ticker-amount">{win.amount} ETH</span>
+                <span className="ticker-separator">•</span>
+              </span>
+            ))}
+            {RECENT_WINS.map((win, i) => (
+              <span key={`win-b-${i}`} className="ticker-item">
                 <span className="ticker-address">{win.address}</span>
                 <span className="ticker-won">won</span>
                 <span className="ticker-amount">{win.amount} ETH</span>

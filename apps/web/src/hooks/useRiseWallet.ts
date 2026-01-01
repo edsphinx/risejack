@@ -55,9 +55,11 @@ export function useRiseWallet(): UseRiseWalletReturn {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showExpiryModal, setShowExpiryModal] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
+    if (typeof window === 'undefined') return false;
     return localStorage.getItem(ONBOARDING_SEEN_KEY) === 'true';
   });
   const [skipFastMode, setSkipFastMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
     return localStorage.getItem(SKIP_FASTMODE_KEY) === 'true';
   });
   const [wasConnected, setWasConnected] = useState(false);

@@ -339,6 +339,12 @@
   border-radius: 4px;
 }
 
+.session-key-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .session-key-btn {
   padding: 0.4rem 0.75rem;
   font-size: 0.7rem;

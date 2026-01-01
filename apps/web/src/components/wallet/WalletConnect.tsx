@@ -80,9 +80,13 @@ export function WalletConnect({
   };
 
   const copyAddress = async () => {
-    await navigator.clipboard.writeText(account!);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(account!);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API not available
+    }
   };
 
   // Not connected state

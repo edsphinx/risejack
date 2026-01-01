@@ -1,0 +1,315 @@
+/* ==================== DESKTOP WALLET DROPDOWN ==================== */
+/* Clean, intuitive dropdown similar to mobile overlay menu */
+
+/* Wallet trigger button */
+.wallet-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.wallet-trigger:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.wallet-trigger-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-right: 0.75rem;
+  border-right: 1px solid rgba(71, 85, 105, 0.4);
+}
+
+.wallet-trigger-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+.wallet-trigger-balance {
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fbbf24;
+}
+
+.wallet-trigger-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wallet-trigger-address {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #e2e8f0;
+}
+
+.wallet-trigger-arrow {
+  font-size: 0.6rem;
+  color: #64748b;
+  transition: transform 0.2s;
+}
+
+.wallet-trigger-arrow.open {
+  transform: rotate(180deg);
+}
+
+.wallet-trigger-session {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 0.9rem;
+  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.5));
+}
+
+/* ==================== DROPDOWN PANEL ==================== */
+
+.wallet-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 100;
+  min-width: 340px;
+  padding: 1rem;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 16px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(139, 92, 246, 0.1);
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: dropdown-appear 0.2s ease-out;
+}
+
+@keyframes dropdown-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Dropdown sections */
+.dropdown-section {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.dropdown-section.session-section {
+  background: rgba(88, 28, 135, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* Header with status */
+.dropdown-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.dropdown-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
+.dropdown-status-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #22c55e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Address row */
+.dropdown-address-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.dropdown-address {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  word-break: break-all;
+  flex: 1;
+  margin-right: 0.5rem;
+}
+
+.dropdown-copy-btn {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: rgba(71, 85, 105, 0.3);
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.dropdown-copy-btn:hover {
+  background: rgba(71, 85, 105, 0.5);
+  color: #e2e8f0;
+}
+
+/* Balance row */
+.dropdown-balance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dropdown-balance-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dropdown-balance-value {
+  font-family: monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fbbf24;
+  text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+}
+
+/* Session section */
+.dropdown-session-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dropdown-session-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dropdown-session-icon {
+  font-size: 1.5rem;
+}
+
+.dropdown-session-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c4b5fd;
+}
+
+.dropdown-session-desc {
+  font-size: 0.7rem;
+  color: #a78bfa;
+}
+
+.dropdown-session-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dropdown-session-time {
+  font-family: monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.15);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+.dropdown-btn-enable {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dropdown-btn-enable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.dropdown-btn-enable:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dropdown-btn-revoke {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dropdown-btn-revoke:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Disconnect button */
+.dropdown-disconnect {
+  width: 100%;
+  padding: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.dropdown-disconnect:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Make wallet-section position relative for dropdown positioning */
+.wallet-section {
+  position: relative;
+}

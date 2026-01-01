@@ -104,7 +104,7 @@ export interface ReferralHistoryResponse {
 
 export type LeaderboardPeriod = 'daily' | 'weekly' | 'monthly' | 'all_time';
 
-export type LeaderboardMetric = 'volume' | 'wins' | 'pnl' | 'xp';
+export type LeaderboardMetric = 'volume' | 'biggest_win' | 'streak' | 'xp';
 
 export interface LeaderboardEntry {
   rank: number;

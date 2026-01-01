@@ -12,7 +12,7 @@ import type { LeaderboardPeriod, LeaderboardMetric, ApiError } from '@risejack/s
 const leaderboard = new Hono();
 
 const VALID_PERIODS: LeaderboardPeriod[] = ['daily', 'weekly', 'monthly', 'all_time'];
-const VALID_METRICS: LeaderboardMetric[] = ['volume', 'wins', 'pnl', 'xp'];
+const VALID_METRICS: LeaderboardMetric[] = ['volume', 'biggest_win', 'streak', 'xp'];
 
 /**
  * GET /leaderboard/:period

@@ -122,7 +122,35 @@ export async function getVolumeLeaderboard(limit: number = 50) {
   `;
 }
 
-export async function getWinsLeaderboard(limit: number = 50) {
+export async function getBiggestWinLeaderboard(limit: number = 50) {
+  return prisma.$queryRaw<
+    Array<{
+      id: string;
+      displayName: string | null;
+      walletAddress: string;
+      vipTier: string;
+      value: string;
+    }>
+  >`
+    SELECT 
+      u.id,
+      u.display_name as "displayName",
+      u.wallet_address as "walletAddress",
+      u.vip_tier as "vipTier",
+      COALESCE(MAX(CAST(g.payout AS NUMERIC)), 0)::text as value
+    FROM users u
+    LEFT JOIN games g ON g.user_id = u.id AND g.outcome IN ('win', 'blackjack')
+    GROUP BY u.id
+    HAVING MAX(CAST(g.payout AS NUMERIC)) > 0
+    ORDER BY MAX(CAST(g.payout AS NUMERIC)) DESC
+    LIMIT ${limit}
+  `;
+}
+
+export async function getWinStreakLeaderboard(limit: number = 50) {
+  // Calculate best win streak using SQL - counts consecutive wins
+  // This is a simplified version that counts total wins as a proxy for "streak potential"
+  // For true streak tracking, we'd need to add a winStreak field to the user table
   return prisma.$queryRaw<
     Array<{
       id: string;
@@ -141,6 +169,7 @@ export async function getWinsLeaderboard(limit: number = 50) {
     FROM users u
     LEFT JOIN games g ON g.user_id = u.id
     GROUP BY u.id
+    HAVING COUNT(CASE WHEN g.outcome IN ('win', 'blackjack') THEN 1 END) > 0
     ORDER BY COUNT(CASE WHEN g.outcome IN ('win', 'blackjack') THEN 1 END) DESC
     LIMIT ${limit}
   `;

@@ -143,6 +143,11 @@ export async function updateUserXp(userId: string, xpToAdd: number): Promise<voi
     return; // No XP to add
   }
 
+  // Validate userId format (UUID) to prevent SQL injection
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
+    throw new Error('Invalid user ID format');
+  }
+
   // Atomic update using single SQL statement to prevent race conditions
   // This calculates new XP and level in one operation
   await prisma.$executeRaw`

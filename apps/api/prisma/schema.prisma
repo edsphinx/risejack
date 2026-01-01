@@ -203,13 +203,13 @@ model Session {
   durationSecs Int?      @map("duration_secs")
 
   // Attribution
-  referrerUrl String? @map("referrer_url")
+  referrerUrl String? @map("referrer_url") @db.VarChar(512) // Limit referrer URL length
   utmSource   String? @map("utm_source") @db.VarChar(64)
   utmMedium   String? @map("utm_medium") @db.VarChar(64)
   utmCampaign String? @map("utm_campaign") @db.VarChar(64)
 
   // Device info
-  userAgent    String? @map("user_agent")
+  userAgent    String? @map("user_agent") @db.VarChar(512) // Limit user agent length
   ipGeoCountry String? @map("ip_geo_country") @db.VarChar(2)
   ipGeoCity    String? @map("ip_geo_city") @db.VarChar(64)
   deviceType   String? @map("device_type") @db.VarChar(16) // 'mobile', 'desktop', 'tablet'

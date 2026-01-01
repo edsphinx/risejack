@@ -57,6 +57,15 @@ events.post('/', async (c) => {
     );
   }
 
+  // INPUT VALIDATION: Validate eventData size to prevent DoS attacks
+  if (eventData) {
+    const eventDataStr = JSON.stringify(eventData);
+    if (eventDataStr.length > 10000) {
+      // 10KB limit
+      return c.json({ error: 'Event data too large' } satisfies ApiError, 400);
+    }
+  }
+
   try {
     // Get geo from Cloudflare header (if deployed on Cloudflare/Vercel)
     const ipGeoCountry = c.req.header('cf-ipcountry') || undefined;

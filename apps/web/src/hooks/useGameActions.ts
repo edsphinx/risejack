@@ -7,7 +7,11 @@
 import { useState, useCallback, useMemo } from 'preact/hooks';
 import { encodeFunctionData, parseEther, formatEther } from 'viem';
 import { getProvider } from '@/lib/riseWallet';
-import { signWithSessionKey, getActiveSessionKey } from '@/services/sessionKeyManager';
+import {
+  signWithSessionKey,
+  getActiveSessionKey,
+  clearAllSessionKeys,
+} from '@/services/sessionKeyManager';
 import { ErrorService } from '@/services';
 import { RISEJACK_ABI, getRiseJackAddress } from '@/lib/contract';
 import { logger } from '@/lib/logger';
@@ -211,11 +215,17 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
             txHash = result.txHash;
             gameEndData = result.gameEndData;
           } catch (sessionErr) {
-            // Session key failed - fallback to passkey
-            logger.warn(
-              '[GameActions] ⚠️ Session key FAILED, falling back to passkey:',
-              sessionErr
-            );
+            // Session key failed - check if it's a permission issue
+            const errorStr = String(sessionErr);
+            if (errorStr.includes('UserRejectedRequestError') || errorStr.includes('rejected')) {
+              // Permission was revoked by Rise Wallet - clear invalid session key
+              logger.warn('[GameActions] ⚠️ Session key REVOKED by wallet, clearing...');
+              clearAllSessionKeys();
+            } else {
+              logger.warn('[GameActions] ⚠️ Session key failed:', sessionErr);
+            }
+
+            // Fallback to passkey
             logger.log('[GameActions] 🔐 Falling back to passkey...');
             txHash = await sendPasskeyTransaction(contractAddress, value ?? 0n, data);
           }

@@ -100,3 +100,26 @@
     font-size: 24px;
   }
 }
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .xp-gain-popup {
+    transition: opacity 0.2s ease;
+  }
+
+  .xp-gain-popup.visible {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .xp-gain-popup.exiting {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .xp-emoji {
+    animation: none;
+  }
+
+  .xp-epic {
+    animation: none;
+  }
+}

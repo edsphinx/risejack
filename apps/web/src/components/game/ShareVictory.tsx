@@ -38,9 +38,14 @@ export function ShareVictory({ winAmount, outcome, walletAddress }: ShareVictory
       `${emoji} ${outcomeText}${amountText} playing RiseJack!\n\nOn-chain Blackjack with provably fair VRF 🎲\n\nPlay now 👇\nhttps://risecasino.xyz`
     );
 
-    // Open Twitter intent
+    // Open Twitter intent with popup blocker fallback
     const twitterUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
-    window.open(twitterUrl, '_blank', 'width=550,height=420');
+    const popup = window.open(twitterUrl, '_blank', 'width=550,height=420');
+
+    // Fallback if popup was blocked
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      window.location.href = twitterUrl;
+    }
   }, [outcome, winAmount, walletAddress]);
 
   return (

@@ -55,13 +55,18 @@ export function PlayerStats() {
 
   // Listen for game end events to refresh stats
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     const handleGameEnd = () => {
       // Small delay to allow backend to update
-      setTimeout(fetchStats, 1000);
+      timeoutId = setTimeout(fetchStats, 1000);
     };
 
     window.addEventListener('risecasino:gameend', handleGameEnd);
-    return () => window.removeEventListener('risecasino:gameend', handleGameEnd);
+    return () => {
+      window.removeEventListener('risecasino:gameend', handleGameEnd);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [fetchStats]);
 
   if (!isConnected || !stats) {

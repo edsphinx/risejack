@@ -41,7 +41,8 @@ export function XPGainPopup({ xpAmount, onComplete }: XPGainPopupProps) {
       clearTimeout(exitTimer);
       clearTimeout(removeTimer);
     };
-  }, [onComplete]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Remove onComplete from dependencies to prevent re-running effect
 
   const getXPStyle = () => {
     if (xpAmount >= 50) return 'xp-epic'; // Blackjack

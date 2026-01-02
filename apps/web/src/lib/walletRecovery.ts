@@ -1,41 +1,76 @@
 /**
- * Wallet Recovery Utilities
- * Handles detection and recovery of corrupted Rise Wallet data
- */
-
-/**
  * Clear Rise Wallet's IndexedDB data (porto database)
  * This forces a fresh connection on next attempt
  */
 export async function clearRiseWalletData(): Promise<boolean> {
     try {
-        // Clear IndexedDB 'porto' database
+        // First, clear localStorage entries related to porto/rise wallet
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('porto') || key.includes('rise') || key.includes('wagmi') || key.includes('risejack'))) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+        // Try to clear IndexedDB 'porto' database
+        let wasBlocked = false;
         await new Promise<void>((resolve, reject) => {
             const request = indexedDB.deleteDatabase('porto');
             request.onsuccess = () => resolve();
             request.onerror = () => reject(request.error);
             request.onblocked = () => {
-                // Database is blocked, still try to proceed
-                console.warn('IndexedDB deletion blocked, attempting to continue...');
+                // Database is blocked by active connections
+                console.warn('IndexedDB deletion blocked by active connections');
+                wasBlocked = true;
                 resolve();
             };
         });
 
-        // Also clear any localStorage entries related to porto/rise wallet
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (key.includes('porto') || key.includes('rise') || key.includes('wagmi'))) {
-                keysToRemove.push(key);
-            }
+        // If IndexedDB was blocked, we need to force close connections
+        // The only reliable way is to reload the page
+        if (wasBlocked) {
+            console.log('🔧 IndexedDB blocked - will retry deletion after reload...');
+            // Set a flag so we know to delete on next load
+            sessionStorage.setItem('risejack.pendingDbDelete', 'true');
+            // Return true - the modal will trigger a reload
+            return true;
         }
-        keysToRemove.forEach((key) => localStorage.removeItem(key));
 
         console.log('🔧 Rise Wallet data cleared successfully');
         return true;
     } catch (error) {
         console.error('Failed to clear Rise Wallet data:', error);
         return false;
+    }
+}
+
+/**
+ * Check if there's a pending database deletion from a blocked attempt
+ * Call this on app startup
+ */
+export async function checkPendingDbDelete(): Promise<void> {
+    if (sessionStorage.getItem('risejack.pendingDbDelete') === 'true') {
+        sessionStorage.removeItem('risejack.pendingDbDelete');
+        console.log('🔧 Completing pending database deletion...');
+
+        // Now the old connections should be closed, try again
+        await new Promise<void>((resolve) => {
+            const request = indexedDB.deleteDatabase('porto');
+            request.onsuccess = () => {
+                console.log('🔧 Porto database deleted successfully');
+                resolve();
+            };
+            request.onerror = () => {
+                console.warn('🔧 Porto database deletion failed, but continuing...');
+                resolve();
+            };
+            request.onblocked = () => {
+                console.warn('🔧 Porto database still blocked, may need browser restart');
+                resolve();
+            };
+        });
     }
 }
 

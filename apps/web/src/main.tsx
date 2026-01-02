@@ -4,5 +4,9 @@ import './lib/webauthn-polyfill';
 import { render } from 'preact';
 import { App } from './app';
 import './styles/globals.css';
+import { checkPendingDbDelete } from './lib/walletRecovery';
 
-render(<App />, document.getElementById('app')!);
+// Complete any pending IndexedDB cleanup from recovery modal
+checkPendingDbDelete().then(() => {
+  render(<App />, document.getElementById('app')!);
+});

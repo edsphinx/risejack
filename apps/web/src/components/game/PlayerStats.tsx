@@ -51,7 +51,8 @@ export function PlayerStats() {
     } else {
       setStats(null);
     }
-  }, [isConnected, address, fetchStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, address]);
 
   // Listen for game end events to refresh stats
   useEffect(() => {

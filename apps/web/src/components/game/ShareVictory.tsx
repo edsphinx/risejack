@@ -35,7 +35,7 @@ export function ShareVictory({ winAmount, outcome, walletAddress }: ShareVictory
     const amountText = winAmount ? ` ${winAmount} ETH` : '';
 
     const tweetText = encodeURIComponent(
-      `${emoji} ${outcomeText}${amountText} playing RiseJack!\n\nOn-chain Blackjack with provably fair VRF 🎲\n\nPlay now 👇\nhttps://risecasino.xyz`
+      `${emoji} ${outcomeText}${amountText} playing RiseJack!\n\nOn-chain Blackjack with provably fair VRF 🎲\n\nPlay now 👇\n${window.location.origin}`
     );
 
     // Open Twitter intent with popup blocker fallback
@@ -43,7 +43,7 @@ export function ShareVictory({ winAmount, outcome, walletAddress }: ShareVictory
     const popup = window.open(twitterUrl, '_blank', 'width=550,height=420');
 
     // Fallback if popup was blocked
-    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+    if (!popup) {
       window.location.href = twitterUrl;
     }
   }, [outcome, winAmount, walletAddress]);

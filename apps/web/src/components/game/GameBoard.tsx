@@ -7,6 +7,8 @@ import { CardDeck } from './CardDeck';
 import { GameHistory } from './GameHistory';
 import { MobileHistory } from './MobileHistory';
 import { VRFWaitingOverlay } from './VRFWaitingOverlay';
+import { XPGainPopup, useXPPopup } from './XPGainPopup';
+import { ShareVictory } from './ShareVictory';
 import { ContractService } from '@/services';
 import { StorageService } from '@/services/storage.service';
 import { logger } from '@/lib/logger';
@@ -27,6 +29,9 @@ export function GameBoard() {
   const [betAmount, setBetAmount] = useState('0.00001');
   const [lastHand, setLastHand] = useState<HandSnapshot | null>(null);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
+
+  // XP gain popup state
+  const { popup: xpPopup, showXPGain, hidePopup: hideXPPopup } = useXPPopup();
 
   // Wallet connection
   const wallet = useWallet();
@@ -101,6 +106,20 @@ export function GameBoard() {
         });
         // Notify history component
         window.dispatchEvent(new CustomEvent('risejack:gameEnd'));
+
+        // Trigger XP gain popup based on result
+        const xpAmounts: Record<string, number> = {
+          blackjack: 50,
+          win: 25,
+          push: 5,
+          lose: 10,
+          surrender: 5,
+        };
+        const xpGained = xpAmounts[result.result || 'lose'] || 10;
+        showXPGain(xpGained);
+
+        // Dispatch event for PlayerStats to refresh
+        window.dispatchEvent(new CustomEvent('risecasino:gameend'));
       }
     }
   }, [game.lastGameResult, game.gameData, betAmount, game.formatBet]);
@@ -335,7 +354,26 @@ export function GameBoard() {
                       You: {lastHand.playerValue} • Dealer: {lastHand.dealerValue}
                     </span>
                   )}
+                  {/* Share Victory button - only for wins */}
+                  {(gameResult === 'win' || gameResult === 'blackjack') && (
+                    <div className="mt-3">
+                      <ShareVictory
+                        outcome={gameResult}
+                        winAmount={
+                          game.lastGameResult?.payout
+                            ? game.formatBet(game.lastGameResult.payout)
+                            : undefined
+                        }
+                        walletAddress={wallet.address ?? undefined}
+                      />
+                    </div>
+                  )}
                 </div>
+              )}
+
+              {/* XP Gain Popup - shows after game ends */}
+              {xpPopup && (
+                <XPGainPopup key={xpPopup.key} xpAmount={xpPopup.xp} onComplete={hideXPPopup} />
               )}
             </div>
 

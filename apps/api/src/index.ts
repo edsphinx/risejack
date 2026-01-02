@@ -35,8 +35,37 @@ app.use('*', logger());
 app.use(
   '*',
   cors({
-    origin: ['http://localhost:5173', 'https://risecasino.xyz'],
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: (origin) => {
+      // Allow listed origins
+      const allowedOrigins = [
+        'http://localhost:5173',
+        'https://localhost:5173',
+        'https://risecasino.xyz',
+        'https://risecasino.vercel.app',
+        'https://risejack.vercel.app',
+      ];
+
+      if (allowedOrigins.includes(origin)) {
+        return origin;
+      }
+
+      // Allow local network IPs for development (192.168.x.x, 10.x.x.x)
+      if (
+        origin &&
+        (origin.includes('192.168.') || origin.includes('10.0.') || origin.includes('127.0.0.1'))
+      ) {
+        return origin;
+      }
+
+      // Allow Vercel preview deployments
+      if (origin && origin.endsWith('.vercel.app')) {
+        return origin;
+      }
+
+      return null; // Deny others
+    },
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
   })
 );
 app.use('*', prettyJSON());

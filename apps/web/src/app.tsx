@@ -9,6 +9,7 @@ import { FastModeOnboarding, SessionExpiryModal } from './components/wallet/Sess
 import { ModalErrorBoundary } from './components/common/ErrorBoundary';
 import { PageLoader } from './components/common/PageLoader';
 import { AppLoader } from './components/common/AppLoader';
+import { PlayerStats } from './components/game/PlayerStats';
 import { safeParseNumber } from './lib/formatters';
 import './components/wallet/styles/mobile-header.css';
 
@@ -246,6 +247,10 @@ function Header() {
               </button>
             </nav>
           </div>
+
+          {/* Player Stats - XP/Level display */}
+          <PlayerStats />
+
           <WalletConnect
             account={wallet.address}
             isConnected={wallet.isConnected}

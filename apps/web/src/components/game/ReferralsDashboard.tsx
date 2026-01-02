@@ -82,12 +82,39 @@ export function ReferralsDashboard() {
 
   return (
     <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-700/50">
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">🎁 Invite Friends</h2>
-        <p className="text-sm text-gray-400 mt-1">
-          Earn 10% of house edge from every game your friends play
-        </p>
+      {/* Hero Banner - Invite & Earn */}
+      <div className="relative bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 p-6 border-b border-purple-500/30">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2220%22 height=%2220%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cpath d=%22M0 0h20v20H0z%22 fill=%22none%22/%3E%3Cpath d=%22M10 0v20M0 10h20%22 stroke=%22%23fff%22 stroke-opacity=%22.03%22/%3E%3C/svg%3E')] opacity-50" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl">🎁</span>
+            <div>
+              <h2 className="text-2xl font-bold text-white">Invite & Earn</h2>
+              <p className="text-purple-300 text-sm font-medium">
+                Passive income from your network
+              </p>
+            </div>
+          </div>
+
+          {/* Benefits Grid */}
+          <div className="grid grid-cols-3 gap-3 mt-4">
+            <div className="bg-slate-900/40 rounded-lg p-3 text-center border border-slate-700/50">
+              <div className="text-2xl mb-1">💰</div>
+              <div className="text-lg font-bold text-green-400">10%</div>
+              <div className="text-xs text-gray-400">House Edge Share</div>
+            </div>
+            <div className="bg-slate-900/40 rounded-lg p-3 text-center border border-slate-700/50">
+              <div className="text-2xl mb-1">♾️</div>
+              <div className="text-lg font-bold text-purple-400">Forever</div>
+              <div className="text-xs text-gray-400">Lifetime Earnings</div>
+            </div>
+            <div className="bg-slate-900/40 rounded-lg p-3 text-center border border-slate-700/50">
+              <div className="text-2xl mb-1">🪙</div>
+              <div className="text-lg font-bold text-yellow-400">CHIP</div>
+              <div className="text-xs text-gray-400">Monthly Rewards</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Content */}

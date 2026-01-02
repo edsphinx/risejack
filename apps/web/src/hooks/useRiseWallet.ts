@@ -75,16 +75,9 @@ export function useRiseWallet(): UseRiseWalletReturn {
         return;
       }
 
-      // If returning user and doesn't have session key, auto-create
-      // Check isCreating to prevent race condition / duplicate attempts
-      if (
-        hasSeenOnboarding &&
-        !sessionKey.hasSessionKey &&
-        !skipFastMode &&
-        !sessionKey.isCreating
-      ) {
-        sessionKey.create();
-      }
+      // Note: We NO LONGER auto-create session key here
+      // Rise Wallet requires user gesture for wallet_grantPermissions
+      // User must explicitly enable Fast Mode via button or onboarding flow
     }
 
     // Reset when disconnected

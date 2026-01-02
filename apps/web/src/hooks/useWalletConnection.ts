@@ -66,12 +66,11 @@ export function useWalletConnection(): UseWalletConnectionReturn {
         // Wait a bit for Rise Wallet to initialize
         await new Promise((resolve) => setTimeout(resolve, 300));
 
-        // Create Rise Wallet instance and use its provider (like Meteoro does)
-        const { RiseWallet } = await import('rise-wallet');
-        const rw = RiseWallet.create();
+        // Use the SAME Rise Wallet singleton as connect() to ensure consistent account derivation
+        const provider = getProvider();
 
         // Check for existing accounts using Rise Wallet's provider
-        const accounts = (await rw.provider.request({
+        const accounts = (await provider.request({
           method: 'eth_accounts',
         })) as `0x${string}`[];
 

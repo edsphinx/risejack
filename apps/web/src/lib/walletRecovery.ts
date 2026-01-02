@@ -1,0 +1,127 @@
+/**
+ * Wallet Recovery Utilities
+ * Handles detection and recovery of corrupted Rise Wallet data
+ */
+
+/**
+ * Clear Rise Wallet's IndexedDB data (porto database)
+ * This forces a fresh connection on next attempt
+ */
+export async function clearRiseWalletData(): Promise<boolean> {
+    try {
+        // Clear IndexedDB 'porto' database
+        await new Promise<void>((resolve, reject) => {
+            const request = indexedDB.deleteDatabase('porto');
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+            request.onblocked = () => {
+                // Database is blocked, still try to proceed
+                console.warn('IndexedDB deletion blocked, attempting to continue...');
+                resolve();
+            };
+        });
+
+        // Also clear any localStorage entries related to porto/rise wallet
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('porto') || key.includes('rise') || key.includes('wagmi'))) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+        console.log('🔧 Rise Wallet data cleared successfully');
+        return true;
+    } catch (error) {
+        console.error('Failed to clear Rise Wallet data:', error);
+        return false;
+    }
+}
+
+/**
+ * Check if an error indicates corrupted wallet state
+ * These errors often occur when IndexedDB data is stale or corrupted
+ */
+export function isCorruptedStateError(error: unknown): boolean {
+    if (!error) return false;
+
+    const message = error instanceof Error ? error.message : String(error);
+    const lowerMessage = message.toLowerCase();
+
+    // Patterns that indicate corrupted state rather than user action
+    const corruptionPatterns = [
+        'user rejected',
+        'userrejectedrequesterror',
+        'request was rejected',
+        'connection was cancelled',
+    ];
+
+    return corruptionPatterns.some((pattern) => lowerMessage.includes(pattern));
+}
+
+/**
+ * Storage key for tracking failed attempts
+ */
+const FAILED_ATTEMPTS_KEY = 'risejack.walletFailedAttempts';
+const FAILURE_WINDOW_MS = 60000; // 1 minute window
+
+interface FailureRecord {
+    count: number;
+    firstFailure: number;
+}
+
+/**
+ * Record a connection failure
+ * Returns the number of consecutive failures
+ */
+export function recordConnectionFailure(): number {
+    try {
+        const stored = localStorage.getItem(FAILED_ATTEMPTS_KEY);
+        const record: FailureRecord = stored ? JSON.parse(stored) : { count: 0, firstFailure: 0 };
+        const now = Date.now();
+
+        // Reset if outside the failure window
+        if (now - record.firstFailure > FAILURE_WINDOW_MS) {
+            record.count = 1;
+            record.firstFailure = now;
+        } else {
+            record.count += 1;
+        }
+
+        localStorage.setItem(FAILED_ATTEMPTS_KEY, JSON.stringify(record));
+        return record.count;
+    } catch {
+        return 1;
+    }
+}
+
+/**
+ * Clear failure record (call on successful connection)
+ */
+export function clearConnectionFailures(): void {
+    try {
+        localStorage.removeItem(FAILED_ATTEMPTS_KEY);
+    } catch {
+        // Ignore
+    }
+}
+
+/**
+ * Get current failure count
+ */
+export function getFailureCount(): number {
+    try {
+        const stored = localStorage.getItem(FAILED_ATTEMPTS_KEY);
+        if (!stored) return 0;
+        const record: FailureRecord = JSON.parse(stored);
+        const now = Date.now();
+        // Check if within window
+        if (now - record.firstFailure > FAILURE_WINDOW_MS) {
+            return 0;
+        }
+        return record.count;
+    } catch {
+        return 0;
+    }
+}

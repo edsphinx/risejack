@@ -77,7 +77,12 @@ export function useRiseWallet(): UseRiseWalletReturn {
 
       // If returning user and doesn't have session key, auto-create
       // Check isCreating to prevent race condition / duplicate attempts
-      if (hasSeenOnboarding && !sessionKey.hasSessionKey && !skipFastMode && !sessionKey.isCreating) {
+      if (
+        hasSeenOnboarding &&
+        !sessionKey.hasSessionKey &&
+        !skipFastMode &&
+        !sessionKey.isCreating
+      ) {
         sessionKey.create();
       }
     }
@@ -205,6 +210,12 @@ export function useRiseWallet(): UseRiseWalletReturn {
     expiryWarningMinutes,
     dismissOnboarding,
     dismissExpiryModal,
+
+    // Wallet Recovery
+    showRecoveryModal: connection.showRecoveryModal,
+    openRecoveryModal: connection.openRecoveryModal,
+    closeRecoveryModal: connection.closeRecoveryModal,
+    handleRecoveryComplete: connection.handleRecoveryComplete,
 
     // Internal for useGameActions
     keyPair: sessionKey.keyPair,

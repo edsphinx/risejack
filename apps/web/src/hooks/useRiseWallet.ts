@@ -3,7 +3,7 @@
  * Combines useWalletConnection, useSessionKey, and auto-session logic
  */
 
-import { useState, useEffect, useCallback } from 'preact/hooks';
+import { useState, useEffect, useCallback, useMemo } from 'preact/hooks';
 import { formatEther } from 'viem';
 import { useWalletConnection } from './useWalletConnection';
 import { useSessionKey } from './useSessionKey';
@@ -184,40 +184,67 @@ export function useRiseWallet(): UseRiseWalletReturn {
     [sessionKey.create]
   );
 
-  return {
-    // Connection
-    address: connection.address,
-    isConnected: connection.isConnected,
-    isConnecting: connection.isConnecting || sessionKey.isCreating,
-    error: connection.error,
-    connect: connection.connect,
-    disconnect,
+  return useMemo(
+    () => ({
+      // Connection
+      address: connection.address,
+      isConnected: connection.isConnected,
+      isConnecting: connection.isConnecting || sessionKey.isCreating,
+      error: connection.error,
+      connect: connection.connect,
+      disconnect,
 
-    // Balance
-    balance,
-    formatBalance,
+      // Balance
+      balance,
+      formatBalance,
 
-    // Session Key
-    hasSessionKey: sessionKey.hasSessionKey,
-    sessionExpiry: sessionKey.sessionExpiry,
-    createSessionKey: sessionKey.create,
-    revokeSessionKey: sessionKey.revoke,
-    isCreatingSession: sessionKey.isCreating,
+      // Session Key
+      hasSessionKey: sessionKey.hasSessionKey,
+      sessionExpiry: sessionKey.sessionExpiry,
+      createSessionKey: sessionKey.create,
+      revokeSessionKey: sessionKey.revoke,
+      isCreatingSession: sessionKey.isCreating,
 
-    // Auto Session Flow
-    showOnboarding,
-    showExpiryModal,
-    expiryWarningMinutes,
-    dismissOnboarding,
-    dismissExpiryModal,
+      // Auto Session Flow
+      showOnboarding,
+      showExpiryModal,
+      expiryWarningMinutes,
+      dismissOnboarding,
+      dismissExpiryModal,
 
-    // Wallet Recovery
-    showRecoveryModal: connection.showRecoveryModal,
-    openRecoveryModal: connection.openRecoveryModal,
-    closeRecoveryModal: connection.closeRecoveryModal,
-    handleRecoveryComplete: connection.handleRecoveryComplete,
+      // Wallet Recovery
+      showRecoveryModal: connection.showRecoveryModal,
+      openRecoveryModal: connection.openRecoveryModal,
+      closeRecoveryModal: connection.closeRecoveryModal,
+      handleRecoveryComplete: connection.handleRecoveryComplete,
 
-    // Internal for useGameActions
-    keyPair: sessionKey.keyPair,
-  };
+      // Internal for useGameActions
+      keyPair: sessionKey.keyPair,
+    }),
+    [
+      connection.address,
+      connection.isConnected,
+      connection.isConnecting,
+      connection.error,
+      connection.connect,
+      connection.showRecoveryModal,
+      connection.openRecoveryModal,
+      connection.closeRecoveryModal,
+      connection.handleRecoveryComplete,
+      sessionKey.isCreating,
+      sessionKey.hasSessionKey,
+      sessionKey.sessionExpiry,
+      sessionKey.create,
+      sessionKey.revoke,
+      sessionKey.keyPair,
+      disconnect,
+      balance,
+      formatBalance,
+      showOnboarding,
+      showExpiryModal,
+      expiryWarningMinutes,
+      dismissOnboarding,
+      dismissExpiryModal,
+    ]
+  );
 }

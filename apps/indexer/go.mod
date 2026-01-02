@@ -1,6 +1,6 @@
 module github.com/edsphinx/risejack/indexer
 
-go 1.23
+go 1.24.0
 
 require (
 	github.com/ethereum/go-ethereum v1.16.7

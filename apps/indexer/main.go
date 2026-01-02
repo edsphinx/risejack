@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -21,26 +22,33 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// RiseJack contract events
+// RiseJack contract events - must match RiseJack.sol exactly
 const riseJackABI = `[
-	{"anonymous":false,"inputs":[{"indexed":true,"name":"player","type":"address"},{"indexed":false,"name":"betAmount","type":"uint256"},{"indexed":false,"name":"payout","type":"uint256"},{"indexed":false,"name":"outcome","type":"uint8"}],"name":"GameEnded","type":"event"}
+	{"anonymous":false,"inputs":[{"indexed":true,"name":"player","type":"address"},{"indexed":false,"name":"result","type":"uint8"},{"indexed":false,"name":"payout","type":"uint256"},{"indexed":false,"name":"playerFinalValue","type":"uint8"},{"indexed":false,"name":"dealerFinalValue","type":"uint8"},{"indexed":false,"name":"playerCardCount","type":"uint8"},{"indexed":false,"name":"dealerCardCount","type":"uint8"}],"name":"GameEnded","type":"event"}
 ]`
 
-// GameEnded event structure
+// GameEnded event structure - matches contract emission
 type GameEndedEvent struct {
-	Player    common.Address
-	BetAmount *big.Int
-	Payout    *big.Int
-	Outcome   uint8
+	Player           common.Address
+	Result           uint8 // GameState enum
+	Payout           *big.Int
+	PlayerFinalValue uint8
+	DealerFinalValue uint8
+	PlayerCardCount  uint8
+	DealerCardCount  uint8
 }
 
-// Outcome enum
+// GameState enum from contract (matches Result field)
 var outcomeNames = map[uint8]string{
-	0: "lose",
-	1: "win",
-	2: "push",
-	3: "blackjack",
-	4: "surrender",
+	0: "idle",
+	1: "waiting_deal",
+	2: "player_turn",
+	3: "waiting_hit",
+	4: "dealer_turn",
+	5: "win",  // PlayerWin
+	6: "lose", // DealerWin
+	7: "push",
+	8: "blackjack", // PlayerBlackjack
 }
 
 func main() {
@@ -97,6 +105,14 @@ func main() {
 		log.Fatalf("Failed to parse ABI: %v", err)
 	}
 
+	// Get contract deployment block from env or use default
+	deployBlock := uint64(0)
+	if deployBlockStr := os.Getenv("CONTRACT_DEPLOY_BLOCK"); deployBlockStr != "" {
+		if parsed, err := strconv.ParseUint(deployBlockStr, 10, 64); err == nil {
+			deployBlock = parsed
+		}
+	}
+
 	// Setup context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -105,13 +121,82 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
-	// Start indexing
+	// Run backfill first to catch up on missed events
+	backfillEvents(ctx, client, db, common.HexToAddress(contractAddr), parsedABI, deployBlock)
+
+	// Start real-time indexing
 	go indexEvents(ctx, client, db, common.HexToAddress(contractAddr), parsedABI)
 
 	<-stop
 	log.Println("\n🛑 Shutting down indexer...")
 	cancel()
 	time.Sleep(time.Second) // Allow goroutines to cleanup
+}
+
+// backfillEvents processes all historical events from contract deployment
+func backfillEvents(ctx context.Context, client *ethclient.Client, db *sql.DB, contractAddr common.Address, contractABI abi.ABI, deployBlock uint64) {
+	fmt.Println("🔄 Starting backfill of historical events...")
+
+	// Get last processed block from DB
+	var lastProcessedBlock uint64 = 0
+	err := db.QueryRow("SELECT COALESCE(MAX(block_number), 0) FROM games").Scan(&lastProcessedBlock)
+	if err != nil {
+		log.Printf("Failed to get last processed block: %v", err)
+	}
+
+	// Use the higher of deploy block or last processed block
+	startBlock := deployBlock
+	if lastProcessedBlock > startBlock {
+		startBlock = lastProcessedBlock + 1
+	}
+
+	// Get current block
+	currentBlock, err := client.BlockNumber(ctx)
+	if err != nil {
+		log.Printf("Failed to get current block: %v", err)
+		return
+	}
+
+	if startBlock >= currentBlock {
+		fmt.Println("✅ Backfill complete - already caught up")
+		return
+	}
+
+	fmt.Printf("📦 Backfilling blocks %d to %d (%d blocks)\n", startBlock, currentBlock, currentBlock-startBlock)
+
+	// Process in batches of 10000 blocks to avoid RPC limits
+	batchSize := uint64(10000)
+	totalEvents := 0
+
+	for fromBlock := startBlock; fromBlock < currentBlock; fromBlock += batchSize {
+		toBlock := fromBlock + batchSize - 1
+		if toBlock > currentBlock {
+			toBlock = currentBlock
+		}
+
+		query := ethereum.FilterQuery{
+			FromBlock: big.NewInt(int64(fromBlock)),
+			ToBlock:   big.NewInt(int64(toBlock)),
+			Addresses: []common.Address{contractAddr},
+		}
+
+		logs, err := client.FilterLogs(ctx, query)
+		if err != nil {
+			log.Printf("Failed to filter logs for blocks %d-%d: %v", fromBlock, toBlock, err)
+			continue
+		}
+
+		for _, vLog := range logs {
+			processLog(db, contractABI, vLog)
+			totalEvents++
+		}
+
+		if len(logs) > 0 {
+			fmt.Printf("   📊 Processed %d events from blocks %d-%d\n", len(logs), fromBlock, toBlock)
+		}
+	}
+
+	fmt.Printf("✅ Backfill complete - processed %d total events\n", totalEvents)
 }
 
 func indexEvents(ctx context.Context, client *ethclient.Client, db *sql.DB, contractAddr common.Address, contractABI abi.ABI) {
@@ -219,25 +304,57 @@ func processLog(db *sql.DB, contractABI abi.ABI, vLog types.Log) {
 		return
 	}
 
-	outcome := outcomeNames[event.Outcome]
-	pnl := new(big.Int).Sub(event.Payout, event.BetAmount)
+	outcome := outcomeNames[event.Result]
 
-	fmt.Printf("🎲 GameEnded: player=%s bet=%s payout=%s outcome=%s\n",
+	// Skip non-terminal states (only process actual game outcomes)
+	if event.Result < 5 { // States 0-4 are not final outcomes
+		return
+	}
+
+	fmt.Printf("🎲 GameEnded: player=%s payout=%s outcome=%s playerValue=%d dealerValue=%d\n",
 		event.Player.Hex()[:10]+"...",
-		event.BetAmount.String(),
 		event.Payout.String(),
 		outcome,
+		event.PlayerFinalValue,
+		event.DealerFinalValue,
 	)
 
+	// Calculate PNL: if payout > 0, player won, else lost
+	// Note: We don't have bet amount in event, so we estimate from payout
+	// For wins: payout = 2*bet, so bet = payout/2, pnl = payout - bet = payout/2
+	// For blackjack: payout = 2.5*bet, so bet = payout/2.5, pnl = payout - bet
+	// For push: payout = bet, pnl = 0
+	// For lose: payout = 0, pnl unknown (but we can set to 0 or query later)
+	var pnl *big.Int
+	var betAmount *big.Int
+
+	switch outcome {
+	case "win":
+		betAmount = new(big.Int).Div(event.Payout, big.NewInt(2))
+		pnl = betAmount // Won 1x bet
+	case "blackjack":
+		// Payout = bet * 2.5 = bet + bet*1.5, so bet = payout / 2.5 = payout * 2 / 5
+		betAmount = new(big.Int).Mul(event.Payout, big.NewInt(2))
+		betAmount = new(big.Int).Div(betAmount, big.NewInt(5))
+		pnl = new(big.Int).Sub(event.Payout, betAmount) // Won 1.5x bet
+	case "push":
+		betAmount = event.Payout // Got bet back
+		pnl = big.NewInt(0)
+	default: // lose
+		betAmount = big.NewInt(0) // We don't know the bet from payout=0
+		pnl = big.NewInt(0)       // Unknown, set to 0
+	}
+
 	// Insert into database
+	// Note: Prisma uses client-side UUID generation, so we use gen_random_uuid() in PostgreSQL
 	_, err = db.Exec(`
 		INSERT INTO games (
-			user_id, game_type, tx_hash, block_number,
+			id, user_id, chain_id, game_type, tx_hash, block_number,
 			bet_amount, currency, payout, pnl, outcome,
 			started_at, ended_at
 		)
 		SELECT 
-			u.id, 'blackjack', $1, $2,
+			gen_random_uuid(), u.id, 713715, 'blackjack', $1, $2,
 			$3, 'ETH', $4, $5, $6,
 			NOW(), NOW()
 		FROM users u
@@ -246,7 +363,7 @@ func processLog(db *sql.DB, contractABI abi.ABI, vLog types.Log) {
 	`,
 		vLog.TxHash.Hex(),
 		vLog.BlockNumber,
-		event.BetAmount.String(),
+		betAmount.String(),
 		event.Payout.String(),
 		pnl.String(),
 		outcome,
@@ -268,8 +385,6 @@ func processLog(db *sql.DB, contractABI abi.ABI, vLog types.Log) {
 		bonusXP = 50
 	case "push":
 		bonusXP = 5
-	case "surrender":
-		bonusXP = 2
 	}
 	totalXP := baseXP + bonusXP
 
@@ -289,87 +404,14 @@ func processLog(db *sql.DB, contractABI abi.ABI, vLog types.Log) {
 		fmt.Printf("   ⭐ XP awarded: +%d (base: %d, bonus: %d)\n", totalXP, baseXP, bonusXP)
 	}
 
-	// Process referral earnings (10% of house edge to referrer)
-	processReferralEarnings(db, event, outcome, vLog.TxHash.Hex())
+	// Process referral earnings (skip for now since we don't have bet amount)
+	// processReferralEarnings(db, event, outcome, vLog.TxHash.Hex())
 }
 
-// processReferralEarnings calculates and stores referral earnings
-// Referrer earns 10% of house edge from each game their referees play
+// processReferralEarnings is disabled - requires BetAmount which is no longer in event
+// TODO: Re-enable when we add bet amount tracking or query from GameStarted event
+/*
 func processReferralEarnings(db *sql.DB, event GameEndedEvent, outcome string, txHash string) {
-	playerAddress := strings.ToLower(event.Player.Hex())
-
-	// Skip if player lost (no house edge to share)
-	if outcome == "lose" || outcome == "surrender" {
-		return
-	}
-
-	// Calculate house edge: betAmount - payout for wins, or betAmount for losses
-	// For wins/blackjack/push, house still takes a small edge on average
-	// We use a fixed 1% of bet as approximation
-	houseEdge := new(big.Int).Div(event.BetAmount, big.NewInt(100)) // 1% of bet
-
-	// Referrer earns 10% of house edge
-	referrerEarning := new(big.Int).Div(houseEdge, big.NewInt(10))
-
-	if referrerEarning.Cmp(big.NewInt(0)) <= 0 {
-		return // No earnings to distribute
-	}
-
-	// Find player's referrer
-	var referrerId, referrerWallet string
-	err := db.QueryRow(`
-		SELECT u2.id, u2.wallet_address
-		FROM users u1
-		JOIN users u2 ON u1.referrer_id = u2.id
-		WHERE u1.wallet_address = $1 AND u1.referrer_id IS NOT NULL
-	`, playerAddress).Scan(&referrerId, &referrerWallet)
-
-	if err != nil {
-		// No referrer found - this is normal for users without referrals
-		return
-	}
-
-	// Get player's user ID for the earning record
-	var playerId, gameId string
-	err = db.QueryRow(`SELECT id FROM users WHERE wallet_address = $1`, playerAddress).Scan(&playerId)
-	if err != nil {
-		log.Printf("Failed to get player ID: %v", err)
-		return
-	}
-
-	// Get game ID from the tx just inserted
-	err = db.QueryRow(`SELECT id FROM games WHERE tx_hash = $1`, txHash).Scan(&gameId)
-	if err != nil {
-		log.Printf("Failed to get game ID: %v", err)
-		return
-	}
-
-	// Insert referral earning (Tier 1)
-	_, err = db.Exec(`
-		INSERT INTO referral_earnings (
-			referrer_id, referee_id, game_id,
-			tier, house_edge, earned, currency,
-			claimed, created_at
-		) VALUES ($1, $2, $3, 1, $4, $5, 'ETH', false, NOW())
-		ON CONFLICT DO NOTHING
-	`,
-		referrerId,
-		playerId,
-		gameId,
-		houseEdge.String(),
-		referrerEarning.String(),
-	)
-
-	if err != nil {
-		log.Printf("Failed to insert referral earning: %v", err)
-		return
-	}
-
-	fmt.Printf("   💰 Referral earning: %s -> %s (+%s wei)\n",
-		playerAddress[:10]+"...",
-		referrerWallet[:10]+"...",
-		referrerEarning.String(),
-	)
-
-	// TODO (Phase 2): Implement Tier 2 earnings (referrer's referrer gets 2%)
+	// ... original implementation commented out ...
 }
+*/

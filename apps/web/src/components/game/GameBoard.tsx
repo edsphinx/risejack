@@ -77,11 +77,8 @@ export function GameBoard() {
           ? game.lastGameResult.dealerCards
           : game.gameData?.dealerCards) || [];
 
-      logger.log('[GameBoard] Setting lastHand with:', {
-        playerCards,
-        dealerCards,
-        fromResult: game.lastGameResult.playerCards?.length >= 2,
-      });
+      // Debug log removed - runs too frequently
+      // logger.log('[GameBoard] Setting lastHand with:', { playerCards, dealerCards });
 
       setLastHand({
         playerCards: [...playerCards],
@@ -171,20 +168,8 @@ export function GameBoard() {
   // Can surrender only on first action
   const canSurrender = canPlay && game.gameData?.playerCards.length === 2;
 
-  // Debug: Log rendering decision
-  logger.log('[GameBoard] 🎮 Render decision:', {
-    isConnected: wallet.isConnected,
-    gameState: game.gameData?.state,
-    isIdle,
-    canBet,
-    canPlay,
-    gameResult,
-    willShow: !wallet.isConnected
-      ? 'Connect Wallet'
-      : isIdle || gameResult
-        ? 'Betting UI'
-        : 'ActionButtons',
-  });
+  // Debug log removed - runs on every render, use React DevTools instead
+  // logger.log('[GameBoard] 🎮 Render decision:', { gameState, canBet, canPlay });
 
   // Combined error
   const error = wallet.error || game.error;

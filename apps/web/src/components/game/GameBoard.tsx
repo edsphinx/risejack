@@ -122,7 +122,7 @@ export function GameBoard() {
         window.dispatchEvent(new CustomEvent('risecasino:gameend'));
       }
     }
-  }, [game.lastGameResult, game.gameData, betAmount, game.formatBet]);
+  }, [game.lastGameResult, game.gameData, betAmount, game.formatBet, showXPGain]);
 
   // Track cooldown - check when in idle state or after game ends
   useEffect(() => {

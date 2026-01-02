@@ -68,7 +68,8 @@ export function PlayerStats() {
       window.removeEventListener('risecasino:gameend', handleGameEnd);
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [fetchStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]); // Use address instead of fetchStats to prevent re-registration
 
   if (!isConnected || !stats) {
     return null;

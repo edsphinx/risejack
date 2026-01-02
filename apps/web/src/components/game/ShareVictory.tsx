@@ -42,9 +42,9 @@ export function ShareVictory({ winAmount, outcome, walletAddress }: ShareVictory
     const twitterUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
     const popup = window.open(twitterUrl, '_blank', 'width=550,height=420');
 
-    // Fallback if popup was blocked
+    // Fallback if popup was blocked - use new tab instead of hijacking current page
     if (!popup) {
-      window.location.href = twitterUrl;
+      window.open(twitterUrl, '_blank');
     }
   }, [outcome, winAmount, walletAddress]);
 

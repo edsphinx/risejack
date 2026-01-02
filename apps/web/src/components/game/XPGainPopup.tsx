@@ -18,18 +18,25 @@ export function XPGainPopup({ xpAmount, onComplete }: XPGainPopupProps) {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Start animation
-    const showTimer = setTimeout(() => setIsVisible(true), 50);
+    const showTimer = setTimeout(() => {
+      if (isMounted) setIsVisible(true);
+    }, 50);
 
     // Start exit animation
-    const exitTimer = setTimeout(() => setIsExiting(true), 1500);
+    const exitTimer = setTimeout(() => {
+      if (isMounted) setIsExiting(true);
+    }, 1500);
 
     // Remove component
     const removeTimer = setTimeout(() => {
-      onComplete?.();
+      if (isMounted) onComplete?.();
     }, 2000);
 
     return () => {
+      isMounted = false;
       clearTimeout(showTimer);
       clearTimeout(exitTimer);
       clearTimeout(removeTimer);

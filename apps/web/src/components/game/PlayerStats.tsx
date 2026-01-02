@@ -28,7 +28,10 @@ export function PlayerStats() {
 
     setIsLoading(true);
     try {
-      const profile = await getUserProfile(address);
+      const response = (await getUserProfile(address)) as {
+        profile: { xp?: number; level?: number; displayName?: string };
+      };
+      const profile = response.profile || response;
       setStats({
         xp: profile.xp || 0,
         level: profile.level || 0,

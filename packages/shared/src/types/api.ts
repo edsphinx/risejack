@@ -134,7 +134,8 @@ export type EventType =
   | 'referral_click'
   | 'vip_upgrade'
   | 'email_subscribe'
-  | 'page_view';
+  | 'page_view'
+  | 'share_victory';
 
 export interface LogEventRequest {
   walletAddress?: string;

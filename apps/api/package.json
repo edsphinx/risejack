@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "dev:ssl": "[ -f localhost+2.pem ] || mkcert localhost 127.0.0.1 ::1; HTTPS=true bun run --watch src/index.ts",
-    "build": "bunx prisma generate && bun build src/index.ts --outdir dist --target bun",
+    "build": "bun x prisma generate && bun build src/index.ts --outdir dist --target bun",
     "start": "bun run dist/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",

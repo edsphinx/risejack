@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { useWallet } from '@/context/WalletContext';
 import { useGameState } from '@/hooks/useGameState';
+import { useTabFocus } from '@/hooks/useTabFocus';
 import { Hand, HandValue } from './Hand';
 import { ActionButtons } from './ActionButtons';
 import { CardDeck } from './CardDeck';
@@ -39,6 +40,9 @@ export function GameBoard() {
   // Game state (pass wallet to avoid duplicate hook instances)
   // Note: lastGameResult now includes final hand values from CardDealt WebSocket tracking
   const game = useGameState(wallet);
+
+  // Tab focus detection (Scenario M: Multiple tabs)
+  const isActiveTab = useTabFocus();
 
   // Get result from parsed tx event or contract state
   const currentResult = ((): GameResult => {
@@ -160,10 +164,13 @@ export function GameBoard() {
   const gameResult = currentResult;
 
   // Check if player can take actions
-  const canPlay = game.gameData?.state === GameState.PlayerTurn;
+  // Disable actions in background tabs (Scenario M)
+  const canPlay = isActiveTab && game.gameData?.state === GameState.PlayerTurn;
   // Can bet when game is idle (including after showing result)
   const canBet =
-    (!game.gameData || game.gameData.state === GameState.Idle) && cooldownRemaining === 0;
+    isActiveTab &&
+    (!game.gameData || game.gameData.state === GameState.Idle) &&
+    cooldownRemaining === 0;
   const isIdle = canBet && !game.lastGameResult;
 
   // Check if waiting for VRF (stuck state detection)
@@ -215,6 +222,14 @@ export function GameBoard() {
   return (
     <div className="min-h-screen game-board-mobile bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       <main className="max-w-6xl mx-auto p-2 sm:p-4 py-4 sm:py-8">
+        {/* Background Tab Warning (Scenario M: Multiple tabs) */}
+        {!isActiveTab && (
+          <div className="mb-4 p-3 bg-yellow-900/50 border border-yellow-500 rounded-lg text-yellow-200 flex items-center gap-2 text-sm">
+            <span>⚠️</span>
+            <span>Tab in background - actions disabled. Click here to activate.</span>
+          </div>
+        )}
+
         {/* Error Display */}
         {error && (
           <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200 flex items-start gap-3">

@@ -17,6 +17,7 @@ interface WalletDropdownProps {
   onCreateSession: () => void;
   onRevokeSession: () => void;
   onDisconnect: () => void;
+  onResetWallet: () => void;
 }
 
 export function WalletDropdown({
@@ -30,6 +31,7 @@ export function WalletDropdown({
   onCreateSession,
   onRevokeSession,
   onDisconnect,
+  onResetWallet,
 }: WalletDropdownProps) {
   return (
     <div className="wallet-dropdown">
@@ -49,6 +51,15 @@ export function WalletDropdown({
         onCreateSession={onCreateSession}
         onRevokeSession={onRevokeSession}
       />
+
+      {/* Reset Wallet Button - for fixing session key issues */}
+      <button
+        className="dropdown-reset"
+        onClick={onResetWallet}
+        title="Clear wallet data and reconnect (fixes session key issues)"
+      >
+        🔧 Reset Wallet
+      </button>
 
       {/* Disconnect Button */}
       <button className="dropdown-disconnect" onClick={onDisconnect}>

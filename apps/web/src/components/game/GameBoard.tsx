@@ -121,6 +121,14 @@ export function GameBoard() {
     }
   }, [game.lastGameResult, game.gameData, betAmount, game.formatBet, showXPGain]);
 
+  // Clear lastHand when starting new game (lastGameResult becomes null)
+  useEffect(() => {
+    if (!game.lastGameResult) {
+      setLastHand(null);
+      lastSavedResultRef.current = null;
+    }
+  }, [game.lastGameResult]);
+
   // Track cooldown - check when in idle state or after game ends
   useEffect(() => {
     if (!wallet.address) return;

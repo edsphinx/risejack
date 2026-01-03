@@ -28,18 +28,32 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
   const [sessionData, setSessionData] = useState<SessionKeyData | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Load existing session key on mount or address change
+  // Load and VALIDATE existing session key on mount or address change
   useEffect(() => {
     if (!address) {
       setSessionData(null);
       return;
     }
 
-    const existingKey = getActiveSessionKey();
-    if (existingKey && isSessionKeyValid(existingKey)) {
-      logger.log('🔑 Restored session key from localStorage');
-      setSessionData(existingKey);
-    }
+    const restoreAndValidate = async () => {
+      const existingKey = getActiveSessionKey();
+      logger.log('🔑 [DEBUG] restoreAndValidate:', {
+        hasKey: !!existingKey,
+        publicKey: existingKey?.publicKey?.slice(0, 20),
+        expiry: existingKey?.expiry,
+        isValid: existingKey ? isSessionKeyValid(existingKey) : false,
+      });
+
+      if (existingKey && isSessionKeyValid(existingKey)) {
+        // Simple validation - just check if key exists and is not expired
+        // No need for RPC validation or warmup - sendSessionTransaction handles failures
+        // with auto-recreate pattern
+        logger.log('🔑 Found valid session key in localStorage');
+        setSessionData(existingKey);
+      }
+    };
+
+    restoreAndValidate();
   }, [address]);
 
   // Update timer periodically

@@ -120,6 +120,12 @@ export interface UseRiseWalletReturn {
   dismissOnboarding: (enableFastMode: boolean) => Promise<void>;
   dismissExpiryModal: (extend: boolean) => Promise<void>;
 
+  // Wallet Recovery
+  showRecoveryModal: boolean;
+  openRecoveryModal: () => void;
+  closeRecoveryModal: () => void;
+  handleRecoveryComplete: () => void;
+
   // Internal - for useGameActions
   keyPair: { publicKey: string; privateKey: string } | null;
 }

@@ -6,6 +6,7 @@ import { Logo } from './components/brand/Logo';
 import { useLocation } from 'wouter-preact';
 import { WalletProvider, useWallet } from './context/WalletContext';
 import { FastModeOnboarding, SessionExpiryModal } from './components/wallet/SessionModals';
+import { WalletRecoveryModal } from './components/wallet/WalletRecoveryModal';
 import { ModalErrorBoundary } from './components/common/ErrorBoundary';
 import { PageLoader } from './components/common/PageLoader';
 import { AppLoader } from './components/common/AppLoader';
@@ -298,6 +299,15 @@ function SessionModalManager({ children }: { children: preact.ComponentChildren 
             isLoading={wallet.isCreatingSession}
           />
         </ModalErrorBoundary>
+      )}
+
+      {/* Wallet Recovery Modal - when connection fails repeatedly */}
+      {wallet.showRecoveryModal && (
+        <WalletRecoveryModal
+          isOpen={wallet.showRecoveryModal}
+          onClose={wallet.closeRecoveryModal}
+          onRecoveryComplete={wallet.handleRecoveryComplete}
+        />
       )}
     </>
   );

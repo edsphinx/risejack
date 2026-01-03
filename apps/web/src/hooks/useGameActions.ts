@@ -7,7 +7,12 @@
 import { useState, useCallback, useMemo } from 'preact/hooks';
 import { encodeFunctionData, parseEther, formatEther } from 'viem';
 import { getProvider } from '@/lib/riseWallet';
-import { signWithSessionKey, getActiveSessionKey } from '@/services/sessionKeyManager';
+import {
+  signWithSessionKey,
+  getActiveSessionKey,
+  clearAllSessionKeys,
+  createSessionKey,
+} from '@/services/sessionKeyManager';
 import { ErrorService } from '@/services';
 import { RISEJACK_ABI, getRiseJackAddress } from '@/lib/contract';
 import { logger } from '@/lib/logger';
@@ -64,6 +69,7 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
 
   /**
    * Send transaction using session key (no popup)
+   * If session key fails with authorization error, auto-recreate it (one PIN prompt)
    * Returns txHash and parsed GameEnded event if present
    */
   const sendSessionTransaction = useCallback(
@@ -83,71 +89,141 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
       const t0 = performance.now();
       logger.log(`⚡ [T+0ms] Using session key`);
 
-      // 1. Prepare Calls
-      const prepareParams = [
-        {
-          calls: [{ to, value: hexValue, data }],
-          key: {
-            type: 'p256',
-            publicKey: sessionKey.publicKey,
+      // Helper: Execute transaction with given session key
+      const executeWithKey = async (key: typeof sessionKey) => {
+        const prepareParams = [
+          {
+            calls: [{ to: to.toLowerCase() as `0x${string}`, value: hexValue, data }],
+            key: {
+              type: 'p256',
+              publicKey: key!.publicKey,
+            },
           },
-        },
-      ];
+        ];
 
-      // Cast provider to bypass strict SDK types
-      const prepared = (await (
-        provider as { request: (args: { method: string; params: unknown }) => Promise<unknown> }
-      ).request({
-        method: 'wallet_prepareCalls',
-        params: prepareParams,
-      })) as { digest: `0x${string}` };
+        const prepared = (await (
+          provider as { request: (args: { method: string; params: unknown }) => Promise<unknown> }
+        ).request({
+          method: 'wallet_prepareCalls',
+          params: prepareParams,
+        })) as { digest: `0x${string}` };
 
-      const t1 = performance.now();
-      logger.log(`⚡ [T+${Math.round(t1 - t0)}ms] wallet_prepareCalls`);
+        const { digest, ...requestParams } = prepared;
+        const signature = signWithSessionKey(digest, key!);
 
-      const { digest, ...requestParams } = prepared;
+        const response = (await (
+          provider as { request: (args: { method: string; params: unknown }) => Promise<unknown> }
+        ).request({
+          method: 'wallet_sendPreparedCalls',
+          params: [{ ...requestParams, signature }],
+        })) as Array<{ id: `0x${string}` }>;
 
-      // 2. Sign digest using session key (local, no popup)
-      const signature = signWithSessionKey(digest, sessionKey);
-      const t2 = performance.now();
-      logger.log(`⚡ [T+${Math.round(t2 - t0)}ms] P256 sign`);
+        return response[0]?.id || null;
+      };
 
-      // 3. Send prepared calls
-      const response = (await (
-        provider as { request: (args: { method: string; params: unknown }) => Promise<unknown> }
-      ).request({
-        method: 'wallet_sendPreparedCalls',
-        params: [{ ...requestParams, signature }],
-      })) as Array<{ id: `0x${string}` }>;
+      // Helper: Check if error is authorization-related
+      const isAuthError = (err: unknown) => {
+        const msg = String(err);
+        return (
+          msg.includes('not been authorized') ||
+          msg.includes('unauthorized') ||
+          msg.includes('REVOKED')
+        );
+      };
 
-      const t3 = performance.now();
-      logger.log(`⚡ [T+${Math.round(t3 - t0)}ms] wallet_sendPreparedCalls`);
+      // Try with existing session key first
+      try {
+        const callId = await executeWithKey(sessionKey);
+        if (!callId) return { txHash: null, gameEndData: null };
 
-      const callId = response[0]?.id;
-      if (!callId) return { txHash: null, gameEndData: null };
+        const t1 = performance.now();
+        logger.log(`⚡ [T+${Math.round(t1 - t0)}ms] Session key transaction sent`);
 
-      logger.log(
-        `⚡ [T+${Math.round(performance.now() - t0)}ms] TOTAL - returning callId:`,
-        callId
-      );
+        // Fire-and-forget: Get receipt for logging
+        provider
+          .request({ method: 'wallet_getCallsStatus', params: [callId] })
+          .then((status) => {
+            const s = status as { receipts?: Array<{ transactionHash: string }> };
+            logger.log(`⚡ [async] txHash:`, s.receipts?.[0]?.transactionHash);
+          })
+          .catch(() => {});
 
-      // Fire-and-forget: Get receipt in background for logging only
-      // GameEnded events are handled by WebSocket, no need to wait
-      provider
-        .request({
-          method: 'wallet_getCallsStatus',
-          params: [callId],
-        })
-        .then((callStatus) => {
-          const status = callStatus as { receipts?: Array<{ transactionHash: string }> };
-          const txHash = status.receipts?.[0]?.transactionHash;
-          logger.log(`⚡ [async] wallet_getCallsStatus completed, txHash:`, txHash);
-        })
-        .catch(() => {
-          /* ignore */
-        });
+        return { txHash: callId, gameEndData: null };
+      } catch (firstError) {
+        if (!isAuthError(firstError)) {
+          throw firstError; // Non-auth error, don't retry
+        }
 
-      return { txHash: callId, gameEndData: null };
+        // Authorization failed - try to reactivate with wallet_connect first (PIN only)
+        logger.log('⚡ Session key authorization failed, trying to reactivate...');
+
+        try {
+          // First, try wallet_connect to reactivate the session (prompts PIN once)
+          await (
+            provider as {
+              request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+            }
+          ).request({
+            method: 'wallet_connect',
+            params: [{}],
+          });
+          logger.log(
+            `⚡ [T+${Math.round(performance.now() - t0)}ms] Provider reactivated, retrying with same key...`
+          );
+
+          // Retry with the SAME session key (no need to create new one)
+          const callId = await executeWithKey(sessionKey);
+          if (!callId) return { txHash: null, gameEndData: null };
+
+          logger.log(
+            `⚡ [T+${Math.round(performance.now() - t0)}ms] Retry with same key succeeded`
+          );
+
+          // Fire-and-forget: Get receipt for logging
+          provider
+            .request({ method: 'wallet_getCallsStatus', params: [callId] })
+            .then((status) => {
+              const s = status as { receipts?: Array<{ transactionHash: string }> };
+              logger.log(`⚡ [async] txHash:`, s.receipts?.[0]?.transactionHash);
+            })
+            .catch(() => {});
+
+          return { txHash: callId, gameEndData: null };
+        } catch {
+          // Reactivation failed - as last resort, try creating a new session key
+          logger.log('⚡ Reactivation failed, creating new session key as last resort...');
+
+          try {
+            const { createSessionKey, clearAllSessionKeys } =
+              await import('@/services/sessionKeyManager');
+            clearAllSessionKeys(); // Clean up stale keys
+
+            const newKey = await createSessionKey(address);
+            logger.log(`⚡ [T+${Math.round(performance.now() - t0)}ms] Session key recreated`);
+
+            // Retry with new session key
+            const callId = await executeWithKey(newKey);
+            if (!callId) return { txHash: null, gameEndData: null };
+
+            logger.log(
+              `⚡ [T+${Math.round(performance.now() - t0)}ms] Retry with new key succeeded`
+            );
+
+            provider
+              .request({ method: 'wallet_getCallsStatus', params: [callId] })
+              .then((status) => {
+                const s = status as { receipts?: Array<{ transactionHash: string }> };
+                logger.log(`⚡ [async] txHash:`, s.receipts?.[0]?.transactionHash);
+              })
+              .catch(() => {});
+
+            return { txHash: callId, gameEndData: null };
+          } catch (recreateErr) {
+            logger.warn('⚡ Session key recreation failed:', recreateErr);
+            throw recreateErr; // Let caller handle fallback to passkey
+          }
+        }
+      }
     },
     [address]
   );
@@ -211,13 +287,39 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
             txHash = result.txHash;
             gameEndData = result.gameEndData;
           } catch (sessionErr) {
-            // Session key failed - fallback to passkey
-            logger.warn(
-              '[GameActions] ⚠️ Session key FAILED, falling back to passkey:',
-              sessionErr
-            );
-            logger.log('[GameActions] 🔐 Falling back to passkey...');
-            txHash = await sendPasskeyTransaction(contractAddress, value ?? 0n, data);
+            // Session key failed - check if it's a permission issue
+            const errorStr = String(sessionErr);
+            if (errorStr.includes('UserRejectedRequestError') || errorStr.includes('rejected')) {
+              // Permission was revoked by Rise Wallet - clear invalid session key
+              logger.warn('[GameActions] ⚠️ Session key REVOKED by wallet, clearing...');
+              clearAllSessionKeys();
+
+              // Try to auto-recreate session key (like Meteoro does)
+              logger.log('[GameActions] 🔑 Attempting to auto-recreate session key...');
+              try {
+                await createSessionKey(address);
+                logger.log('[GameActions] 🔑 Session key recreated successfully!');
+
+                // Retry with new session key
+                const retryResult = await sendSessionTransaction(
+                  contractAddress,
+                  value ?? 0n,
+                  data
+                );
+                txHash = retryResult.txHash;
+                gameEndData = retryResult.gameEndData;
+              } catch (recreateErr) {
+                logger.warn('[GameActions] ⚠️ Failed to recreate session key:', recreateErr);
+                // Fallback to passkey
+                logger.log('[GameActions] 🔐 Falling back to passkey...');
+                txHash = await sendPasskeyTransaction(contractAddress, value ?? 0n, data);
+              }
+            } else {
+              logger.warn('[GameActions] ⚠️ Session key failed:', sessionErr);
+              // Fallback to passkey
+              logger.log('[GameActions] 🔐 Falling back to passkey...');
+              txHash = await sendPasskeyTransaction(contractAddress, value ?? 0n, data);
+            }
           }
         } else {
           logger.log('[GameActions] 🔐 Using passkey (no session key)...', {

@@ -14,8 +14,9 @@ export function getFunctionSelector(signature: string): `0x${string}` {
     return keccak256(toHex(signature)).slice(0, 10) as `0x${string}`;
 }
 
-// Contract address
-const CONTRACT_ADDRESS = getRiseJackAddress();
+// Contract address - converted to lowercase for Porto compatibility
+// Porto stores and compares addresses as lowercase strings
+const CONTRACT_ADDRESS = getRiseJackAddress().toLowerCase() as `0x${string}`;
 
 /**
  * Allowed contract calls for session key

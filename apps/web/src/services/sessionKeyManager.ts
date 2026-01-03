@@ -96,6 +96,75 @@ export function hasUsableSessionKey(): boolean {
 }
 
 /**
+ * Validate that a session key exists in Rise Wallet (not just localStorage)
+ * Uses Porto's hydrated zustand state instead of RPC calls to avoid "provider disconnected" errors
+ */
+export async function validateSessionKeyWithWallet(): Promise<boolean> {
+  const sessionKey = getActiveSessionKey();
+  if (!sessionKey) return false;
+
+  try {
+    // Import and wait for Porto's zustand store to hydrate from IndexedDB
+    const { getRiseWallet, waitForHydration } = await import('@/lib/riseWallet');
+    await waitForHydration();
+
+    const rw = getRiseWallet();
+
+    // Access Porto's hydrated zustand state DIRECTLY instead of using RPC
+    // This avoids "provider disconnected" errors after page refresh
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const state = (rw._internal.store as any).getState();
+    const accounts = state?.accounts as
+      | Array<{ address: string; keys?: Array<{ publicKey?: string; expiry?: number }> }>
+      | undefined;
+
+    if (!accounts || accounts.length === 0) {
+      logger.warn('🔑 No accounts in Porto state, cannot validate session key');
+      return false;
+    }
+
+    // Get keys from first account (session keys are stored with account)
+    const accountKeys = accounts[0].keys;
+
+    if (!accountKeys || !Array.isArray(accountKeys)) {
+      logger.warn('🔑 No keys found in Porto account state');
+      // Clear stale local session key since Rise Wallet doesn't have keys
+      clearAllSessionKeys();
+      return false;
+    }
+
+    // Debug: Log all session keys in Porto state
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sessionKeysInPorto = (accountKeys as any[]).filter((k) => k.role === 'session');
+    logger.log(`🔑 [DEBUG] Porto has ${sessionKeysInPorto.length} session keys:`);
+    sessionKeysInPorto.forEach((k: { publicKey?: string; expiry?: number }, i: number) => {
+      logger.log(`   [${i}] ${k.publicKey?.slice(0, 30)}... (expires: ${k.expiry})`);
+    });
+    logger.log(`🔑 [DEBUG] Our localStorage key: ${sessionKey.publicKey?.slice(0, 30)}...`);
+
+    // Check if our session key's publicKey exists in the account's keys
+    const now = Math.floor(Date.now() / 1000);
+    const matchingKey = accountKeys.find(
+      (k: { publicKey?: string; expiry?: number }) =>
+        k.publicKey === sessionKey.publicKey && (k.expiry ?? 0) > now
+    );
+
+    if (matchingKey) {
+      logger.log('🔑 Session key validated with Porto state ✓');
+      return true;
+    } else {
+      logger.warn('🔑 Session key NOT found in Porto account keys - clearing stale key');
+      // Clear the stale session key from localStorage
+      clearAllSessionKeys();
+      return false;
+    }
+  } catch (error) {
+    logger.warn('🔑 Failed to validate session key with Porto state:', error);
+    return false;
+  }
+}
+
+/**
  * Create a new session key and request permissions from Rise Wallet
  */
 export async function createSessionKey(walletAddress: string): Promise<SessionKeyData> {
@@ -132,6 +201,19 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
   ];
 
   logger.log('🔑 Requesting permissions:', permissionParams);
+
+  // Ensure provider is connected (needed after page refresh)
+  // This may prompt for PIN but is required for grantPermissions to work
+  try {
+    await (
+      provider as { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> }
+    ).request({
+      method: 'wallet_connect',
+      params: [{}],
+    });
+  } catch {
+    // Ignore errors - wallet_connect might fail if already connected
+  }
 
   // Use type assertion since SDK types are too strict for our params
   await (

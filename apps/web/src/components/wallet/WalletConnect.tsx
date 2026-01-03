@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from 'preact/hooks';
 import type { WalletConnectProps } from '@risejack/shared';
 import { WalletTrigger } from './WalletTrigger';
 import { WalletDropdown } from './WalletDropdown';
+import { clearRiseWalletData } from '@/lib/walletRecovery';
 import './styles/header.css';
 import './styles/desktop-dropdown.css';
 
@@ -68,6 +69,13 @@ export function WalletConnect({
     setDropdownOpen(false);
   };
 
+  const handleResetWallet = async () => {
+    if (confirm('This will clear all wallet data and reload the page. Continue?')) {
+      await clearRiseWalletData();
+      window.location.reload();
+    }
+  };
+
   // Get formatted balance string
   const balanceString = balance !== null ? formatBalance() : null;
 
@@ -116,6 +124,7 @@ export function WalletConnect({
           onCreateSession={handleCreateSession}
           onRevokeSession={onRevokeSession}
           onDisconnect={handleDisconnect}
+          onResetWallet={handleResetWallet}
         />
       )}
     </div>

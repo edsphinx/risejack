@@ -257,15 +257,6 @@ export function useGameState(wallet: UseRiseWalletReturn): UseGameStateReturn {
     return actions.surrender();
   };
 
-  // Wrap placeBet to clear previous game state before starting new game
-  const wrappedPlaceBet = async (betAmount: string): Promise<boolean> => {
-    // Clear previous game result and cards
-    setLastGameResult(null);
-    setAccumulatedCards({ playerCards: [], dealerCards: [], dealerHiddenCard: null });
-    cardSnapshotRef.current = null;
-    return actions.placeBet(betAmount);
-  };
-
   return {
     // State
     gameData: state.gameData,
@@ -287,7 +278,7 @@ export function useGameState(wallet: UseRiseWalletReturn): UseGameStateReturn {
     // Actions (wrapped with snapshot)
     isLoading: actions.isLoading,
     error: actions.error,
-    placeBet: wrappedPlaceBet,
+    placeBet: actions.placeBet,
     hit: wrappedHit,
     stand: wrappedStand,
     double: wrappedDouble,

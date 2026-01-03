@@ -42,6 +42,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@risejack/shared": "workspace:*",
+        "ox": "^0.11.1",
         "preact": "^10.25.4",
         "rise-wallet": "^0.3.0",
         "shreds": "^0.2.3",

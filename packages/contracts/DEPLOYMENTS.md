@@ -32,13 +32,15 @@
 
 ## DeFi Contracts - 2024-12-30
 
-### CHIPToken
+### CHIPToken (v3 - Hardhat + SAFE Owner)
 
 **Contract:** CHIPToken (ERC20)  
-**Address:** [`0x2D97Ba366119e55B1a98D9349ce35868920C7Ae8`](https://explorer.testnet.riselabs.xyz/address/0x2d97ba366119e55b1a98d9349ce35868920c7ae8)  
+**Address:** [`0x18cA3c414bD08C74622C3E3bFE7464903d95602A`](https://explorer.testnet.riselabs.xyz/address/0x18cA3c414bD08C74622C3E3bFE7464903d95602A)  
 **Symbol:** CHIP  
 **Initial Supply:** 1,000,000,000 CHIP  
-**Verified:** ✅ Blockscout
+**Owner:** SAFE Multisig (see private docs)  
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0x18cA3c414bD08C74622C3E3bFE7464903d95602A#code)  
+**Deployed With:** Hardhat 2.22.17
 
 ### UniswapV2Factory (risecasinoswap)
 

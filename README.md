@@ -13,6 +13,25 @@ Rise Blackjack is a fully on-chain casino game that leverages Rise Chain's ultra
 
 ---
 
+## ⚡ Powered by Rise Chain
+
+| Technology | Usage |
+|------------|-------|
+| **Shreds** | Real-time event streaming for live wins ticker and auto-refresh leaderboard |
+| **Fast VRF** | Provably fair random card generation with sub-second response |
+| **Rise Wallet** | Passkey-based authentication - no seed phrases, instant onboarding |
+| **Session Keys** | Gasless gameplay - players never sign individual transactions |
+
+### Shreds Integration
+
+The frontend subscribes to on-chain `GameEnded` events via Shreds WebSocket:
+
+- **LiveWinsTicker** - Shows real-time wins across all players
+- **LeaderboardPreview** - Auto-refreshes when activity is detected
+- **< 100ms latency** from on-chain event to UI update
+
+---
+
 ## 📚 Documentation
 
 Detailed documentation is available in the [`docs/`](./docs/README.md) directory:

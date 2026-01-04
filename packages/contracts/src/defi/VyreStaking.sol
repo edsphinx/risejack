@@ -26,13 +26,13 @@ interface IStakingRewards {
 }
 
 /**
- * @title RiseCasinoStaking
+ * @title VyreStaking
  * @notice Based on Synthetix StakingRewards (Audited, Proven).
  * Ported to Solidity 0.8.x with OpenZeppelin v5 dependencies.
  *
  * Users stake StakingToken (e.g., CHIP) to earn RewardsToken (e.g., WETH or CHIP).
  */
-contract RiseCasinoStaking is IStakingRewards, ReentrancyGuard, Ownable {
+contract VyreStaking is IStakingRewards, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     /* ========== STATE VARIABLES ========== */

@@ -4,9 +4,9 @@ pragma solidity ^0.8.28;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { IRiseGame } from "./interfaces/IRiseGame.sol";
+import { IVyreGame } from "./interfaces/IVyreGame.sol";
 
-interface IRiseTreasury {
+interface IVyreTreasury {
     function payout(
         address to,
         address token,
@@ -43,26 +43,26 @@ interface IReferralRegistry {
 }
 
 /**
- * @title RiseCasino
+ * @title VyreCasino
  * @notice Central orchestrator for all casino games
  * @dev Handles house edge, referrals, token whitelist, and game routing
  *
  * FLOW:
- * 1. Player approves CHIP to RiseCasino
+ * 1. Player approves CHIP to VyreCasino
  * 2. Player calls play(game, token, amount, params)
- * 3. RiseCasino transfers tokens from player to Treasury
- * 4. RiseCasino calls game.play()
+ * 3. VyreCasino transfers tokens from player to Treasury
+ * 4. VyreCasino calls game.play()
  * 5. Game returns result (won, payout)
- * 6. RiseCasino calculates house edge and referral share
- * 7. RiseCasino requests Treasury to payout net amount
+ * 6. VyreCasino calculates house edge and referral share
+ * 7. VyreCasino requests Treasury to payout net amount
  */
-contract RiseCasino is ReentrancyGuard {
+contract VyreCasino is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // ==================== STATE ====================
 
     /// @notice Treasury contract
-    IRiseTreasury public immutable treasury;
+    IVyreTreasury public immutable treasury;
 
     /// @notice XP Registry for level tracking
     IXPRegistry public xpRegistry;
@@ -151,17 +151,17 @@ contract RiseCasino is ReentrancyGuard {
     // ==================== MODIFIERS ====================
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "RiseCasino: only owner");
+        require(msg.sender == owner, "VyreCasino: only owner");
         _;
     }
 
     modifier whenNotPaused() {
-        require(!paused, "RiseCasino: paused");
+        require(!paused, "VyreCasino: paused");
         _;
     }
 
     modifier onlyRegisteredGame() {
-        require(registeredGames[msg.sender], "RiseCasino: not registered game");
+        require(registeredGames[msg.sender], "VyreCasino: not registered game");
         _;
     }
 
@@ -173,11 +173,11 @@ contract RiseCasino is ReentrancyGuard {
         address _owner,
         address _buybackWallet
     ) {
-        require(_treasury != address(0), "RiseCasino: zero treasury");
-        require(_chipToken != address(0), "RiseCasino: zero chip");
-        require(_owner != address(0), "RiseCasino: zero owner");
+        require(_treasury != address(0), "VyreCasino: zero treasury");
+        require(_chipToken != address(0), "VyreCasino: zero chip");
+        require(_owner != address(0), "VyreCasino: zero owner");
 
-        treasury = IRiseTreasury(_treasury);
+        treasury = IVyreTreasury(_treasury);
         chipToken = _chipToken;
         owner = _owner;
         buybackWallet = _buybackWallet;
@@ -200,14 +200,14 @@ contract RiseCasino is ReentrancyGuard {
         address token,
         uint256 amount,
         bytes calldata gameData
-    ) external whenNotPaused nonReentrant returns (IRiseGame.GameResult memory result) {
+    ) external whenNotPaused nonReentrant returns (IVyreGame.GameResult memory result) {
         // Validations
-        require(registeredGames[game], "RiseCasino: game not registered");
-        require(whitelistedTokens[token], "RiseCasino: token not whitelisted");
-        require(amount > 0, "RiseCasino: zero bet");
+        require(registeredGames[game], "VyreCasino: game not registered");
+        require(whitelistedTokens[token], "VyreCasino: token not whitelisted");
+        require(amount > 0, "VyreCasino: zero bet");
         require(
-            amount >= IRiseGame(game).minBet(token) && amount <= IRiseGame(game).maxBet(token),
-            "RiseCasino: bet out of range"
+            amount >= IVyreGame(game).minBet(token) && amount <= IVyreGame(game).maxBet(token),
+            "VyreCasino: bet out of range"
         );
 
         // Transfer bet from player to treasury
@@ -217,10 +217,10 @@ contract RiseCasino is ReentrancyGuard {
         uint8 chipTier = _getChipTier(amount);
 
         // Call game
-        IRiseGame.BetInfo memory betInfo =
-            IRiseGame.BetInfo({ token: token, amount: amount, chipTier: chipTier });
+        IVyreGame.BetInfo memory betInfo =
+            IVyreGame.BetInfo({ token: token, amount: amount, chipTier: chipTier });
 
-        result = IRiseGame(game).play(msg.sender, betInfo, gameData);
+        result = IVyreGame(game).play(msg.sender, betInfo, gameData);
 
         // Process result
         if (result.won && result.payout > 0) {
@@ -248,9 +248,9 @@ contract RiseCasino is ReentrancyGuard {
     function setReferrer(
         address referrer
     ) external {
-        require(referrers[msg.sender] == address(0), "RiseCasino: referrer already set");
-        require(referrer != address(0), "RiseCasino: zero referrer");
-        require(referrer != msg.sender, "RiseCasino: self referral");
+        require(referrers[msg.sender] == address(0), "VyreCasino: referrer already set");
+        require(referrer != address(0), "VyreCasino: zero referrer");
+        require(referrer != msg.sender, "VyreCasino: self referral");
 
         referrers[msg.sender] = referrer;
         emit ReferrerSet(msg.sender, referrer);
@@ -264,7 +264,7 @@ contract RiseCasino is ReentrancyGuard {
         address token
     ) external nonReentrant {
         uint256 earnings = referralEarnings[msg.sender][token];
-        require(earnings > 0, "RiseCasino: no earnings");
+        require(earnings > 0, "VyreCasino: no earnings");
 
         referralEarnings[msg.sender][token] = 0;
         treasury.payout(msg.sender, token, earnings);
@@ -277,7 +277,7 @@ contract RiseCasino is ReentrancyGuard {
     function registerGame(
         address game
     ) external onlyOwner {
-        require(game != address(0), "RiseCasino: zero game");
+        require(game != address(0), "VyreCasino: zero game");
         registeredGames[game] = true;
         emit GameRegistered(game);
     }
@@ -292,7 +292,7 @@ contract RiseCasino is ReentrancyGuard {
     function whitelistToken(
         address token
     ) external onlyOwner {
-        require(token != address(0), "RiseCasino: zero token");
+        require(token != address(0), "VyreCasino: zero token");
         whitelistedTokens[token] = true;
         emit TokenWhitelisted(token);
     }
@@ -300,7 +300,7 @@ contract RiseCasino is ReentrancyGuard {
     function removeToken(
         address token
     ) external onlyOwner {
-        require(token != chipToken, "RiseCasino: cannot remove CHIP");
+        require(token != chipToken, "VyreCasino: cannot remove CHIP");
         whitelistedTokens[token] = false;
         emit TokenRemoved(token);
     }
@@ -308,14 +308,14 @@ contract RiseCasino is ReentrancyGuard {
     function setHouseEdge(
         uint256 bps
     ) external onlyOwner {
-        require(bps <= 1000, "RiseCasino: max 10%");
+        require(bps <= 1000, "VyreCasino: max 10%");
         houseEdgeBps = bps;
     }
 
     function setReferralShare(
         uint256 bps
     ) external onlyOwner {
-        require(bps <= 10_000, "RiseCasino: max 100%");
+        require(bps <= 10_000, "VyreCasino: max 100%");
         referralShareBps = bps;
     }
 
@@ -342,7 +342,7 @@ contract RiseCasino is ReentrancyGuard {
     function transferOwnership(
         address newOwner
     ) external onlyOwner {
-        require(newOwner != address(0), "RiseCasino: zero owner");
+        require(newOwner != address(0), "VyreCasino: zero owner");
         owner = newOwner;
     }
 

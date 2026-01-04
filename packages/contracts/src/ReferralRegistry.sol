@@ -5,7 +5,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-interface IRiseTreasury {
+interface IVyreTreasury {
     function payout(
         address to,
         address token,
@@ -36,9 +36,9 @@ contract ReferralRegistry is ReentrancyGuard {
     address public owner;
 
     /// @notice Treasury for payouts
-    IRiseTreasury public treasury;
+    IVyreTreasury public treasury;
 
-    /// @notice Authorized callers (RiseCasino)
+    /// @notice Authorized callers (VyreCasino)
     mapping(address => bool) public authorizedCallers;
 
     /// @notice Direct referrer for each player
@@ -103,7 +103,7 @@ contract ReferralRegistry is ReentrancyGuard {
         require(_owner != address(0), "ReferralRegistry: zero owner");
         require(_treasury != address(0), "ReferralRegistry: zero treasury");
         owner = _owner;
-        treasury = IRiseTreasury(_treasury);
+        treasury = IVyreTreasury(_treasury);
     }
 
     // ==================== PLAYER FUNCTIONS ====================
@@ -262,7 +262,7 @@ contract ReferralRegistry is ReentrancyGuard {
         address _treasury
     ) external onlyOwner {
         require(_treasury != address(0), "ReferralRegistry: zero treasury");
-        treasury = IRiseTreasury(_treasury);
+        treasury = IVyreTreasury(_treasury);
     }
 
     function setSelfReferralAllowed(

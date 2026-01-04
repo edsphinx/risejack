@@ -7,18 +7,18 @@ import { CHIPToken } from "../src/defi/CHIPToken.sol";
 /**
  * @title DeployCHIP
  * @notice Deploy CHIPToken with SAFE multisig as owner
- * 
+ *
  * Required env vars:
  * - DEPLOYER_PRIVATE_KEY: Private key for deployment
  * - RISE_SAFE_ADDRESS: SAFE multisig address (owner of token)
- * 
+ *
  * Run: forge script script/DeployCHIP.s.sol:DeployCHIP --rpc-url https://testnet.riselabs.xyz --broadcast
  */
 contract DeployCHIP is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
-        
+
         // Load SAFE address from env - NEVER hardcode
         address safeOwner = vm.envAddress("RISE_SAFE_ADDRESS");
 

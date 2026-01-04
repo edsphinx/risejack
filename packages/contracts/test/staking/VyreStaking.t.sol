@@ -2,11 +2,11 @@
 pragma solidity ^0.8.20;
 
 import { Test, console } from "forge-std/Test.sol";
-import { RiseCasinoStaking } from "../../src/defi/RiseCasinoStaking.sol";
+import { VyreStaking } from "../../src/defi/VyreStaking.sol";
 import { MockToken } from "../../src/mocks/MockToken.sol";
 
-contract RiseCasinoStakingTest is Test {
-    RiseCasinoStaking staking;
+contract VyreStakingTest is Test {
+    VyreStaking staking;
     MockToken stakingToken;
     MockToken rewardsToken;
 
@@ -22,7 +22,7 @@ contract RiseCasinoStakingTest is Test {
         stakingToken = new MockToken("LP Token", "LP");
         rewardsToken = new MockToken("Reward Chip", "CHIP");
 
-        staking = new RiseCasinoStaking(owner, address(rewardsToken), address(stakingToken));
+        staking = new VyreStaking(owner, address(rewardsToken), address(stakingToken));
 
         // Fund staking contract with rewards
         rewardsToken.transfer(address(staking), REWARD_AMOUNT);

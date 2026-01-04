@@ -2,11 +2,11 @@
 pragma solidity ^0.8.28;
 
 /**
- * @title IRiseGame
+ * @title IVyreGame
  * @notice Interface for all RiseCasino games
  * @dev Games must implement this interface to be registered with RiseCasino
  */
-interface IRiseGame {
+interface IVyreGame {
     // ==================== STRUCTS ====================
 
     /// @notice Bet information

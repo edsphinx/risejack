@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import { Test, console } from "forge-std/Test.sol";
-import { RiseCasinoStaking } from "../../src/defi/RiseCasinoStaking.sol";
+import { VyreStaking } from "../../src/defi/VyreStaking.sol";
 import { MockToken } from "../../src/mocks/MockToken.sol";
 
 /**
@@ -10,7 +10,7 @@ import { MockToken } from "../../src/mocks/MockToken.sol";
  * @notice Handler contract for invariant testing - simulates user actions on Staking
  */
 contract StakingHandler is Test {
-    RiseCasinoStaking public staking;
+    VyreStaking public staking;
     MockToken public stakingToken;
     MockToken public rewardsToken;
 
@@ -38,7 +38,7 @@ contract StakingHandler is Test {
     }
 
     constructor(
-        RiseCasinoStaking _staking,
+        VyreStaking _staking,
         MockToken _stakingToken,
         MockToken _rewardsToken
     ) {
@@ -144,11 +144,11 @@ contract StakingHandler is Test {
 }
 
 /**
- * @title RiseCasinoStakingInvariantTest
+ * @title VyreStakingInvariantTest
  * @notice Invariant tests for RiseCasino Staking contract
  */
-contract RiseCasinoStakingInvariantTest is Test {
-    RiseCasinoStaking public staking;
+contract VyreStakingInvariantTest is Test {
+    VyreStaking public staking;
     MockToken public stakingToken;
     MockToken public rewardsToken;
     StakingHandler public handler;
@@ -159,7 +159,7 @@ contract RiseCasinoStakingInvariantTest is Test {
         stakingToken = new MockToken("LP Token", "LP");
         rewardsToken = new MockToken("CHIP", "CHIP");
 
-        staking = new RiseCasinoStaking(address(this), address(rewardsToken), address(stakingToken));
+        staking = new VyreStaking(address(this), address(rewardsToken), address(stakingToken));
 
         // Fund staking contract with rewards using deal
         deal(address(rewardsToken), address(staking), REWARD_AMOUNT);

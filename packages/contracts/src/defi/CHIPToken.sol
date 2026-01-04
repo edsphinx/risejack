@@ -18,7 +18,7 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 contract CHIPToken is ERC20, ERC20Burnable, ERC20Permit, Ownable {
     constructor(
         address initialOwner
-    ) ERC20("RiseCasino Chip", "CHIP") ERC20Permit("RiseCasino Chip") Ownable(initialOwner) {
+    ) ERC20("Vyre Chip", "CHIP") ERC20Permit("Vyre Chip") Ownable(initialOwner) {
         // Initial supply to owner for liquidity pools
         _mint(initialOwner, 1_000_000_000 * 10 ** decimals()); // 1 Billion start
     }

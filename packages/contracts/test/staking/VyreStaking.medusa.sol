@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import { RiseCasinoStaking } from "../../src/defi/RiseCasinoStaking.sol";
+import { VyreStaking } from "../../src/defi/VyreStaking.sol";
 import { MockToken } from "../../src/mocks/MockToken.sol";
 
 /**
- * @title RiseCasinoStakingMedusaTest
+ * @title VyreStakingMedusaTest
  * @notice Property-based tests for Medusa fuzzer targeting Staking contract
  * @dev All functions prefixed with "property_" are tested by Medusa
  */
-contract RiseCasinoStakingMedusaTest {
-    RiseCasinoStaking public staking;
+contract VyreStakingMedusaTest {
+    VyreStaking public staking;
     MockToken public stakingToken;
     MockToken public rewardsToken;
 
@@ -24,7 +24,7 @@ contract RiseCasinoStakingMedusaTest {
         stakingToken = new MockToken("LP Token", "LP");
         rewardsToken = new MockToken("CHIP", "CHIP");
 
-        staking = new RiseCasinoStaking(address(this), address(rewardsToken), address(stakingToken));
+        staking = new VyreStaking(address(this), address(rewardsToken), address(stakingToken));
 
         // Fund staking contract with rewards
         rewardsToken.transfer(address(staking), REWARD_AMOUNT);

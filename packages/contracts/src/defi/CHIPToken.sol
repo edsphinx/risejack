@@ -24,13 +24,23 @@ contract CHIPToken is ERC20, ERC20Burnable, ERC20Permit, Ownable {
     }
 
     /**
-     * @dev Mint new tokens. Only callable by owner (initially).
-     * In future, ownership will be transferred to the Staking/Game ecosystem.
+     * @dev Mint new tokens. Only callable by owner (CHIPWrapper).
      */
     function mint(
         address to,
         uint256 amount
     ) public onlyOwner {
         _mint(to, amount);
+    }
+
+    /**
+     * @dev Burn tokens from address. Only callable by owner (CHIPWrapper).
+     * Used when users withdraw CHIP for USDC.
+     */
+    function burn(
+        address from,
+        uint256 amount
+    ) public onlyOwner {
+        _burn(from, amount);
     }
 }

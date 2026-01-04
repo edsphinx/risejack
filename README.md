@@ -15,12 +15,12 @@ Rise Blackjack is a fully on-chain casino game that leverages Rise Chain's ultra
 
 ## ⚡ Powered by Rise Chain
 
-| Technology | Usage |
-|------------|-------|
-| **Shreds** | Real-time event streaming for live wins ticker and auto-refresh leaderboard |
-| **Fast VRF** | Provably fair random card generation with sub-second response |
-| **Rise Wallet** | Passkey-based authentication - no seed phrases, instant onboarding |
-| **Session Keys** | Gasless gameplay - players never sign individual transactions |
+| Technology       | Usage                                                                       |
+| ---------------- | --------------------------------------------------------------------------- |
+| **Shreds**       | Real-time event streaming for live wins ticker and auto-refresh leaderboard |
+| **Fast VRF**     | Provably fair random card generation with sub-second response               |
+| **Rise Wallet**  | Passkey-based authentication - no seed phrases, instant onboarding          |
+| **Session Keys** | Gasless gameplay - players never sign individual transactions               |
 
 ### Shreds Integration
 
@@ -128,6 +128,32 @@ risejack/
 ├── turbo.json                  # Build pipeline
 └── package.json                # Workspace configuration
 ```
+
+---
+
+## 💱 DeFi Integration (Uniswap V2)
+
+The project uses **official Uniswap V2 contracts** deployed in separate repositories:
+
+| Repository                                 | Purpose   | Contracts                       |
+| ------------------------------------------ | --------- | ------------------------------- |
+| [`risecasinoswap/`](../risecasinoswap)     | AMM Core  | UniswapV2Factory, UniswapV2Pair |
+| [`risecasinorouter/`](../risecasinorouter) | Periphery | UniswapV2Router02               |
+
+### Deployed Addresses (Rise Testnet)
+
+```bash
+# Check deployment-router-rise_testnet.json for current addresses
+cat ../risecasinorouter/deployment-router-rise_testnet.json
+```
+
+### CHIP/USDC Swap (1:1 Stablecoin Peg)
+
+- CHIP is designed to trade at ~$1 (pegged to USDC via LP)
+- Swaps available via in-app widget
+- 0.3% swap fee (standard Uniswap)
+
+---
 
 ---
 

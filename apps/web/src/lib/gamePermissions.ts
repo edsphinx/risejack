@@ -1,11 +1,12 @@
 /**
  * Game Permissions Configuration
- * Defines session key permissions for RiseJack game
+ * Defines session key permissions for RiseJack game and related contracts
  * Based on Meteoro's gamePermissions.js
  */
 
 import { keccak256, toHex } from 'viem';
 import { getRiseJackAddress } from './contract';
+import { CHIP_FAUCET_ADDRESS } from './faucet';
 
 /**
  * Compute function selector from signature
@@ -14,20 +15,24 @@ export function getFunctionSelector(signature: string): `0x${string}` {
     return keccak256(toHex(signature)).slice(0, 10) as `0x${string}`;
 }
 
-// Contract address - converted to lowercase for Porto compatibility
+// Contract addresses - converted to lowercase for Porto compatibility
 // Porto stores and compares addresses as lowercase strings
-const CONTRACT_ADDRESS = getRiseJackAddress().toLowerCase() as `0x${string}`;
+const RISEJACK_ADDRESS = getRiseJackAddress().toLowerCase() as `0x${string}`;
+const FAUCET_ADDRESS = CHIP_FAUCET_ADDRESS.toLowerCase() as `0x${string}`;
 
 /**
  * Allowed contract calls for session key
  * These functions can be called without user popup confirmation
  */
 export const GAME_CALLS = [
-    { to: CONTRACT_ADDRESS, signature: getFunctionSelector('placeBet()') },
-    { to: CONTRACT_ADDRESS, signature: getFunctionSelector('hit()') },
-    { to: CONTRACT_ADDRESS, signature: getFunctionSelector('stand()') },
-    { to: CONTRACT_ADDRESS, signature: getFunctionSelector('double()') },
-    { to: CONTRACT_ADDRESS, signature: getFunctionSelector('surrender()') },
+    // RiseJack game actions
+    { to: RISEJACK_ADDRESS, signature: getFunctionSelector('placeBet()') },
+    { to: RISEJACK_ADDRESS, signature: getFunctionSelector('hit()') },
+    { to: RISEJACK_ADDRESS, signature: getFunctionSelector('stand()') },
+    { to: RISEJACK_ADDRESS, signature: getFunctionSelector('double()') },
+    { to: RISEJACK_ADDRESS, signature: getFunctionSelector('surrender()') },
+    // Faucet claim
+    { to: FAUCET_ADDRESS, signature: getFunctionSelector('claim()') },
 ];
 
 /**

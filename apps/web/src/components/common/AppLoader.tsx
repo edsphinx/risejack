@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'preact/hooks';
+import { Logo } from '@/components/brand/Logo';
 import './app-loader.css';
 
 interface AppLoaderProps {
@@ -77,18 +78,10 @@ export function AppLoader({ onLoadComplete, minimumDisplayTime = 2000 }: AppLoad
     return (
         <div className="app-loader">
             <div className="app-loader-content">
-                {/* Animated Logo */}
+                {/* Animated Logo - Using existing brand */}
                 <div className="app-loader-logo">
-                    <div className="loader-card card-1">🃏</div>
-                    <div className="loader-card card-2">🎰</div>
-                    <div className="loader-card card-3">💰</div>
+                    <Logo className="loader-brand-logo" />
                 </div>
-
-                {/* Title */}
-                <h1 className="app-loader-title">
-                    <span className="title-rise">RISE</span>
-                    <span className="title-casino">CASINO</span>
-                </h1>
 
                 {/* Progress bar */}
                 <div className="app-loader-progress">

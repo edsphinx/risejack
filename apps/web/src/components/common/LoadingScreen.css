@@ -1,0 +1,154 @@
+/* Loading Screen Styles */
+.loading-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0f0a1e 0%, #1a1035 50%, #0d0818 100%);
+    z-index: 9999;
+}
+
+.loading-bg-glow {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(60px);
+    animation: glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    z-index: 1;
+}
+
+.loading-logo {
+    animation: logo-float 3s ease-in-out infinite;
+}
+
+@keyframes logo-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.animated-logo {
+    width: 120px;
+    height: auto;
+    filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.5));
+}
+
+.loading-spinner {
+    position: relative;
+    width: 60px;
+    height: 60px;
+}
+
+.spinner-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    animation: spin 1.5s linear infinite;
+}
+
+.spinner-ring:nth-child(1) {
+    border-top-color: #8b5cf6;
+    animation-delay: 0s;
+}
+
+.spinner-ring:nth-child(2) {
+    border-right-color: #a78bfa;
+    animation-delay: 0.15s;
+    inset: 5px;
+}
+
+.spinner-ring:nth-child(3) {
+    border-bottom-color: #eab308;
+    animation-delay: 0.3s;
+    inset: 10px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-message {
+    color: #9ca3af;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.loading-cards {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.floating-card {
+    font-size: 2rem;
+    opacity: 0.3;
+    animation: card-float 2s ease-in-out infinite;
+}
+
+.floating-card:nth-child(1) {
+    color: #1a1a1a;
+    animation-delay: 0s;
+}
+
+.floating-card:nth-child(2) {
+    color: #ef4444;
+    animation-delay: 0.3s;
+}
+
+.floating-card:nth-child(3) {
+    color: #ef4444;
+    animation-delay: 0.6s;
+}
+
+.floating-card:nth-child(4) {
+    color: #1a1a1a;
+    animation-delay: 0.9s;
+}
+
+@keyframes card-float {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.3;
+    }
+
+    50% {
+        transform: translateY(-15px) rotate(10deg);
+        opacity: 0.7;
+    }
+}

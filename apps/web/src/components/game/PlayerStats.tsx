@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import { useWallet } from '@/context/WalletContext';
 import { getUserProfile } from '@/lib/api';
+import { getLevelProgress } from '@risejack/shared';
 import './styles/player-stats.css';
 
 interface UserStats {
@@ -15,8 +16,6 @@ interface UserStats {
   level: number;
   displayName?: string;
 }
-
-const XP_PER_LEVEL = 100;
 
 export function PlayerStats() {
   const { address, isConnected } = useWallet();
@@ -75,9 +74,10 @@ export function PlayerStats() {
     return null;
   }
 
-  const currentLevelXp = stats.xp % XP_PER_LEVEL;
-  const progressPercent = (currentLevelXp / XP_PER_LEVEL) * 100;
-  const xpToNext = XP_PER_LEVEL - currentLevelXp;
+  // Use shared exponential level calculation
+  const levelProgress = getLevelProgress(stats.xp);
+  const progressPercent = levelProgress.progress;
+  const xpToNext = levelProgress.xpToNext;
 
   return (
     <div className="player-stats">
@@ -88,7 +88,7 @@ export function PlayerStats() {
       ) : (
         <>
           <div className="player-stats-level">
-            <span className="level-badge">Lv.{stats.level}</span>
+            <span className="level-badge">Lv.{levelProgress.level}</span>
           </div>
           <div className="player-stats-xp">
             <div className="xp-bar-container">

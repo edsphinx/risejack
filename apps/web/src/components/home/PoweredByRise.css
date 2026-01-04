@@ -1,0 +1,117 @@
+/* Powered by Rise Section Styles */
+.powered-by-rise {
+    background: linear-gradient(135deg, rgba(88, 28, 135, 0.15) 0%, rgba(30, 27, 75, 0.95) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 20px;
+    padding: 2rem;
+    margin: 2rem auto;
+    max-width: 900px;
+    text-align: center;
+}
+
+.rise-header {
+    margin-bottom: 1.5rem;
+}
+
+.rise-badge {
+    display: inline-block;
+    background: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    margin-bottom: 0.5rem;
+}
+
+.rise-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #f5f5f5;
+    margin: 0.5rem 0;
+}
+
+.rise-logo {
+    background: linear-gradient(90deg, #8b5cf6 0%, #c4b5fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.rise-subtitle {
+    color: #9ca3af;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.rise-tech-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+@media (max-width: 768px) {
+    .rise-tech-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.tech-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.tech-card:hover {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.3);
+    transform: translateY(-2px);
+}
+
+.tech-icon {
+    font-size: 1.8rem;
+}
+
+.tech-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.tech-name {
+    font-weight: 600;
+    color: #f5f5f5;
+    font-size: 0.9rem;
+}
+
+.tech-value {
+    font-weight: 700;
+    color: #8b5cf6;
+    font-size: 1.2rem;
+}
+
+.tech-desc {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.rise-docs-link {
+    display: inline-block;
+    color: #a78bfa;
+    font-size: 0.85rem;
+    text-decoration: none;
+    margin-top: 0.5rem;
+    transition: color 0.2s ease;
+}
+
+.rise-docs-link:hover {
+    color: #c4b5fd;
+}

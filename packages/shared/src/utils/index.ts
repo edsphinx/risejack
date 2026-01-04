@@ -1,5 +1,8 @@
 import { RANK_NAMES, SUIT_SYMBOLS, type CardDisplay } from '../types';
 
+// Re-export XP utils
+export * from './xp';
+
 /**
  * Convert a card number (0-51) to CardDisplay object
  */

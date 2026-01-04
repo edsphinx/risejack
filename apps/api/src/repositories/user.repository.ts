@@ -9,13 +9,16 @@ import { randomBytes } from 'crypto';
 import prisma from '../db/client';
 import { Prisma } from '@prisma/client';
 import type { User } from '@prisma/client';
+import { BASE_XP, calculateLevelFromXp, getXpRequiredForLevel, getLevelProgress } from '@risejack/shared';
 
 const DEFAULT_CHAIN_ID = 713715; // Rise Testnet
 
-// XP configuration constants
-const XP_PER_LEVEL = 100;
+// XP validation constants
 const MAX_XP_PER_UPDATE = 1000; // Prevent XP manipulation
 const MIN_XP_PER_UPDATE = 0;
+
+// Re-export XP utils for convenience
+export { calculateLevelFromXp, getXpRequiredForLevel, getLevelProgress };
 
 // ==================== READ OPERATIONS ====================
 
@@ -234,13 +237,14 @@ export async function updateUserXp(userId: string, xpToAdd: number): Promise<voi
   }
 
   // Atomic update using single SQL statement to prevent race conditions
-  // This calculates new XP and level in one operation
+  // This calculates new XP and level using sqrt-based exponential formula
+  // Level = FLOOR(SQRT((xp + newXp) / BASE_XP))
   await prisma.$executeRaw(
     Prisma.sql`
       UPDATE "User"
       SET 
         xp = xp + ${validatedXp},
-        level = FLOOR((xp + ${validatedXp}) / ${XP_PER_LEVEL}),
+        level = FLOOR(SQRT((xp + ${validatedXp}) / ${BASE_XP})),
         "lastSeenAt" = NOW()
       WHERE id = ${userId}
     `

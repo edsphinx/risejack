@@ -3,13 +3,18 @@
  * Composes subcomponents, minimal logic in this file
  */
 
+import { useState, useEffect } from 'preact/hooks';
 import { useLocation } from 'wouter-preact';
 import { Logo } from '@/components/brand/Logo';
 import { useWallet } from '@/context/WalletContext';
 import { FeaturedGameCard } from '@/components/home/FeaturedGameCard';
 import { LiveStats } from '@/components/home/LiveStats';
-import { WinsTicker } from '@/components/home/WinsTicker';
+import { LiveWinsTicker } from '@/components/home/LiveWinsTicker';
 import { ComingSoonCard } from '@/components/home/ComingSoonCard';
+import { LeaderboardPreview } from '@/components/home/LeaderboardPreview';
+import { PoweredByRise } from '@/components/home/PoweredByRise';
+import { Footer } from '@/components/common/Footer';
+import { FaucetModal, useFaucetCanClaim } from '@/components/wallet/FaucetModal';
 import './styles/home.css';
 
 // Mock data - in production, fetch from backend/contract
@@ -18,13 +23,6 @@ const LIVE_STATS = {
   totalPot: 4.28,
   biggestWin: 0.89,
 };
-
-const RECENT_WINS = [
-  { address: '0x7a2f...3f4d', amount: 0.52, game: 'Blackjack' },
-  { address: '0xb91c...2c1a', amount: 0.31, game: 'Blackjack' },
-  { address: '0x3e8d...9b2c', amount: 1.24, game: 'Blackjack' },
-  { address: '0x5f1a...7e3b', amount: 0.18, game: 'Blackjack' },
-];
 
 const COMING_SOON_GAMES = [
   { icon: '🎡', title: 'Roulette', description: 'European single-zero' },
@@ -37,8 +35,20 @@ export function Home() {
   const wallet = useWallet();
 
   const navigateToGame = () => setLocation('/risejack');
-  const navigateToSwap = () => setLocation('/swap');
   const navigateToStake = () => setLocation('/stake');
+
+  // Faucet modal state
+  const [faucetOpen, setFaucetOpen] = useState(false);
+  const canClaimFaucet = useFaucetCanClaim();
+
+  // Auto-open faucet modal when user can claim (first time)
+  useEffect(() => {
+    if (canClaimFaucet && wallet.isConnected) {
+      // Small delay to not overwhelm user right after connect
+      const timer = setTimeout(() => setFaucetOpen(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [canClaimFaucet, wallet.isConnected]);
 
   return (
     <div className="home-page">
@@ -68,13 +78,14 @@ export function Home() {
             />
 
             <div className="hero-cta-secondary">
-              <button onClick={navigateToSwap}>💱 Get CHIP</button>
+              <button onClick={() => setFaucetOpen(true)}>🚰 Get CHIP</button>
               <button onClick={navigateToStake}>📈 Earn Yield</button>
             </div>
           </div>
 
           {/* Right - Featured Game */}
           <div className="hero-right">
+            <LeaderboardPreview />
             <FeaturedGameCard
               title="RISEJACK"
               description="Classic Blackjack • Instant Payouts"
@@ -89,8 +100,11 @@ export function Home() {
       {/* Live Stats */}
       <LiveStats {...LIVE_STATS} />
 
-      {/* Recent Wins */}
-      <WinsTicker wins={RECENT_WINS} />
+      {/* Live Wins - Real-time via Shreds WebSocket */}
+      <LiveWinsTicker />
+
+      {/* Powered by Rise - Showcasing Rise Chain tech */}
+      <PoweredByRise />
 
       {/* Coming Soon Games */}
       <section className="games-section">
@@ -101,6 +115,12 @@ export function Home() {
           ))}
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer />
+
+      {/* Faucet Modal */}
+      <FaucetModal isOpen={faucetOpen} onClose={() => setFaucetOpen(false)} />
     </div>
   );
 }

@@ -11,9 +11,12 @@
 
 .hero-section {
   position: relative;
-  padding: 3rem 1rem;
+  padding: 2rem 1rem;
   overflow: hidden;
-  min-height: 80vh;
+  /* Hero height calculated to show ticker at bottom of viewport */
+  /* 100vh - header(60px) - stats(80px) - ticker(50px) - padding */
+  min-height: calc(100vh - 60px - 80px - 50px - 2rem);
+  max-height: calc(100vh - 190px);
   display: flex;
   align-items: center;
 }

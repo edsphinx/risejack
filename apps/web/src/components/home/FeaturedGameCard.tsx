@@ -36,8 +36,6 @@ export function FeaturedGameCard({
           <span>🎮 {playersCount} playing</span>
           <span>💰 {potAmount} ETH pot</span>
         </div>
-
-        <button className="game-card-cta">PLAY NOW →</button>
       </div>
     </div>
   );

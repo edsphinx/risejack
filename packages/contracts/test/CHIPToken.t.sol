@@ -22,7 +22,7 @@ contract CHIPTokenTest is Test {
     // ==================== INITIAL STATE ====================
 
     function test_Name() public view {
-        assertEq(chip.name(), "RiseCasino Chip");
+        assertEq(chip.name(), "Vyre Chip");
     }
 
     function test_Symbol() public view {

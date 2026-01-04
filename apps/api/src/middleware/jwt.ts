@@ -8,8 +8,8 @@ import type { Context, Next } from 'hono';
 import * as AuthService from '../services/auth';
 
 export interface AuthUser {
-    wallet: string;
-    userId?: string;
+  wallet: string;
+  userId?: string;
 }
 
 /**
@@ -17,26 +17,33 @@ export interface AuthUser {
  * Use for protected routes that REQUIRE authentication
  */
 export const jwtAuth = async (c: Context, next: Next) => {
-    const authHeader = c.req.header('Authorization');
+  const authHeader = c.req.header('Authorization');
 
-    if (!authHeader?.startsWith('Bearer ')) {
-        return c.json({ error: 'Authorization required' }, 401);
-    }
+  if (!authHeader?.startsWith('Bearer ')) {
+    return c.json({ error: 'Authorization required' }, 401);
+  }
 
-    const token = authHeader.slice(7);
+  const token = authHeader.slice(7);
+
+  try {
     const payload = await AuthService.verifyToken(token);
 
     if (!payload) {
-        return c.json({ error: 'Invalid or expired token' }, 401);
+      return c.json({ error: 'Invalid or expired token' }, 401);
     }
 
     // Set user on context for use in handlers
     c.set('user', {
-        wallet: payload.wallet,
-        userId: payload.userId,
+      wallet: payload.wallet,
+      userId: payload.userId,
     } as AuthUser);
 
     await next();
+  } catch (error) {
+    // Log error for debugging but don't expose details
+    console.error('JWT verification error:', error);
+    return c.json({ error: 'Invalid or expired token' }, 401);
+  }
 };
 
 /**
@@ -44,26 +51,33 @@ export const jwtAuth = async (c: Context, next: Next) => {
  * Use for routes that work with or without authentication
  */
 export const optionalJwtAuth = async (c: Context, next: Next) => {
-    const authHeader = c.req.header('Authorization');
+  const authHeader = c.req.header('Authorization');
 
-    if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.slice(7);
-        const payload = await AuthService.verifyToken(token);
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7);
 
-        if (payload) {
-            c.set('user', {
-                wallet: payload.wallet,
-                userId: payload.userId,
-            } as AuthUser);
-        }
+    try {
+      const payload = await AuthService.verifyToken(token);
+
+      if (payload) {
+        c.set('user', {
+          wallet: payload.wallet,
+          userId: payload.userId,
+        } as AuthUser);
+      }
+    } catch (error) {
+      // Log error for debugging but don't expose details
+      console.error('Optional JWT verification error:', error);
+      // Continue without setting user context for optional auth
     }
+  }
 
-    await next();
+  await next();
 };
 
 /**
  * Helper to get authenticated user from context
  */
 export const getAuthUser = (c: Context): AuthUser | undefined => {
-    return c.get('user') as AuthUser | undefined;
+  return c.get('user') as AuthUser | undefined;
 };

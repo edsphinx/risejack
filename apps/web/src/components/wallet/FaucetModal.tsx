@@ -145,16 +145,23 @@ interface FaucetSuccessProps {
 }
 
 function FaucetSuccess({ txHash }: FaucetSuccessProps) {
+  // Validate txHash format (should be 66 chars, start with 0x, hex)
+  const isValidTxHash = /^0x[0-9a-fA-F]{64}$/.test(txHash);
+
   return (
     <div className="faucet-success">
       ✅ Claimed!{' '}
-      <a
-        href={`https://explorer.testnet.riselabs.xyz/tx/${txHash}`}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        View TX
-      </a>
+      {isValidTxHash ? (
+        <a
+          href={`https://explorer.testnet.riselabs.xyz/tx/${txHash}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View TX
+        </a>
+      ) : (
+        <span>Transaction completed</span>
+      )}
     </div>
   );
 }
@@ -164,7 +171,9 @@ interface FaucetErrorProps {
 }
 
 function FaucetError({ message }: FaucetErrorProps) {
-  return <div className="faucet-error">❌ {message}</div>;
+  // Sanitize error message to prevent XSS
+  const sanitizedMessage = message.replace(/[<>'"&]/g, '');
+  return <div className="faucet-error">❌ {sanitizedMessage}</div>;
 }
 
 interface FaucetFooterProps {

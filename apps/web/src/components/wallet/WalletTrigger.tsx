@@ -1,12 +1,13 @@
 /**
  * WalletTrigger - The clickable wallet button (presentation only)
- * Shows connection status, balance, and address
+ * Shows connection status, CHIP balance, and address
  */
 
-import { shortenAddress, formatEthBalance } from '@/lib/formatters';
+import { shortenAddress } from '@/lib/formatters';
+import { ChipIcon } from '@/components/icons/ChipIcon';
 
 interface WalletTriggerProps {
-  balance: string;
+  chipBalance: string; // CHIP balance (display formatted)
   address: string;
   hasSessionKey: boolean;
   isOpen: boolean;
@@ -14,7 +15,7 @@ interface WalletTriggerProps {
 }
 
 export function WalletTrigger({
-  balance,
+  chipBalance,
   address,
   hasSessionKey,
   isOpen,
@@ -24,7 +25,11 @@ export function WalletTrigger({
     <button className="wallet-trigger" onClick={onClick}>
       <div className="wallet-trigger-left">
         <span className="wallet-trigger-dot" />
-        <span className="wallet-trigger-balance">{formatEthBalance(balance, 4)}</span>
+        {/* CHIP balance: amount + chip icon */}
+        <span className="wallet-trigger-balance wallet-trigger-chip">
+          <span>{chipBalance}</span>
+          <ChipIcon size={16} />
+        </span>
       </div>
       <div className="wallet-trigger-right">
         <span className="wallet-trigger-address">{shortenAddress(address)}</span>

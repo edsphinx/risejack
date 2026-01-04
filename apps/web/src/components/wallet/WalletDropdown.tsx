@@ -4,11 +4,13 @@
  */
 
 import { formatEthBalance, formatSessionTime } from '@/lib/formatters';
+import { ChipIcon } from '@/components/icons/ChipIcon';
 import type { TimeRemaining } from '@risejack/shared';
 
 interface WalletDropdownProps {
   address: string;
-  balance: string;
+  balance: string; // ETH balance
+  chipBalance: string; // CHIP balance (display formatted)
   hasSessionKey: boolean;
   sessionExpiry: TimeRemaining | null;
   copied: boolean;
@@ -23,6 +25,7 @@ interface WalletDropdownProps {
 export function WalletDropdown({
   address,
   balance,
+  chipBalance,
   hasSessionKey,
   sessionExpiry,
   copied,
@@ -39,6 +42,7 @@ export function WalletDropdown({
       <WalletInfoSection
         address={address}
         balance={balance}
+        chipBalance={chipBalance}
         copied={copied}
         onCopyAddress={onCopyAddress}
       />
@@ -74,11 +78,18 @@ export function WalletDropdown({
 interface WalletInfoSectionProps {
   address: string;
   balance: string;
+  chipBalance: string;
   copied: boolean;
   onCopyAddress: () => void;
 }
 
-function WalletInfoSection({ address, balance, copied, onCopyAddress }: WalletInfoSectionProps) {
+function WalletInfoSection({
+  address,
+  balance,
+  chipBalance,
+  copied,
+  onCopyAddress,
+}: WalletInfoSectionProps) {
   return (
     <div className="dropdown-section">
       <div className="dropdown-section-header">
@@ -93,9 +104,18 @@ function WalletInfoSection({ address, balance, copied, onCopyAddress }: WalletIn
         </button>
       </div>
 
-      <div className="dropdown-balance-row">
-        <span className="dropdown-balance-label">Balance</span>
-        <span className="dropdown-balance-value">{formatEthBalance(balance, 6)}</span>
+      {/* CHIP Balance: amount + chip icon */}
+      <div className="dropdown-balance-row dropdown-balance-chip">
+        <span className="dropdown-balance-label">CHIP Balance</span>
+        <span className="dropdown-balance-value">
+          {chipBalance} <ChipIcon size={18} />
+        </span>
+      </div>
+
+      {/* ETH Balance */}
+      <div className="dropdown-balance-row dropdown-balance-eth">
+        <span className="dropdown-balance-label">ETH Balance</span>
+        <span className="dropdown-balance-value">{formatEthBalance(balance, 6)} Ξ</span>
       </div>
     </div>
   );

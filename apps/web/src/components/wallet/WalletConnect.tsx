@@ -9,6 +9,7 @@ import type { WalletConnectProps } from '@risejack/shared';
 import { WalletTrigger } from './WalletTrigger';
 import { WalletDropdown } from './WalletDropdown';
 import { clearRiseWalletData } from '@/lib/walletRecovery';
+import { useChipBalance } from '@/hooks/useChipBalance';
 import './styles/header.css';
 import './styles/desktop-dropdown.css';
 
@@ -31,6 +32,9 @@ export function WalletConnect({
   const [copied, setCopied] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Get CHIP balance
+  const { displayBalance: chipBalance } = useChipBalance();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -76,7 +80,7 @@ export function WalletConnect({
     }
   };
 
-  // Get formatted balance string
+  // Get formatted ETH balance string
   const balanceString = balance !== null ? formatBalance() : null;
 
   // Not connected state
@@ -105,7 +109,7 @@ export function WalletConnect({
   return (
     <div className="wallet-section" ref={dropdownRef}>
       <WalletTrigger
-        balance={balanceString || ''}
+        chipBalance={chipBalance}
         address={account || ''}
         hasSessionKey={hasSessionKey}
         isOpen={dropdownOpen}
@@ -116,6 +120,7 @@ export function WalletConnect({
         <WalletDropdown
           address={account || ''}
           balance={balanceString || ''}
+          chipBalance={chipBalance}
           hasSessionKey={hasSessionKey}
           sessionExpiry={sessionExpiry}
           copied={copied}

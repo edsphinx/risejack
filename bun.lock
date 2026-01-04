@@ -19,7 +19,7 @@
       },
     },
     "apps/api": {
-      "name": "@risejack/api",
+      "name": "@vyrejack/api",
       "version": "0.1.0",
       "dependencies": {
         "@prisma/adapter-pg": "^7.2.0",
@@ -38,7 +38,7 @@
       },
     },
     "apps/web": {
-      "name": "@risejack/web",
+      "name": "@vyrejack/web",
       "version": "0.1.0",
       "dependencies": {
         "@vyrejack/shared": "workspace:*",
@@ -62,7 +62,7 @@
       },
     },
     "packages/contracts": {
-      "name": "@risejack/contracts",
+      "name": "@vyrejack/contracts",
       "version": "0.1.0",
       "devDependencies": {
         "@nomicfoundation/hardhat-verify": "^2.0.0",
@@ -430,12 +430,6 @@
 
     "@prisma/studio-core": ["@prisma/studio-core@0.9.0", "", { "peerDependencies": { "@types/react": "^18.0.0 || ^19.0.0", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" } }, "sha512-xA2zoR/ADu/NCSQuriBKTh6Ps4XjU0bErkEcgMfnSGh346K1VI7iWKnoq1l2DoxUqiddPHIEWwtxJ6xCHG6W7g=="],
 
-    "@risejack/api": ["@risejack/api@workspace:apps/api"],
-
-    "@risejack/contracts": ["@risejack/contracts@workspace:packages/contracts"],
-
-    "@risejack/web": ["@risejack/web@workspace:apps/web"],
-
     "@rollup/pluginutils": ["@rollup/pluginutils@4.2.1", "", { "dependencies": { "estree-walker": "^2.0.1", "picomatch": "^2.2.2" } }, "sha512-iKnFXr7NkdZAIHiIWE+BX5ULi/ucVFYWD6TbAV+rZctiRTY2PL6tsIKhoIOaoskiWAkgu+VsbXgUVDNLHf+InQ=="],
 
     "@rollup/rollup-android-arm-eabi": ["@rollup/rollup-android-arm-eabi@4.54.0", "", { "os": "android", "cpu": "arm" }, "sha512-OywsdRHrFvCdvsewAInDKCNyR3laPA2mc9bRYJ6LBp5IyvF3fvXbbNR0bSzHlZVFtn6E0xw2oZlyjg4rKCVcng=="],
@@ -582,7 +576,13 @@
 
     "@typescript-eslint/visitor-keys": ["@typescript-eslint/visitor-keys@8.51.0", "", { "dependencies": { "@typescript-eslint/types": "8.51.0", "eslint-visitor-keys": "^4.2.1" } }, "sha512-mM/JRQOzhVN1ykejrvwnBRV3+7yTKK8tVANVN3o1O0t0v7o+jqdVu9crPy5Y9dov15TJk/FTIgoUGHrTOVL3Zg=="],
 
+    "@vyrejack/api": ["@vyrejack/api@workspace:apps/api"],
+
+    "@vyrejack/contracts": ["@vyrejack/contracts@workspace:packages/contracts"],
+
     "@vyrejack/shared": ["@vyrejack/shared@workspace:packages/shared"],
+
+    "@vyrejack/web": ["@vyrejack/web@workspace:apps/web"],
 
     "@wagmi/core": ["@wagmi/core@3.0.2", "", { "dependencies": { "eventemitter3": "5.0.1", "mipd": "0.0.7", "zustand": "5.0.0" }, "peerDependencies": { "@tanstack/query-core": ">=5.0.0", "typescript": ">=5.7.3", "viem": "2.x" }, "optionalPeers": ["@tanstack/query-core", "typescript"] }, "sha512-Aj5AI3M7XXRQZ9eAO6WWZ/A1yZoNAj46ZcPAwZSsKGa84LpX3Ff30s73RJhi8hSSVvaot9+yCeneLXMLRh63hw=="],
 

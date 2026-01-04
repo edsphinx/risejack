@@ -4,8 +4,8 @@
  */
 
 const STORAGE_KEYS = {
-  WALLET: 'risejack.wallet',
-  SESSION_KEY_PREFIX: 'risejack.sessionKey',
+  WALLET: 'vyrejack.wallet',
+  SESSION_KEY_PREFIX: 'vyrejack.sessionKey',
 } as const;
 
 // Types
@@ -103,7 +103,7 @@ function clearAllSessionKeys(): void {
 
 // ==================== Game History Storage ====================
 
-const GAME_HISTORY_KEY = 'risejack.gameHistory';
+const GAME_HISTORY_KEY = 'vyrejack.gameHistory';
 const MAX_HISTORY_ENTRIES = 50;
 
 export interface GameHistoryEntry {

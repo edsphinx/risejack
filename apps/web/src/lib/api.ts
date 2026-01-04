@@ -5,7 +5,7 @@
  * Uses VITE_API_URL from environment.
  */
 
-import type { LogEventRequest, EventType } from '@risejack/shared';
+import type { LogEventRequest, EventType } from '@vyrejack/shared';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 

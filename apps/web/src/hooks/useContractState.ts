@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback, useRef } from 'preact/hooks';
 import { ContractService } from '@/services';
 import { logger } from '@/lib/logger';
-import type { GameData, HandValue, BetLimits } from '@risejack/shared';
+import type { GameData, HandValue, BetLimits } from '@vyrejack/shared';
 
 export interface UseContractStateReturn {
   gameData: GameData | null;
@@ -56,15 +56,15 @@ export function useContractState(address: `0x${string}` | null): UseContractStat
         state: gd?.state,
         stateLabel: gd
           ? [
-            'Idle',
-            'WaitingVRF',
-            'PlayerTurn',
-            'DealerTurn',
-            'PlayerWin',
-            'DealerWin',
-            'Push',
-            'Blackjack',
-          ][gd.state]
+              'Idle',
+              'WaitingVRF',
+              'PlayerTurn',
+              'DealerTurn',
+              'PlayerWin',
+              'DealerWin',
+              'Push',
+              'Blackjack',
+            ][gd.state]
           : 'null',
         playerCards: gd?.playerCards,
         bet: gd?.bet?.toString(),

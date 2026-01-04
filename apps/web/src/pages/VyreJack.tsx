@@ -1,11 +1,11 @@
 import { GameBoard } from '@/components/game/GameBoard';
 import { useWallet } from '@/context/WalletContext';
 
-export function RiseJack() {
+export function VyreJack() {
   const wallet = useWallet();
 
   return (
-    <div className="risejack-page relative">
+    <div className="vyrejack-page relative">
       <GameBoard />
 
       {/* Connection Overlay - shown when wallet not connected */}
@@ -15,7 +15,7 @@ export function RiseJack() {
             <div className="text-6xl mb-6">🃏</div>
             <h2 className="text-3xl font-black mb-4 text-white">Connect to Play</h2>
             <p className="text-gray-400 mb-8">
-              Connect your Rise Wallet to join the table and start playing RiseJack.
+              Connect your Rise Wallet to join the table and start playing VyreJack.
             </p>
             <button
               onClick={wallet.connect}
@@ -31,4 +31,4 @@ export function RiseJack() {
   );
 }
 
-export default RiseJack;
+export default VyreJack;

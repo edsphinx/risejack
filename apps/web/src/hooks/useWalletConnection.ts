@@ -14,7 +14,7 @@ import {
 } from '@/lib/walletRecovery';
 
 // Storage key
-const WALLET_STORAGE_KEY = 'risejack.wallet';
+const WALLET_STORAGE_KEY = 'vyrejack.wallet';
 
 // Number of failures before showing recovery modal
 const FAILURE_THRESHOLD = 2;

@@ -14,10 +14,10 @@ import {
   createSessionKey,
 } from '@/services/sessionKeyManager';
 import { ErrorService } from '@/services';
-import { RISEJACK_ABI, getRiseJackAddress } from '@/lib/contract';
+import { VYREJACK_ABI, getVyreJackAddress } from '@/lib/contract';
 import { logger } from '@/lib/logger';
 import { logEvent } from '@/lib/api';
-import type { BetLimits, GameResult } from '@risejack/shared';
+import type { BetLimits, GameResult } from '@vyrejack/shared';
 
 // Valid game action types
 type GameActionName = 'placeBet' | 'hit' | 'stand' | 'double' | 'surrender';
@@ -63,7 +63,7 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const contractAddress = useMemo(() => getRiseJackAddress(), []);
+  const contractAddress = useMemo(() => getVyreJackAddress(), []);
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -270,7 +270,7 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
 
       try {
         const data = encodeFunctionData({
-          abi: RISEJACK_ABI,
+          abi: VYREJACK_ABI,
           functionName,
         });
 
@@ -447,7 +447,7 @@ export function useGameActions(config: GameActionsConfig): UseGameActionsReturn 
 
     try {
       const data = encodeFunctionData({
-        abi: RISEJACK_ABI,
+        abi: VYREJACK_ABI,
         functionName: 'cancelTimedOutGame',
         args: [address],
       });

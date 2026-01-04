@@ -1,8 +1,8 @@
 // Auto-generated - DO NOT EDIT
-// Synced from: packages/contracts/out/RiseJack.sol/RiseJack.json
+// Synced from: packages/contracts/out/VyreJack.sol/VyreJack.json
 // Last updated: 2025-12-30T05:34:03.033Z
 
-export const RISEJACK_ABI = [
+export const VYREJACK_ABI = [
   {
     "type": "constructor",
     "inputs": [
@@ -391,7 +391,7 @@ export const RISEJACK_ABI = [
       {
         "name": "state",
         "type": "uint8",
-        "internalType": "enum RiseJack.GameState"
+        "internalType": "enum VyreJack.GameState"
       },
       {
         "name": "timestamp",
@@ -463,7 +463,7 @@ export const RISEJACK_ABI = [
       {
         "name": "",
         "type": "tuple",
-        "internalType": "struct RiseJack.Game",
+        "internalType": "struct VyreJack.Game",
         "components": [
           {
             "name": "player",
@@ -488,7 +488,7 @@ export const RISEJACK_ABI = [
           {
             "name": "state",
             "type": "uint8",
-            "internalType": "enum RiseJack.GameState"
+            "internalType": "enum VyreJack.GameState"
           },
           {
             "name": "timestamp",
@@ -891,7 +891,7 @@ export const RISEJACK_ABI = [
       {
         "name": "requestType",
         "type": "uint8",
-        "internalType": "enum RiseJack.RequestType"
+        "internalType": "enum VyreJack.RequestType"
       },
       {
         "name": "fulfilled",
@@ -1035,7 +1035,7 @@ export const RISEJACK_ABI = [
         "name": "requestType",
         "type": "uint8",
         "indexed": false,
-        "internalType": "enum RiseJack.RequestType"
+        "internalType": "enum VyreJack.RequestType"
       }
     ],
     "anonymous": false
@@ -1137,7 +1137,7 @@ export const RISEJACK_ABI = [
         "name": "result",
         "type": "uint8",
         "indexed": false,
-        "internalType": "enum RiseJack.GameState"
+        "internalType": "enum VyreJack.GameState"
       },
       {
         "name": "payout",
@@ -1408,4 +1408,4 @@ export const RISEJACK_ABI = [
   }
 ] as const;
 
-export type RiseJackABI = typeof RISEJACK_ABI;
+export type VyreJackABI = typeof VYREJACK_ABI;

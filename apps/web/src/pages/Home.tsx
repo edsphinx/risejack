@@ -34,7 +34,7 @@ export function Home() {
   const [, setLocation] = useLocation();
   const wallet = useWallet();
 
-  const navigateToGame = () => setLocation('/risejack');
+  const navigateToGame = () => setLocation('/vyrejack');
   const navigateToStake = () => setLocation('/stake');
 
   // Faucet modal state
@@ -87,7 +87,7 @@ export function Home() {
           <div className="hero-right">
             <LeaderboardPreview />
             <FeaturedGameCard
-              title="RISEJACK"
+              title="VYREJACK"
               description="Classic Blackjack • Instant Payouts"
               playersCount={LIVE_STATS.playersOnline}
               potAmount={LIVE_STATS.totalPot}
@@ -144,7 +144,7 @@ function HeroCTA({ isConnected, isConnecting, onConnect, onPlay }: HeroCTAProps)
 
   return (
     <button className="hero-cta-primary" onClick={onPlay}>
-      🎲 Play RiseJack Now
+      🎲 Play VyreJack Now
     </button>
   );
 }

@@ -1,11 +1,11 @@
 /**
  * Contract Service - All contract read operations
- * Handles reading state from the RiseJack smart contract.
+ * Handles reading state from the VyreJack smart contract.
  */
 
 import { createPublicClient, http } from 'viem';
-import { RISEJACK_ABI, getRiseJackAddress, riseTestnet } from '@/lib/contract';
-import type { GameData, HandValue, BetLimits, GameState } from '@risejack/shared';
+import { VYREJACK_ABI, getVyreJackAddress, riseTestnet } from '@/lib/contract';
+import type { GameData, HandValue, BetLimits, GameState } from '@vyrejack/shared';
 
 // Shared public client - created once
 const publicClient = createPublicClient({
@@ -13,7 +13,7 @@ const publicClient = createPublicClient({
   transport: http(),
 });
 
-const contractAddress = getRiseJackAddress();
+const contractAddress = getVyreJackAddress();
 
 /**
  * Get the current game state for a player
@@ -21,7 +21,7 @@ const contractAddress = getRiseJackAddress();
 async function getGameState(playerAddress: `0x${string}`): Promise<GameData> {
   const game = await publicClient.readContract({
     address: contractAddress,
-    abi: RISEJACK_ABI,
+    abi: VYREJACK_ABI,
     functionName: 'getGameState',
     args: [playerAddress],
   });
@@ -43,7 +43,7 @@ async function getGameState(playerAddress: `0x${string}`): Promise<GameData> {
 async function getPlayerHandValue(playerAddress: `0x${string}`): Promise<HandValue> {
   const [value, isSoft] = await publicClient.readContract({
     address: contractAddress,
-    abi: RISEJACK_ABI,
+    abi: VYREJACK_ABI,
     functionName: 'getPlayerHandValue',
     args: [playerAddress],
   });
@@ -57,7 +57,7 @@ async function getPlayerHandValue(playerAddress: `0x${string}`): Promise<HandVal
 async function getDealerVisibleValue(playerAddress: `0x${string}`): Promise<number> {
   return publicClient.readContract({
     address: contractAddress,
-    abi: RISEJACK_ABI,
+    abi: VYREJACK_ABI,
     functionName: 'getDealerVisibleValue',
     args: [playerAddress],
   });
@@ -70,12 +70,12 @@ async function getBetLimits(): Promise<BetLimits> {
   const [min, max] = await Promise.all([
     publicClient.readContract({
       address: contractAddress,
-      abi: RISEJACK_ABI,
+      abi: VYREJACK_ABI,
       functionName: 'minBet',
     }),
     publicClient.readContract({
       address: contractAddress,
-      abi: RISEJACK_ABI,
+      abi: VYREJACK_ABI,
       functionName: 'maxBet',
     }),
   ]);
@@ -141,13 +141,13 @@ async function getCooldownRemaining(playerAddress: `0x${string}`): Promise<numbe
     const [lastTimestamp, cooldownDuration] = await Promise.all([
       publicClient.readContract({
         address: contractAddress,
-        abi: RISEJACK_ABI,
+        abi: VYREJACK_ABI,
         functionName: 'lastGameTimestamp',
         args: [playerAddress],
       }),
       publicClient.readContract({
         address: contractAddress,
-        abi: RISEJACK_ABI,
+        abi: VYREJACK_ABI,
         functionName: 'gameCooldown',
       }),
     ]);

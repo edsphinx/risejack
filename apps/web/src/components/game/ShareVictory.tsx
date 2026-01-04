@@ -35,7 +35,7 @@ export function ShareVictory({ winAmount, outcome, walletAddress }: ShareVictory
     const amountText = winAmount ? ` ${winAmount} ETH` : '';
 
     const tweetText = encodeURIComponent(
-      `${emoji} ${outcomeText}${amountText} playing RiseJack!\n\nOn-chain Blackjack with provably fair VRF 🎲\n\nPlay now 👇\n${window.location.origin}`
+      `${emoji} ${outcomeText}${amountText} playing VyreJack!\n\nOn-chain Blackjack with provably fair VRF 🎲\n\nPlay now 👇\n${window.location.origin}`
     );
 
     // Open Twitter intent with popup blocker fallback

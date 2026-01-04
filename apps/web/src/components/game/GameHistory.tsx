@@ -25,8 +25,8 @@ export function GameHistory({ onHistoryChange }: GameHistoryProps) {
   // Refresh when parent signals
   useEffect(() => {
     const refresh = () => setHistory(StorageService.getGameHistory());
-    window.addEventListener('risejack:gameEnd', refresh);
-    return () => window.removeEventListener('risejack:gameEnd', refresh);
+    window.addEventListener('vyrejack:gameEnd', refresh);
+    return () => window.removeEventListener('vyrejack:gameEnd', refresh);
   }, []);
 
   const handleClear = () => {

@@ -13,7 +13,7 @@ import { ShareVictory } from './ShareVictory';
 import { ContractService } from '@/services';
 import { StorageService } from '@/services/storage.service';
 import { logger } from '@/lib/logger';
-import { GameState, type GameResult } from '@risejack/shared';
+import { GameState, type GameResult } from '@vyrejack/shared';
 import './styles/casino-table.css';
 import './styles/action-buttons.css';
 
@@ -106,7 +106,7 @@ export function GameBoard() {
           payout: result.payout ? game.formatBet(result.payout) : '0',
         });
         // Notify history component
-        window.dispatchEvent(new CustomEvent('risejack:gameEnd'));
+        window.dispatchEvent(new CustomEvent('vyrejack:gameEnd'));
 
         // Trigger XP gain popup based on result
         const xpAmounts: Record<string, number> = {
@@ -120,7 +120,7 @@ export function GameBoard() {
         showXPGain(xpGained);
 
         // Dispatch event for PlayerStats to refresh
-        window.dispatchEvent(new CustomEvent('risecasino:gameend'));
+        window.dispatchEvent(new CustomEvent('vyrecasino:gameend'));
       }
     }
   }, [game.lastGameResult, game.gameData, betAmount, game.formatBet, showXPGain]);

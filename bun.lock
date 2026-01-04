@@ -24,7 +24,7 @@
       "dependencies": {
         "@prisma/adapter-pg": "^7.2.0",
         "@prisma/client": "^7.2.0",
-        "@risejack/shared": "workspace:*",
+        "@vyrejack/shared": "workspace:*",
         "hono": "^4.6.14",
         "hono-rate-limiter": "^0.5.3",
         "pg": "^8.16.3",
@@ -41,7 +41,7 @@
       "name": "@risejack/web",
       "version": "0.1.0",
       "dependencies": {
-        "@risejack/shared": "workspace:*",
+        "@vyrejack/shared": "workspace:*",
         "ox": "0.9.8",
         "preact": "^10.25.4",
         "rise-wallet": "0.3.0",
@@ -92,7 +92,7 @@
       },
     },
     "packages/shared": {
-      "name": "@risejack/shared",
+      "name": "@vyrejack/shared",
       "version": "0.1.0",
       "devDependencies": {
         "typescript": "^5.7.2",
@@ -418,8 +418,6 @@
 
     "@risejack/contracts": ["@risejack/contracts@workspace:packages/contracts"],
 
-    "@risejack/shared": ["@risejack/shared@workspace:packages/shared"],
-
     "@risejack/web": ["@risejack/web@workspace:apps/web"],
 
     "@rollup/pluginutils": ["@rollup/pluginutils@4.2.1", "", { "dependencies": { "estree-walker": "^2.0.1", "picomatch": "^2.2.2" } }, "sha512-iKnFXr7NkdZAIHiIWE+BX5ULi/ucVFYWD6TbAV+rZctiRTY2PL6tsIKhoIOaoskiWAkgu+VsbXgUVDNLHf+InQ=="],
@@ -561,6 +559,8 @@
     "@typescript-eslint/utils": ["@typescript-eslint/utils@8.51.0", "", { "dependencies": { "@eslint-community/eslint-utils": "^4.7.0", "@typescript-eslint/scope-manager": "8.51.0", "@typescript-eslint/types": "8.51.0", "@typescript-eslint/typescript-estree": "8.51.0" }, "peerDependencies": { "eslint": "^8.57.0 || ^9.0.0", "typescript": ">=4.8.4 <6.0.0" } }, "sha512-11rZYxSe0zabiKaCP2QAwRf/dnmgFgvTmeDTtZvUvXG3UuAdg/GU02NExmmIXzz3vLGgMdtrIosI84jITQOxUA=="],
 
     "@typescript-eslint/visitor-keys": ["@typescript-eslint/visitor-keys@8.51.0", "", { "dependencies": { "@typescript-eslint/types": "8.51.0", "eslint-visitor-keys": "^4.2.1" } }, "sha512-mM/JRQOzhVN1ykejrvwnBRV3+7yTKK8tVANVN3o1O0t0v7o+jqdVu9crPy5Y9dov15TJk/FTIgoUGHrTOVL3Zg=="],
+
+    "@vyrejack/shared": ["@vyrejack/shared@workspace:packages/shared"],
 
     "@wagmi/core": ["@wagmi/core@3.0.2", "", { "dependencies": { "eventemitter3": "5.0.1", "mipd": "0.0.7", "zustand": "5.0.0" }, "peerDependencies": { "@tanstack/query-core": ">=5.0.0", "typescript": ">=5.7.3", "viem": "2.x" }, "optionalPeers": ["@tanstack/query-core", "typescript"] }, "sha512-Aj5AI3M7XXRQZ9eAO6WWZ/A1yZoNAj46ZcPAwZSsKGa84LpX3Ff30s73RJhi8hSSVvaot9+yCeneLXMLRh63hw=="],
 

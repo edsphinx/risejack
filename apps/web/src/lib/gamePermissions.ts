@@ -1,11 +1,11 @@
 /**
  * Game Permissions Configuration
- * Defines session key permissions for RiseJack game and related contracts
+ * Defines session key permissions for VyreJack game and related contracts
  * Based on Meteoro's gamePermissions.js
  */
 
 import { keccak256, toHex } from 'viem';
-import { getRiseJackAddress } from './contract';
+import { getVyreJackAddress } from './contract';
 import { CHIP_FAUCET_ADDRESS } from './faucet';
 
 /**
@@ -17,7 +17,7 @@ export function getFunctionSelector(signature: string): `0x${string}` {
 
 // Contract addresses - converted to lowercase for Porto compatibility
 // Porto stores and compares addresses as lowercase strings
-const RISEJACK_ADDRESS = getRiseJackAddress().toLowerCase() as `0x${string}`;
+const VYREJACK_ADDRESS = getVyreJackAddress().toLowerCase() as `0x${string}`;
 const FAUCET_ADDRESS = CHIP_FAUCET_ADDRESS.toLowerCase() as `0x${string}`;
 
 /**
@@ -25,12 +25,12 @@ const FAUCET_ADDRESS = CHIP_FAUCET_ADDRESS.toLowerCase() as `0x${string}`;
  * These functions can be called without user popup confirmation
  */
 export const GAME_CALLS = [
-    // RiseJack game actions
-    { to: RISEJACK_ADDRESS, signature: getFunctionSelector('placeBet()') },
-    { to: RISEJACK_ADDRESS, signature: getFunctionSelector('hit()') },
-    { to: RISEJACK_ADDRESS, signature: getFunctionSelector('stand()') },
-    { to: RISEJACK_ADDRESS, signature: getFunctionSelector('double()') },
-    { to: RISEJACK_ADDRESS, signature: getFunctionSelector('surrender()') },
+    // VyreJack game actions
+    { to: VYREJACK_ADDRESS, signature: getFunctionSelector('placeBet()') },
+    { to: VYREJACK_ADDRESS, signature: getFunctionSelector('hit()') },
+    { to: VYREJACK_ADDRESS, signature: getFunctionSelector('stand()') },
+    { to: VYREJACK_ADDRESS, signature: getFunctionSelector('double()') },
+    { to: VYREJACK_ADDRESS, signature: getFunctionSelector('surrender()') },
     // Faucet claim
     { to: FAUCET_ADDRESS, signature: getFunctionSelector('claim()') },
 ];

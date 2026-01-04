@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useRef } from 'preact/hooks';
-import type { WalletConnectProps } from '@risejack/shared';
+import type { WalletConnectProps } from '@vyrejack/shared';
 import { WalletTrigger } from './WalletTrigger';
 import { WalletDropdown } from './WalletDropdown';
 import { clearRiseWalletData } from '@/lib/walletRecovery';

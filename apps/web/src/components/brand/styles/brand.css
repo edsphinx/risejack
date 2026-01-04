@@ -1,4 +1,4 @@
-/* ==================== RISEJACK BRAND STYLES ==================== */
+/* ==================== VYREJACK BRAND STYLES ==================== */
 /* DEGEN UX branding with CSS-only animations */
 
 /* ==================== LOGO VARIANTS ==================== */
@@ -152,9 +152,9 @@
   }
 }
 
-/* ==================== RISEJACK LOADER ==================== */
+/* ==================== VYREJACK LOADER ==================== */
 
-.risejack-loader {
+.vyrejack-loader {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -406,7 +406,7 @@
     height: 32px;
   }
 
-  .risejack-loader {
+  .vyrejack-loader {
     min-height: 200px;
   }
 }

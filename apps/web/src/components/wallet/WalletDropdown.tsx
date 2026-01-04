@@ -5,7 +5,7 @@
 
 import { formatEthBalance, formatSessionTime } from '@/lib/formatters';
 import { ChipIcon } from '@/components/icons/ChipIcon';
-import type { TimeRemaining } from '@risejack/shared';
+import type { TimeRemaining } from '@vyrejack/shared';
 
 interface WalletDropdownProps {
   address: string;

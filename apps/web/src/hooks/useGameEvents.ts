@@ -8,9 +8,9 @@
 
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { createPublicClient, webSocket } from 'viem';
-import { riseTestnet, RISEJACK_ABI, RISEJACK_ADDRESS } from '@/lib/contract';
+import { riseTestnet, VYREJACK_ABI, VYREJACK_ADDRESS } from '@/lib/contract';
 import { logger } from '@/lib/logger';
-import type { GameResult } from '@risejack/shared';
+import type { GameResult } from '@vyrejack/shared';
 
 // Rise Chain Testnet WebSocket URL
 const WSS_URL = 'wss://testnet.riselabs.xyz/ws';
@@ -81,8 +81,8 @@ export function useGameEvents(
 
       // Watch for GameEnded events
       const unwatchGameEnded = client.watchContractEvent({
-        address: RISEJACK_ADDRESS,
-        abi: RISEJACK_ABI,
+        address: VYREJACK_ADDRESS,
+        abi: VYREJACK_ABI,
         eventName: 'GameEnded',
         args: {
           player: playerAddress,
@@ -151,8 +151,8 @@ export function useGameEvents(
 
       // Watch for CardDealt events (to keep hand cache updated in real-time)
       const unwatchCardDealt = client.watchContractEvent({
-        address: RISEJACK_ADDRESS,
-        abi: RISEJACK_ABI,
+        address: VYREJACK_ADDRESS,
+        abi: VYREJACK_ABI,
         eventName: 'CardDealt',
         args: {
           player: playerAddress,

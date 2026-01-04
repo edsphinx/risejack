@@ -8,7 +8,7 @@ export async function clearRiseWalletData(): Promise<boolean> {
         const keysToRemove: string[] = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && (key.includes('porto') || key.includes('rise') || key.includes('wagmi') || key.includes('risejack'))) {
+            if (key && (key.includes('porto') || key.includes('rise') || key.includes('wagmi') || key.includes('vyrejack'))) {
                 keysToRemove.push(key);
             }
         }
@@ -33,7 +33,7 @@ export async function clearRiseWalletData(): Promise<boolean> {
         if (wasBlocked) {
             console.log('🔧 IndexedDB blocked - will retry deletion after reload...');
             // Set a flag so we know to delete on next load
-            sessionStorage.setItem('risejack.pendingDbDelete', 'true');
+            sessionStorage.setItem('vyrejack.pendingDbDelete', 'true');
             // Return true - the modal will trigger a reload
             return true;
         }
@@ -51,8 +51,8 @@ export async function clearRiseWalletData(): Promise<boolean> {
  * Call this on app startup
  */
 export async function checkPendingDbDelete(): Promise<void> {
-    if (sessionStorage.getItem('risejack.pendingDbDelete') === 'true') {
-        sessionStorage.removeItem('risejack.pendingDbDelete');
+    if (sessionStorage.getItem('vyrejack.pendingDbDelete') === 'true') {
+        sessionStorage.removeItem('vyrejack.pendingDbDelete');
         console.log('🔧 Completing pending database deletion...');
 
         // Now the old connections should be closed, try again
@@ -98,7 +98,7 @@ export function isCorruptedStateError(error: unknown): boolean {
 /**
  * Storage key for tracking failed attempts
  */
-const FAILED_ATTEMPTS_KEY = 'risejack.walletFailedAttempts';
+const FAILED_ATTEMPTS_KEY = 'vyrejack.walletFailedAttempts';
 const FAILURE_WINDOW_MS = 60000; // 1 minute window
 
 interface FailureRecord {

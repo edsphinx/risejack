@@ -10,7 +10,7 @@ import { GAME_PERMISSIONS } from '@/lib/gamePermissions';
 import { logger } from '@/lib/logger';
 
 // Storage prefix
-const STORAGE_PREFIX = 'risejack.sessionKey';
+const STORAGE_PREFIX = 'vyrejack.sessionKey';
 
 // Session key expiry (1 hour)
 const SESSION_EXPIRY_SECONDS = 3600;

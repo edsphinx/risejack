@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import { useWallet } from '@/context/WalletContext';
 import { getUserProfile } from '@/lib/api';
-import { getLevelProgress } from '@risejack/shared';
+import { getLevelProgress } from '@vyrejack/shared';
 import './styles/player-stats.css';
 
 interface UserStats {
@@ -62,9 +62,9 @@ export function PlayerStats() {
       timeoutId = setTimeout(fetchStats, 1000);
     };
 
-    window.addEventListener('risecasino:gameend', handleGameEnd);
+    window.addEventListener('vyrecasino:gameend', handleGameEnd);
     return () => {
-      window.removeEventListener('risecasino:gameend', handleGameEnd);
+      window.removeEventListener('vyrecasino:gameend', handleGameEnd);
       if (timeoutId) clearTimeout(timeoutId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

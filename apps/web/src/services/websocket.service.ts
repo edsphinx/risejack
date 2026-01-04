@@ -1,5 +1,5 @@
 /**
- * WebSocket Event Service for RiseJack
+ * WebSocket Event Service for VyreJack
  *
  * Provides real-time event monitoring using WebSocket and shreds,
  * similar to Meteoro's implementation.
@@ -7,9 +7,9 @@
 
 import { createPublicClient, webSocket, type Log } from 'viem';
 import { shredActions } from 'shreds/viem';
-import { riseTestnet, RISEJACK_ABI, RISEJACK_ADDRESS } from '@/lib/contract';
+import { riseTestnet, VYREJACK_ABI, VYREJACK_ADDRESS } from '@/lib/contract';
 import { logger } from '@/lib/logger';
-import type { GameResult } from '@risejack/shared';
+import type { GameResult } from '@vyrejack/shared';
 
 // Rise Chain Testnet WebSocket URL
 const WSS_URL = 'wss://testnet.riselabs.xyz/ws';
@@ -84,8 +84,8 @@ export function startGameEventMonitoring(
 
   try {
     const unwatch = client.watchContractEvent({
-      address: RISEJACK_ADDRESS,
-      abi: RISEJACK_ABI,
+      address: VYREJACK_ADDRESS,
+      abi: VYREJACK_ABI,
       eventName: 'GameEnded',
       args: {
         player: playerAddress,

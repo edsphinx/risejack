@@ -9,11 +9,11 @@ import { useWalletConnection } from './useWalletConnection';
 import { useSessionKey } from './useSessionKey';
 import { getProvider } from '@/lib/riseWallet';
 import { logger } from '@/lib/logger';
-import type { UseRiseWalletReturn } from '@risejack/shared';
+import type { UseRiseWalletReturn } from '@vyrejack/shared';
 
 // LocalStorage keys
-const ONBOARDING_SEEN_KEY = 'risejack_fastmode_onboarding_seen';
-const SKIP_FASTMODE_KEY = 'risejack_skip_fastmode';
+const ONBOARDING_SEEN_KEY = 'vyrejack_fastmode_onboarding_seen';
+const SKIP_FASTMODE_KEY = 'vyrejack_skip_fastmode';
 
 export function useRiseWallet(): UseRiseWalletReturn {
   const connection = useWalletConnection();

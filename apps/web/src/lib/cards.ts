@@ -1,5 +1,5 @@
-import { RANK_NAMES, SUIT_SYMBOLS } from '@risejack/shared';
-import type { CardDisplay } from '@risejack/shared';
+import { RANK_NAMES, SUIT_SYMBOLS } from '@vyrejack/shared';
+import type { CardDisplay } from '@vyrejack/shared';
 
 const MAX_CARD_INDEX = 51; // 52 cards (0-51)
 

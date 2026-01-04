@@ -7,7 +7,7 @@ import type {
   SessionExpiryModalProps,
   FastModeOnboardingProps,
   SessionWarningProps,
-} from '@risejack/shared';
+} from '@vyrejack/shared';
 import './styles/session-modal.css';
 
 export function SessionExpiryModal({ onExtend, onSkip, isLoading }: SessionExpiryModalProps) {
@@ -31,7 +31,9 @@ export function SessionExpiryModal({ onExtend, onSkip, isLoading }: SessionExpir
     >
       <div className="session-modal-content">
         <div className="session-modal-icon">⏰</div>
-        <h2 id="session-expiry-title" className="session-modal-title">Session Expired</h2>
+        <h2 id="session-expiry-title" className="session-modal-title">
+          Session Expired
+        </h2>
         <p className="session-modal-subtitle">
           Your Fast Mode session has ended. Extend it to continue playing without transaction
           popups.
@@ -78,7 +80,9 @@ export function FastModeOnboarding({ onEnable, onSkip, isLoading }: FastModeOnbo
       <div className="onboarding-modal-content">
         <div className="onboarding-header">
           <div className="onboarding-icon">🚀</div>
-          <h2 id="onboarding-title" className="onboarding-title">Enable Fast Mode</h2>
+          <h2 id="onboarding-title" className="onboarding-title">
+            Enable Fast Mode
+          </h2>
           <p className="onboarding-subtitle">Play without interruptions</p>
         </div>
 

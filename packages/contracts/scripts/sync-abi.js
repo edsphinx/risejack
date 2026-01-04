@@ -18,13 +18,13 @@ const rootDir = join(__dirname, '..');
 const webDir = join(rootDir, '..', '..', 'apps', 'web');
 
 // Source: Compiled contract output
-const sourceFile = join(rootDir, 'out', 'RiseJack.sol', 'RiseJack.json');
+const sourceFile = join(rootDir, 'out', 'VyreJack.sol', 'VyreJack.json');
 
 // Destination: Web app lib folder
 const destDir = join(webDir, 'src', 'lib', 'abi');
-const destFile = join(destDir, 'RiseJack.json');
+const destFile = join(destDir, 'VyreJack.json');
 
-console.log('📋 Syncing RiseJack ABI to frontend...');
+console.log('📋 Syncing VyreJack ABI to frontend...');
 console.log(`   Source: ${sourceFile}`);
 console.log(`   Dest:   ${destFile}`);
 
@@ -36,8 +36,8 @@ try {
   const abiOnly = {
     abi: compiled.abi,
     // Also include some useful metadata
-    contractName: 'RiseJack',
-    sourceName: 'src/RiseJack.sol',
+    contractName: 'VyreJack',
+    sourceName: 'src/VyreJack.sol',
     // Include compiler version for reference
     compiler: compiled.metadata?.compiler?.version || 'unknown',
     lastUpdated: new Date().toISOString(),
@@ -54,15 +54,15 @@ try {
 
   // Also export as TypeScript for type safety
   const tsContent = `// Auto-generated - DO NOT EDIT
-// Synced from: packages/contracts/out/RiseJack.sol/RiseJack.json
+// Synced from: packages/contracts/out/VyreJack.sol/VyreJack.json
 // Last updated: ${new Date().toISOString()}
 
-export const RISEJACK_ABI = ${JSON.stringify(compiled.abi, null, 2)} as const;
+export const VYREJACK_ABI = ${JSON.stringify(compiled.abi, null, 2)} as const;
 
-export type RiseJackABI = typeof RISEJACK_ABI;
+export type VyreJackABI = typeof VYREJACK_ABI;
 `;
 
-  writeFileSync(join(destDir, 'RiseJack.ts'), tsContent);
+  writeFileSync(join(destDir, 'VyreJack.ts'), tsContent);
   console.log('✅ TypeScript ABI generated!');
 } catch (error) {
   console.error('❌ Failed to sync ABI:', error.message);

@@ -52,7 +52,7 @@ export function FaucetModal({ isOpen, onClose }: FaucetModalProps) {
           <span className="faucet-title">CHIP Faucet</span>
         </div>
 
-        <p className="faucet-description">Get free CHIP tokens to play RiseJack on testnet!</p>
+        <p className="faucet-description">Get free CHIP tokens to play VyreJack on testnet!</p>
 
         {!isConnected ? (
           <FaucetNotConnected />

@@ -1,7 +1,7 @@
 import './styles/brand.css';
 
 /**
- * RiseJack Logo Component
+ * VyreJack Logo Component
  *
  * DEGEN UX branded logo with CSS animations
  * Variants: full (desktop), compact (mobile), icon (minimal)
@@ -9,19 +9,19 @@ import './styles/brand.css';
 
 interface LogoProps {
   size?: 'full' | 'compact' | 'icon';
-  variant?: 'risejack' | 'risecasino';
+  variant?: 'vyrejack' | 'vyrecasino';
   animated?: boolean;
   className?: string;
 }
 
 export function Logo({
   size = 'full',
-  variant = 'risejack',
+  variant = 'vyrejack',
   animated = true,
   className = '',
 }: LogoProps) {
   const animatedClass = animated ? 'logo-animated' : '';
-  const text = variant === 'risecasino' ? 'RISECASINO' : 'RISEJACK';
+  const text = variant === 'vyrecasino' ? 'VYRECASINO' : 'VYREJACK';
 
   if (size === 'icon') {
     return (
@@ -70,7 +70,7 @@ function SpadeIcon() {
       viewBox="0 0 100 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="RiseJack Spade"
+      aria-label="VyreJack Spade"
     >
       <defs>
         <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -97,14 +97,14 @@ function SpadeIcon() {
 }
 
 /**
- * RiseJack Loader Component
+ * VyreJack Loader Component
  *
  * CSS-only loading animation (no Framer Motion)
  * Inspired by VeriFi loader pattern
  */
-export function RiseJackLoader({ message = 'DEALING...' }: { message?: string }) {
+export function VyreJackLoader({ message = 'DEALING...' }: { message?: string }) {
   return (
-    <div className="risejack-loader">
+    <div className="vyrejack-loader">
       {/* Outer rotating ring */}
       <div className="loader-ring">
         <div className="loader-dot" />

@@ -13,7 +13,7 @@ import {
   type SessionKeyData,
 } from '@/services/sessionKeyManager';
 import { logger } from '@/lib/logger';
-import type { TimeRemaining } from '@risejack/shared';
+import type { TimeRemaining } from '@vyrejack/shared';
 
 export interface UseSessionKeyReturn {
   hasSessionKey: boolean;

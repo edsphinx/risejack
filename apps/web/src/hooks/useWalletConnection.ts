@@ -76,36 +76,38 @@ export function useWalletConnection(): UseWalletConnectionReturn {
       if (!savedWallet) return;
 
       try {
-        // Import and wait for Porto's zustand store to hydrate from IndexedDB
-        // This is critical for session key persistence - without this, Porto hasn't
-        // loaded the account state and will return "provider disconnected" errors
+        // Import Rise Wallet and wait for hydration
         const { getRiseWallet, waitForHydration } = await import('@/lib/riseWallet');
         await waitForHydration();
 
         const rw = getRiseWallet();
 
-        // Access Porto's hydrated zustand state DIRECTLY instead of calling wallet_connect
-        // wallet_connect is interactive (prompts for PIN), but after hydration,
-        // the accounts are already in zustand state from IndexedDB
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const state = (rw._internal.store as any).getState();
-        const hydratedAccounts = state?.accounts as Array<{ address: `0x${string}` }> | undefined;
+        // Use eth_accounts (not wallet_connect) to check for existing session
+        // eth_accounts is NON-INTERACTIVE - it returns accounts silently if already authorized
+        // This is the Meteoro pattern that enables "keyless" experience
+        const accounts = await (
+          rw.provider as {
+            request: (args: { method: string }) => Promise<`0x${string}`[]>;
+          }
+        ).request({
+          method: 'eth_accounts',
+        });
 
-        if (hydratedAccounts && hydratedAccounts.length > 0) {
-          const restoredAddress = hydratedAccounts[0].address;
+        if (accounts && accounts.length > 0) {
+          const restoredAddress = accounts[0];
           // Verify it matches our saved address
           if (restoredAddress.toLowerCase() === savedWallet.address.toLowerCase()) {
-            logger.log('🔗 Wallet silently restored from Porto state:', restoredAddress);
+            logger.log('🔗 Wallet silently restored via eth_accounts:', restoredAddress);
             setAddress(restoredAddress);
             setIsConnected(true);
             clearConnectionFailures();
             return;
           } else {
-            logger.log('🔗 Different account in Porto state, clearing saved wallet');
+            logger.log('🔗 Different account returned, clearing saved wallet');
             removeWallet();
           }
         } else {
-          logger.log('🔗 No accounts in Porto hydrated state, session expired');
+          logger.log('🔗 No accounts from eth_accounts, session not available');
           // Don't remove saved wallet - user can manually reconnect
         }
       } catch (err) {

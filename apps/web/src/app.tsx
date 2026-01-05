@@ -11,7 +11,7 @@ import { ModalErrorBoundary } from './components/common/ErrorBoundary';
 import { PageLoader } from './components/common/PageLoader';
 import { AppLoader } from './components/common/AppLoader';
 import { PlayerStats } from './components/game/PlayerStats';
-import { safeParseNumber } from './lib/formatters';
+import { safeParseNumber, formatSessionTime } from './lib/formatters';
 import './components/wallet/styles/mobile-header.css';
 
 // Lazy-loaded pages - each becomes a separate chunk
@@ -146,7 +146,7 @@ function Header() {
                         <div className="session-key-actions">
                           {wallet.sessionExpiry && !wallet.sessionExpiry.expired && (
                             <span className="session-key-time">
-                              {wallet.sessionExpiry.hours}h {wallet.sessionExpiry.minutes}m
+                              {formatSessionTime(wallet.sessionExpiry)}
                             </span>
                           )}
                           <button

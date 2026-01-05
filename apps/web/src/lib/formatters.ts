@@ -49,6 +49,7 @@ export function formatEthBalance(
 
 /**
  * Format session time remaining
+ * For permanent sessions (>30 days), shows "Permanent" instead of huge hour counts
  */
 export function formatSessionTime(time: {
     hours: number;
@@ -57,6 +58,17 @@ export function formatSessionTime(time: {
     expired: boolean;
 } | null): string {
     if (!time || time.expired) return 'Expired';
+
+    // For sessions with more than 720 hours (30 days), show "Permanent"
+    if (time.hours >= 720) return '✓ Permanent';
+
+    // For sessions with more than 24 hours but less than 30 days, show days
+    if (time.hours >= 24) {
+        const days = Math.floor(time.hours / 24);
+        return `${days}d remaining`;
+    }
+
+    // For shorter sessions, show hours and minutes
     const parts: string[] = [];
     if (time.hours > 0) parts.push(`${time.hours}h`);
     if (time.minutes > 0) parts.push(`${time.minutes}m`);

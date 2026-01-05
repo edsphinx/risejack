@@ -42,12 +42,12 @@ export function SessionExpiryModal({ onExtend, onSkip, isLoading }: SessionExpir
         <div className="session-modal-benefit">
           <span className="session-modal-benefit-icon">⚡</span>
           <span className="session-modal-benefit-text">
-            Instant gameplay - no wallet confirmations for 1 hour
+            Instant gameplay - no wallet confirmations for 30 days
           </span>
         </div>
 
         <button className="session-modal-cta" onClick={onExtend} disabled={isLoading}>
-          {isLoading ? <>⏳ Activating...</> : <>🔑 Extend Session (1 hour)</>}
+          {isLoading ? <>⏳ Activating...</> : <>🔑 Extend Session (30 days)</>}
         </button>
 
         <button className="session-modal-skip" onClick={onSkip}>
@@ -108,8 +108,10 @@ export function FastModeOnboarding({ onEnable, onSkip, isLoading }: FastModeOnbo
           <div className="onboarding-feature">
             <span className="onboarding-feature-icon">⏱️</span>
             <div className="onboarding-feature-text">
-              <div className="onboarding-feature-title">1-Hour Sessions</div>
-              <div className="onboarding-feature-desc">Auto-expires for your security</div>
+              <div className="onboarding-feature-title">30-Day Sessions</div>
+              <div className="onboarding-feature-desc">
+                Stay logged in - recover anytime via social login
+              </div>
             </div>
           </div>
         </div>

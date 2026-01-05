@@ -12,8 +12,15 @@ import { logger } from '@/lib/logger';
 // Storage prefix
 const STORAGE_PREFIX = 'vyrejack.sessionKey';
 
-// Session key expiry (1 hour)
-const SESSION_EXPIRY_SECONDS = 3600;
+// Session key expiry - 30 days for "keyless" experience
+// Users can always recover via social login if needed
+const SESSION_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30 days = 2,592,000 seconds
+
+// Flag to indicate long-duration mode (affects UI behavior)
+export const SESSION_KEY_LONG_DURATION = true;
+
+// Threshold for showing expiry warnings (24 hours before expiry)
+export const EXPIRY_WARNING_THRESHOLD_HOURS = 24;
 
 // Module-level cache
 let activeKeyPair: SessionKeyData | null = null;

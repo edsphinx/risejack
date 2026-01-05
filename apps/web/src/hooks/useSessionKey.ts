@@ -56,9 +56,13 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
     restoreAndValidate();
   }, [address]);
 
-  // Update timer periodically
+  // Update timer periodically - less frequently for long-duration keys
   useEffect(() => {
     if (!sessionData) return;
+
+    // Update every minute if more than 1 hour remaining, every second if less
+    const remaining = getSessionKeyTimeRemaining(sessionData);
+    const intervalMs = remaining.hours > 1 ? 60000 : 1000;
 
     const interval = setInterval(() => {
       if (!isSessionKeyValid(sessionData)) {
@@ -68,10 +72,10 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
         // Force re-render to update time remaining
         setSessionData({ ...sessionData });
       }
-    }, 1000);
+    }, intervalMs);
 
     return () => clearInterval(interval);
-  }, [sessionData?.publicKey]);
+  }, [sessionData?.publicKey, sessionData?.expiry]);
 
   const hasSessionKey = Boolean(sessionData && isSessionKeyValid(sessionData));
 

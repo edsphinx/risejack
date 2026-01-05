@@ -144,7 +144,7 @@ function SessionKeySection({
           <div>
             <div className="dropdown-session-label">Fast Mode</div>
             <div className="dropdown-session-desc">
-              {hasSessionKey ? 'Active - no popups!' : 'Enable for instant gameplay'}
+              {hasSessionKey ? 'Active' : 'Enable for instant gameplay'}
             </div>
           </div>
         </div>

@@ -136,9 +136,7 @@ function Header() {
                         <div>
                           <div className="session-key-label">Fast Mode</div>
                           <div className="session-key-status">
-                            {wallet.hasSessionKey
-                              ? 'Active - no popups!'
-                              : 'Enable for instant gameplay'}
+                            {wallet.hasSessionKey ? 'Active' : 'Enable for instant gameplay'}
                           </div>
                         </div>
                       </div>

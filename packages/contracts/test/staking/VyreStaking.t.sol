@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import { Test, console } from "forge-std/Test.sol";
-import { VyreStaking } from "../../src/defi/VyreStaking.sol";
+import { VyreStaking } from "../../src/tokens/defi/VyreStaking.sol";
 import { MockToken } from "../../src/mocks/MockToken.sol";
 
 contract VyreStakingTest is Test {

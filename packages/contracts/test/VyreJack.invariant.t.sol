@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { Test, console } from "forge-std/Test.sol";
-import { VyreJack } from "../src/VyreJack.sol";
+import { VyreJackETH } from "../src/games/standalone/VyreJackETH.sol";
 import { IVRFCoordinator } from "../src/interfaces/IVRFCoordinator.sol";
 
 /**
@@ -11,12 +11,12 @@ import { IVRFCoordinator } from "../src/interfaces/IVRFCoordinator.sol";
  */
 contract MockVRFCoordinatorForInvariant is IVRFCoordinator {
     uint256 public requestId;
-    VyreJack public game;
+    VyreJackETH public game;
 
     function setGame(
         address _game
     ) external {
-        game = VyreJack(payable(_game));
+        game = VyreJackETH(payable(_game));
     }
 
     function requestRandomNumbers(
@@ -37,11 +37,11 @@ contract MockVRFCoordinatorForInvariant is IVRFCoordinator {
 }
 
 /**
- * @title VyreJackHandler
+ * @title VyreJackETHHandler
  * @notice Handler contract for invariant testing - simulates player actions
  */
-contract VyreJackHandler is Test {
-    VyreJack public risejack;
+contract VyreJackETHHandler is Test {
+    VyreJackETH public risejack;
     address[] public players;
 
     uint256 public ghost_totalBetsPlaced;
@@ -50,7 +50,7 @@ contract VyreJackHandler is Test {
     uint256 public ghost_gamesEnded;
 
     constructor(
-        VyreJack _risejack
+        VyreJackETH _risejack
     ) {
         risejack = _risejack;
 
@@ -69,8 +69,8 @@ contract VyreJackHandler is Test {
         address player = players[playerSeed % players.length];
         amount = bound(amount, risejack.minBet(), risejack.maxBet());
 
-        VyreJack.Game memory game = risejack.getGameState(player);
-        if (game.state != VyreJack.GameState.Idle) return;
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        if (game.state != VyreJackETH.GameState.Idle) return;
 
         uint256 balanceBefore = player.balance;
         if (balanceBefore < amount) return;
@@ -87,8 +87,8 @@ contract VyreJackHandler is Test {
     ) external {
         address player = players[playerSeed % players.length];
 
-        VyreJack.Game memory game = risejack.getGameState(player);
-        if (game.state != VyreJack.GameState.PlayerTurn) return;
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        if (game.state != VyreJackETH.GameState.PlayerTurn) return;
 
         vm.prank(player);
         try risejack.hit() { } catch { }
@@ -99,8 +99,8 @@ contract VyreJackHandler is Test {
     ) external {
         address player = players[playerSeed % players.length];
 
-        VyreJack.Game memory game = risejack.getGameState(player);
-        if (game.state != VyreJack.GameState.PlayerTurn) return;
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        if (game.state != VyreJackETH.GameState.PlayerTurn) return;
 
         vm.prank(player);
         try risejack.stand() { } catch { }
@@ -111,8 +111,8 @@ contract VyreJackHandler is Test {
     ) external {
         address player = players[playerSeed % players.length];
 
-        VyreJack.Game memory game = risejack.getGameState(player);
-        if (game.state != VyreJack.GameState.PlayerTurn) return;
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        if (game.state != VyreJackETH.GameState.PlayerTurn) return;
         if (game.playerCards.length != 2) return;
 
         vm.prank(player);
@@ -129,23 +129,23 @@ contract VyreJackHandler is Test {
 }
 
 /**
- * @title VyreJackInvariantTest
- * @notice Invariant tests for VyreJack contract
+ * @title VyreJackETHInvariantTest
+ * @notice Invariant tests for VyreJackETH contract
  */
-contract VyreJackInvariantTest is Test {
-    VyreJack public risejack;
+contract VyreJackETHInvariantTest is Test {
+    VyreJackETH public risejack;
     MockVRFCoordinatorForInvariant public mockVRF;
-    VyreJackHandler public handler;
+    VyreJackETHHandler public handler;
 
     function setUp() public {
         mockVRF = new MockVRFCoordinatorForInvariant();
-        risejack = new VyreJack(address(mockVRF));
+        risejack = new VyreJackETH(address(mockVRF), address(this));
         mockVRF.setGame(address(risejack));
 
         // Fund the house
         vm.deal(address(risejack), 1000 ether);
 
-        handler = new VyreJackHandler(risejack);
+        handler = new VyreJackETHHandler(risejack);
 
         // Target only the handler for invariant testing
         targetContract(address(handler));
@@ -180,9 +180,9 @@ contract VyreJackInvariantTest is Test {
         uint256 count = handler.getPlayersCount();
 
         for (uint256 i = 0; i < count; i++) {
-            VyreJack.Game memory game = risejack.getGameState(handler.players(i));
+            VyreJackETH.Game memory game = risejack.getGameState(handler.players(i));
 
-            if (game.state != VyreJack.GameState.Idle) {
+            if (game.state != VyreJackETH.GameState.Idle) {
                 assertTrue(game.timestamp > 0, "Active game must have timestamp");
                 assertTrue(game.bet > 0, "Active game must have bet");
             }

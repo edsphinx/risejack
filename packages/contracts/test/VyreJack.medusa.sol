@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { VyreJack } from "../src/VyreJack.sol";
+import { VyreJackETH } from "../src/games/standalone/VyreJackETH.sol";
 import { IVRFCoordinator } from "../src/interfaces/IVRFCoordinator.sol";
 
 /**
@@ -10,13 +10,13 @@ import { IVRFCoordinator } from "../src/interfaces/IVRFCoordinator.sol";
  */
 contract AutoFulfillVRF is IVRFCoordinator {
     uint256 public requestId;
-    VyreJack public game;
+    VyreJackETH public game;
     uint256 public seed;
 
     function setGame(
         address _game
     ) external {
-        game = VyreJack(payable(_game));
+        game = VyreJackETH(payable(_game));
     }
 
     function requestRandomNumbers(
@@ -42,8 +42,8 @@ contract AutoFulfillVRF is IVRFCoordinator {
  * @notice Property-based tests for Medusa fuzzer
  * @dev All functions prefixed with "property_" are tested by Medusa
  */
-contract VyreJackMedusaTest {
-    VyreJack public risejack;
+contract VyreJackETHMedusaTest {
+    VyreJackETH public risejack;
     AutoFulfillVRF public vrf;
 
     // Ghost variables for tracking
@@ -53,7 +53,7 @@ contract VyreJackMedusaTest {
 
     constructor() payable {
         vrf = new AutoFulfillVRF();
-        risejack = new VyreJack(address(vrf));
+        risejack = new VyreJackETH(address(vrf), address(this));
         vrf.setGame(address(risejack));
 
         // Fund the house
@@ -67,8 +67,8 @@ contract VyreJackMedusaTest {
     ) external payable {
         amount = _bound(amount, risejack.minBet(), risejack.maxBet());
 
-        VyreJack.Game memory game = risejack.getGameState(msg.sender);
-        if (game.state != VyreJack.GameState.Idle) return;
+        VyreJackETH.Game memory game = risejack.getGameState(msg.sender);
+        if (game.state != VyreJackETH.GameState.Idle) return;
 
         if (address(this).balance < amount) return;
 
@@ -79,30 +79,30 @@ contract VyreJackMedusaTest {
     }
 
     function hit() external {
-        VyreJack.Game memory game = risejack.getGameState(msg.sender);
-        if (game.state != VyreJack.GameState.PlayerTurn) return;
+        VyreJackETH.Game memory game = risejack.getGameState(msg.sender);
+        if (game.state != VyreJackETH.GameState.PlayerTurn) return;
 
         try risejack.hit() { } catch { }
     }
 
     function stand() external {
-        VyreJack.Game memory game = risejack.getGameState(msg.sender);
-        if (game.state != VyreJack.GameState.PlayerTurn) return;
+        VyreJackETH.Game memory game = risejack.getGameState(msg.sender);
+        if (game.state != VyreJackETH.GameState.PlayerTurn) return;
 
         try risejack.stand() { } catch { }
     }
 
     function surrender() external {
-        VyreJack.Game memory game = risejack.getGameState(msg.sender);
-        if (game.state != VyreJack.GameState.PlayerTurn) return;
+        VyreJackETH.Game memory game = risejack.getGameState(msg.sender);
+        if (game.state != VyreJackETH.GameState.PlayerTurn) return;
         if (game.playerCards.length != 2) return;
 
         try risejack.surrender() { } catch { }
     }
 
     function doubleDown() external payable {
-        VyreJack.Game memory game = risejack.getGameState(msg.sender);
-        if (game.state != VyreJack.GameState.PlayerTurn) return;
+        VyreJackETH.Game memory game = risejack.getGameState(msg.sender);
+        if (game.state != VyreJackETH.GameState.PlayerTurn) return;
         if (game.playerCards.length != 2) return;
 
         uint256 bet = game.bet;
@@ -173,8 +173,8 @@ contract VyreJackMedusaTest {
      * @notice Property: Active games must have non-zero bet
      */
     function property_activeGamesHaveBet() external view returns (bool) {
-        VyreJack.Game memory game = risejack.getGameState(msg.sender);
-        if (game.state != VyreJack.GameState.Idle) {
+        VyreJackETH.Game memory game = risejack.getGameState(msg.sender);
+        if (game.state != VyreJackETH.GameState.Idle) {
             return game.bet > 0;
         }
         return true;

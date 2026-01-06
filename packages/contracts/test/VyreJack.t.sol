@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { Test, console } from "forge-std/Test.sol";
-import { VyreJack } from "../src/VyreJack.sol";
+import { VyreJackETH } from "../src/games/standalone/VyreJackETH.sol";
 import { IVRFCoordinator } from "../src/interfaces/IVRFCoordinator.sol";
 
 /**
@@ -31,13 +31,14 @@ contract MockVRFCoordinator is IVRFCoordinator {
 
 /**
  * @title VyreJackTest
- * @notice Test suite for VyreJack contract with VRF
+ * @notice Test suite for VyreJackETH contract with VRF
  */
-contract VyreJackTest is Test {
-    VyreJack public risejack;
+contract VyreJackETHTest is Test {
+    VyreJackETH public risejack;
     MockVRFCoordinator public mockVRF;
 
     address public player = address(0x1);
+    address public treasury = address(0x999);
     address public vrfCoordinator;
 
     function setUp() public {
@@ -45,8 +46,8 @@ contract VyreJackTest is Test {
         mockVRF = new MockVRFCoordinator();
         vrfCoordinator = address(mockVRF);
 
-        // Deploy Blackjack with mock VRF coordinator (dependency injection)
-        risejack = new VyreJack(vrfCoordinator);
+        // Deploy Blackjack with mock VRF coordinator and treasury
+        risejack = new VyreJackETH(vrfCoordinator, treasury);
 
         // Fund accounts
         vm.deal(player, 10 ether);
@@ -62,10 +63,11 @@ contract VyreJackTest is Test {
         vm.prank(player);
         risejack.placeBet{ value: 0.01 ether }();
 
-        VyreJack.Game memory game = risejack.getGameState(player);
+        VyreJackETH.Game memory game = risejack.getGameState(player);
         assertEq(game.player, player);
-        assertEq(game.bet, 0.01 ether);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.WaitingForDeal));
+        // Bet stored is net of 2% house fee: 0.01 * 98% = 0.0098 ether
+        assertEq(game.bet, 0.0098 ether);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.WaitingForDeal));
     }
 
     function test_RevertOnBelowMinBet() public {
@@ -107,8 +109,8 @@ contract VyreJackTest is Test {
         vm.prank(vrfCoordinator);
         risejack.rawFulfillRandomNumbers(1, randomNumbers);
 
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.PlayerTurn));
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.PlayerTurn));
         assertEq(game.playerCards.length, 2);
         assertEq(game.dealerCards.length, 2);
     }
@@ -129,13 +131,14 @@ contract VyreJackTest is Test {
         vm.prank(vrfCoordinator);
         risejack.rawFulfillRandomNumbers(1, randomNumbers);
 
-        // Player should have received 3:2 payout
-        // Payout: 0.01 * 1.5 + 0.01 = 0.025 ether
-        assertEq(player.balance, playerBalanceBefore + 0.025 ether);
+        // Player should have received 3:2 payout on netBet
+        // netBet = 0.01 * 0.98 = 0.0098 ether
+        // Payout: 0.0098 * 1.5 + 0.0098 = 0.0245 ether
+        assertEq(player.balance, playerBalanceBefore + 0.0245 ether);
 
         // Game should be reset
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.Idle));
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.Idle));
     }
 
     function test_DealerBlackjack() public {
@@ -158,8 +161,8 @@ contract VyreJackTest is Test {
         assertEq(player.balance, playerBalanceBefore);
 
         // Game should be reset
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.Idle));
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.Idle));
     }
 
     function test_BothBlackjack() public {
@@ -178,8 +181,8 @@ contract VyreJackTest is Test {
         vm.prank(vrfCoordinator);
         risejack.rawFulfillRandomNumbers(1, randomNumbers);
 
-        // Push - player gets bet back
-        assertEq(player.balance, playerBalanceBefore + 0.01 ether);
+        // Push - player gets netBet back (0.0098 ether)
+        assertEq(player.balance, playerBalanceBefore + 0.0098 ether);
     }
 
     // ==================== HIT TESTS ====================
@@ -202,8 +205,8 @@ contract VyreJackTest is Test {
         vm.prank(player);
         risejack.hit();
 
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.WaitingForHit));
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.WaitingForHit));
 
         // VRF callback for hit (requestId = 2)
         uint256[] memory hitCard = new uint256[](1);
@@ -213,7 +216,7 @@ contract VyreJackTest is Test {
         risejack.rawFulfillRandomNumbers(2, hitCard);
 
         game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.PlayerTurn));
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.PlayerTurn));
         assertEq(game.playerCards.length, 3);
     }
 
@@ -247,8 +250,8 @@ contract VyreJackTest is Test {
         // Player busted, loses bet
         assertEq(player.balance, playerBalanceBefore);
 
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.Idle));
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.Idle));
     }
 
     // ==================== STAND TESTS ====================
@@ -272,8 +275,8 @@ contract VyreJackTest is Test {
         risejack.stand();
 
         // Dealer has 16, must hit
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.DealerTurn));
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.DealerTurn));
     }
 
     // ==================== SURRENDER TEST ====================
@@ -298,12 +301,12 @@ contract VyreJackTest is Test {
         vm.prank(player);
         risejack.surrender();
 
-        // Should get half bet back
-        assertEq(player.balance, playerBalanceBefore + 0.005 ether);
+        // Should get half of netBet back (0.0098 / 2 = 0.0049 ether)
+        assertEq(player.balance, playerBalanceBefore + 0.0049 ether);
 
         // Game should be reset
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.Idle));
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.Idle));
     }
 
     // ==================== HAND VALUE TESTS ====================
@@ -418,14 +421,15 @@ contract VyreJackTest is Test {
         vm.prank(vrfCoordinator);
         risejack.rawFulfillRandomNumbers(1, initialCards);
 
-        // Double down
+        // Double down - must send netBet amount (0.0098 ether)
         vm.prank(player);
-        risejack.double{ value: 0.01 ether }();
+        risejack.double{ value: 0.0098 ether }();
 
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(game.bet, 0.02 ether);
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        // Total bet = netBet + netBet = 0.0098 + 0.0098 = 0.0196 ether
+        assertEq(game.bet, 0.0196 ether);
         assertEq(game.isDoubled, true);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.WaitingForHit));
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.WaitingForHit));
     }
 
     function test_DoubleDownMustMatchBet() public {
@@ -442,6 +446,7 @@ contract VyreJackTest is Test {
         risejack.rawFulfillRandomNumbers(1, initialCards);
 
         vm.prank(player);
+        // Must match netBet (0.0098 ether), not msg.value
         vm.expectRevert("Must match original bet");
         risejack.double{ value: 0.005 ether }();
     }
@@ -574,8 +579,8 @@ contract VyreJackTest is Test {
         vm.prank(vrfCoordinator);
         risejack.rawFulfillRandomNumbers(2, dealerCards);
 
-        // Player wins (2:1 payout)
-        assertEq(player.balance, playerBalanceBefore + 0.2 ether);
+        // Player wins (2:1 payout on netBet 0.098 ether)
+        assertEq(player.balance, playerBalanceBefore + 0.196 ether);
     }
 
     function test_DealerWinsFullGame() public {
@@ -622,8 +627,8 @@ contract VyreJackTest is Test {
         vm.prank(player);
         risejack.stand();
 
-        // Push - bet returned
-        assertEq(player.balance, playerBalanceBefore + 0.1 ether);
+        // Push - netBet returned (0.098 ether)
+        assertEq(player.balance, playerBalanceBefore + 0.098 ether);
     }
 
     // ==================== PLAYER WITHDRAW TEST ====================
@@ -649,7 +654,9 @@ contract VyreJackTest is Test {
         risejack.rawFulfillRandomNumbers(1, randomNumbers);
 
         // Payout should have failed, check pending withdrawal
-        uint256 expectedPayout = (0.01 ether * 150) / 100 + 0.01 ether; // 0.025 ether
+        // netBet = 0.01 * 0.98 = 0.0098 ether
+        // Blackjack payout = 0.0098 * 1.5 + 0.0098 = 0.0245 ether
+        uint256 expectedPayout = 0.0245 ether;
         uint256 pending = risejack.pendingWithdrawals(rejecterAddr);
         assertEq(pending, expectedPayout, "Pending withdrawal should equal failed payout");
 
@@ -691,12 +698,12 @@ contract VyreJackTest is Test {
         // Anyone can cancel timed out game
         risejack.cancelTimedOutGame(player);
 
-        // Player gets full refund
-        assertEq(player.balance, playerBalanceBefore + 0.1 ether);
+        // Player gets netBet refund (0.1 * 0.98 = 0.098 ether)
+        assertEq(player.balance, playerBalanceBefore + 0.098 ether);
 
         // Game reset
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.Idle));
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.Idle));
     }
 
     function test_CannotCancelActiveGame() public {
@@ -727,8 +734,8 @@ contract VyreJackTest is Test {
         risejack.rawFulfillRandomNumbers(1, initialCards);
 
         // Now in PlayerTurn state
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.PlayerTurn));
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.PlayerTurn));
 
         // Fast forward past timeout
         vm.warp(block.timestamp + 1 hours + 1);
@@ -736,8 +743,8 @@ contract VyreJackTest is Test {
         uint256 playerBalanceBefore = player.balance;
         risejack.cancelTimedOutGame(player);
 
-        // Player gets refund even in PlayerTurn
-        assertEq(player.balance, playerBalanceBefore + 0.1 ether);
+        // Player gets netBet refund even in PlayerTurn (0.098 ether)
+        assertEq(player.balance, playerBalanceBefore + 0.098 ether);
     }
 
     // ==================== VIEW FUNCTION TESTS ====================
@@ -789,9 +796,11 @@ contract VyreJackTest is Test {
         vm.prank(player);
         risejack.placeBet{ value: amount }();
 
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(game.bet, amount);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.WaitingForDeal));
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        // Bet stored is netBet (98% of amount after 2% house fee)
+        uint256 expectedNetBet = amount - (amount * 200 / 10_000);
+        assertEq(game.bet, expectedNetBet);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.WaitingForDeal));
     }
 
     function testFuzz_PlaceBetRevertsOutOfRange(
@@ -852,15 +861,15 @@ contract VyreJackTest is Test {
         vm.prank(vrfCoordinator);
         risejack.rawFulfillRandomNumbers(1, randomNumbers);
 
-        VyreJack.Game memory game = risejack.getGameState(player);
+        VyreJackETH.Game memory game = risejack.getGameState(player);
 
         // Game should either be in PlayerTurn or resolved (Idle means resolved)
-        bool validState =
-            game.state == VyreJack.GameState.PlayerTurn || game.state == VyreJack.GameState.Idle;
+        bool validState = game.state == VyreJackETH.GameState.PlayerTurn
+            || game.state == VyreJackETH.GameState.Idle;
         assertTrue(validState, "Invalid game state after deal");
 
         // If resolved, funds should be conserved
-        if (game.state == VyreJack.GameState.Idle) {
+        if (game.state == VyreJackETH.GameState.Idle) {
             uint256 totalAfter = player.balance + address(risejack).balance;
             uint256 totalBefore = playerBalanceBefore + contractBalanceBefore;
             assertEq(totalAfter, totalBefore, "Funds not conserved");
@@ -903,12 +912,12 @@ contract VyreJackTest is Test {
         // Owner force resolves
         risejack.forceResolveGame(player);
 
-        // Player should receive full refund
-        assertEq(player.balance, playerBalanceBefore + 0.01 ether, "Should receive full refund");
+        // Player should receive netBet refund (0.0098 ether)
+        assertEq(player.balance, playerBalanceBefore + 0.0098 ether, "Should receive full refund");
 
         // Game should be reset
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.Idle), "Game should be idle");
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.Idle), "Game should be idle");
     }
 
     function test_ForceResolveGameOnlyOwner() public {
@@ -935,21 +944,23 @@ contract VyreJackTest is Test {
         vm.prank(vrfCoordinator);
         risejack.rawFulfillRandomNumbers(1, randomNumbers);
 
-        // Double down (pays another 0.01 ether, total bet now 0.02 ether)
+        // Double down (pays netBet amount 0.0098 ether, total bet now 0.0196 ether)
         vm.prank(player);
-        risejack.double{ value: 0.01 ether }();
+        risejack.double{ value: 0.0098 ether }();
 
         uint256 playerBalanceBefore = player.balance;
 
         // Owner force resolves
         risejack.forceResolveGame(player);
 
-        // Player should receive full bet amount (0.02 ether - the total wagered)
-        assertEq(player.balance, playerBalanceBefore + 0.02 ether, "Should receive full bet refund");
+        // Player should receive total netBet (0.0098 + 0.0098 = 0.0196 ether)
+        assertEq(
+            player.balance, playerBalanceBefore + 0.0196 ether, "Should receive full bet refund"
+        );
 
         // Game should be reset
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.Idle), "Game should be idle");
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.Idle), "Game should be idle");
     }
 
     // ==================== PHASE 4.3: RATE LIMITING TESTS ====================
@@ -995,8 +1006,8 @@ contract VyreJackTest is Test {
         vm.prank(player);
         risejack.placeBet{ value: 0.01 ether }();
 
-        VyreJack.Game memory game = risejack.getGameState(player);
-        assertEq(uint256(game.state), uint256(VyreJack.GameState.WaitingForDeal));
+        VyreJackETH.Game memory game = risejack.getGameState(player);
+        assertEq(uint256(game.state), uint256(VyreJackETH.GameState.WaitingForDeal));
     }
 
     // Receive function for contract to receive ETH from withdrawHouseFunds

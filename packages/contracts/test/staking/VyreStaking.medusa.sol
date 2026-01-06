@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import { VyreStaking } from "../../src/defi/VyreStaking.sol";
+import { VyreStaking } from "../../src/tokens/defi/VyreStaking.sol";
 import { MockToken } from "../../src/mocks/MockToken.sol";
 
 /**

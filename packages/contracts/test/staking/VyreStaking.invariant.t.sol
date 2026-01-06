@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import { Test, console } from "forge-std/Test.sol";
-import { VyreStaking } from "../../src/defi/VyreStaking.sol";
+import { VyreStaking } from "../../src/tokens/defi/VyreStaking.sol";
 import { MockToken } from "../../src/mocks/MockToken.sol";
 
 /**
@@ -206,7 +206,6 @@ contract VyreStakingInvariantTest is Test {
      */
     function invariant_RewardRateReasonable() public view {
         uint256 rewardRate = staking.rewardRate();
-        uint256 rewardsDuration = staking.rewardsDuration();
         uint256 contractBalance = rewardsToken.balanceOf(address(staking));
 
         // Total rewards for duration should not exceed balance

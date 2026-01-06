@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import { Test, console } from "forge-std/Test.sol";
-import { CHIPToken } from "../src/defi/CHIPToken.sol";
+import { CHIPToken } from "../src/tokens/defi/CHIPToken.sol";
 
 contract CHIPTokenTest is Test {
     CHIPToken chip;

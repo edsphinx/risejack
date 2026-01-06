@@ -1,10 +1,25 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.28;
 
+/* --------------------------------------------------------------------------
+ * IVYREGAME — STANDARD INTERFACE FOR ALL CASINO GAMES
+ * -------------------------------------------------------------------------
+ * All games registered with VyreCasino must implement this interface.
+ *
+ * - play(): Called by VyreCasino to execute game logic
+ * - BetInfo: Standardized bet structure with token, amount, and visual tier
+ * - GameResult: Standardized result with win status and payout amount
+ * ------------------------------------------------------------------------*/
+
 /**
- * @title IVyreGame
- * @notice Interface for all RiseCasino games
- * @dev Games must implement this interface to be registered with RiseCasino
+ * @title  IVyreGame
+ * @author edsphinx
+ * @custom:company Blocketh
+ * @notice Standard interface for all Vyre Casino games.
+ * @dev    Games implementing this interface can be registered with VyreCasino
+ *         and will receive routed bets from players. The game is responsible
+ *         only for pure game logic - all financial handling (house edge,
+ *         referrals, payouts) is managed by VyreCasino.
  */
 interface IVyreGame {
     // ==================== STRUCTS ====================

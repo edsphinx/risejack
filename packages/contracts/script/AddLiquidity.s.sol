@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { Script, console2 } from "forge-std/Script.sol";
-import { CHIPToken } from "../src/defi/CHIPToken.sol";
+import { CHIPToken } from "../src/tokens/defi/CHIPToken.sol";
 
 interface IUniswapV2Router02 {
     function addLiquidityETH(

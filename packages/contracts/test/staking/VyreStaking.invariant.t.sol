@@ -48,7 +48,7 @@ contract StakingHandler is Test {
 
         // Create actors
         for (uint256 i = 0; i < 5; i++) {
-            address actor = address(uint160(0x2000 + i));
+            address actor = vm.addr(0x2000 + i);
             actors.push(actor);
 
             // Fund actors with staking tokens

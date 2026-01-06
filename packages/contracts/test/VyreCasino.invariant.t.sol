@@ -94,7 +94,7 @@ contract VyreCasinoHandler is Test {
 
         // Create test players
         for (uint256 i = 0; i < 10; i++) {
-            address player = address(uint160(0x1000 + i));
+            address player = vm.addr(0x1000 + i);
             players.push(player);
             chip.mint(player, 100_000e18);
             vm.prank(player);

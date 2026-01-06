@@ -3,8 +3,11 @@ pragma solidity ^0.8.20;
 
 import { Test, console } from "forge-std/Test.sol";
 import { CHIPToken } from "../src/tokens/defi/CHIPToken.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract CHIPTokenTest is Test {
+    using SafeERC20 for IERC20;
     CHIPToken chip;
     address owner = address(this);
     address alice = address(0x1);
@@ -95,7 +98,7 @@ contract CHIPTokenTest is Test {
 
     function test_BurnFrom() public {
         uint256 amount = 100e18;
-        chip.transfer(alice, amount);
+        IERC20(address(chip)).safeTransfer(alice, amount);
 
         vm.prank(alice);
         chip.approve(owner, amount);
@@ -106,7 +109,7 @@ contract CHIPTokenTest is Test {
     }
 
     function test_BurnFromWithoutApproval() public {
-        chip.transfer(alice, 100e18);
+        IERC20(address(chip)).safeTransfer(alice, 100e18);
 
         vm.expectRevert();
         chip.burnFrom(alice, 100e18);
@@ -116,7 +119,7 @@ contract CHIPTokenTest is Test {
 
     function test_Transfer() public {
         uint256 amount = 100e18;
-        chip.transfer(alice, amount);
+        IERC20(address(chip)).safeTransfer(alice, amount);
 
         assertEq(chip.balanceOf(alice), amount);
         assertEq(chip.balanceOf(owner), INITIAL_SUPPLY - amount);
@@ -127,7 +130,7 @@ contract CHIPTokenTest is Test {
         chip.approve(alice, amount);
 
         vm.prank(alice);
-        chip.transferFrom(owner, bob, amount);
+        IERC20(address(chip)).safeTransferFrom(owner, bob, amount);
 
         assertEq(chip.balanceOf(bob), amount);
     }
@@ -139,7 +142,7 @@ contract CHIPTokenTest is Test {
         address signer = vm.addr(privateKey);
         uint256 amount = 100e18;
 
-        chip.transfer(signer, amount);
+        IERC20(address(chip)).safeTransfer(signer, amount);
 
         uint256 nonce = chip.nonces(signer);
         uint256 deadline = block.timestamp + 1 hours;

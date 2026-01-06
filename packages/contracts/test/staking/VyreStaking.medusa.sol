@@ -3,6 +3,8 @@ pragma solidity ^0.8.20;
 
 import { VyreStaking } from "../../src/tokens/defi/VyreStaking.sol";
 import { MockToken } from "../../src/mocks/MockToken.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title VyreStakingMedusaTest
@@ -10,6 +12,8 @@ import { MockToken } from "../../src/mocks/MockToken.sol";
  * @dev All functions prefixed with "property_" are tested by Medusa
  */
 contract VyreStakingMedusaTest {
+    using SafeERC20 for IERC20;
+
     VyreStaking public staking;
     MockToken public stakingToken;
     MockToken public rewardsToken;
@@ -27,7 +31,7 @@ contract VyreStakingMedusaTest {
         staking = new VyreStaking(address(this), address(rewardsToken), address(stakingToken));
 
         // Fund staking contract with rewards
-        rewardsToken.transfer(address(staking), REWARD_AMOUNT);
+        IERC20(address(rewardsToken)).safeTransfer(address(staking), REWARD_AMOUNT);
         staking.notifyRewardAmount(REWARD_AMOUNT);
 
         // Approve staking

@@ -5,6 +5,7 @@ import { Test, console } from "forge-std/Test.sol";
 import { TokenFactory, MemeToken } from "../src/tokens/TokenFactory.sol";
 import { CHIPToken } from "../src/tokens/defi/CHIPToken.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @dev Mock XP Registry for level verification
 contract MockXPRegistry {
@@ -57,6 +58,8 @@ contract MockUniswapFactory {
 
 /// @dev Mock Uniswap V2 Router
 contract MockUniswapRouter {
+    using SafeERC20 for IERC20;
+
     function addLiquidity(
         address tokenA,
         address tokenB,
@@ -68,8 +71,8 @@ contract MockUniswapRouter {
         uint256
     ) external returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
         // Transfer tokens from sender
-        IERC20(tokenA).transferFrom(msg.sender, address(this), amountADesired);
-        IERC20(tokenB).transferFrom(msg.sender, address(this), amountBDesired);
+        IERC20(tokenA).safeTransferFrom(msg.sender, address(this), amountADesired);
+        IERC20(tokenB).safeTransferFrom(msg.sender, address(this), amountBDesired);
 
         amountA = amountADesired;
         amountB = amountBDesired;
@@ -85,6 +88,8 @@ contract MockUniswapRouter {
  * @notice Comprehensive tests for meme token creation by Casino Owners
  */
 contract TokenFactoryTest is Test {
+    using SafeERC20 for IERC20;
+
     TokenFactory factory;
     CHIPToken chip;
     MockXPRegistry xpRegistry;
@@ -116,7 +121,7 @@ contract TokenFactoryTest is Test {
         xpRegistry.setCasinoOwner(casinoOwner, true);
 
         // Give CHIP to casino owner for creation (enough for multiple token creates)
-        chip.transfer(casinoOwner, 1_000_000e18);
+        IERC20(address(chip)).safeTransfer(casinoOwner, 1_000_000e18);
 
         // Labels
         vm.label(address(factory), "TokenFactory");

@@ -56,7 +56,7 @@ contract VyreJackETHHandler is Test {
 
         // Create test players
         for (uint256 i = 0; i < 5; i++) {
-            address player = address(uint160(0x1000 + i));
+            address player = vm.addr(0x1000 + i);
             players.push(player);
             vm.deal(player, 100 ether);
         }

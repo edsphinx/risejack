@@ -4,8 +4,11 @@ pragma solidity ^0.8.20;
 import { Test, console } from "forge-std/Test.sol";
 import { VyreStaking } from "../../src/tokens/defi/VyreStaking.sol";
 import { MockToken } from "../../src/mocks/MockToken.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract VyreStakingTest is Test {
+    using SafeERC20 for IERC20;
     VyreStaking staking;
     MockToken stakingToken;
     MockToken rewardsToken;
@@ -25,12 +28,12 @@ contract VyreStakingTest is Test {
         staking = new VyreStaking(owner, address(rewardsToken), address(stakingToken));
 
         // Fund staking contract with rewards
-        rewardsToken.transfer(address(staking), REWARD_AMOUNT);
+        IERC20(address(rewardsToken)).safeTransfer(address(staking), REWARD_AMOUNT);
 
         // Fund users with staking tokens
-        stakingToken.transfer(alice, 1000e18);
-        stakingToken.transfer(bob, 1000e18);
-        stakingToken.transfer(carol, 1000e18);
+        IERC20(address(stakingToken)).safeTransfer(alice, 1000e18);
+        IERC20(address(stakingToken)).safeTransfer(bob, 1000e18);
+        IERC20(address(stakingToken)).safeTransfer(carol, 1000e18);
 
         vm.label(address(staking), "Staking");
         vm.label(address(stakingToken), "StakingToken");

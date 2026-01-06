@@ -20,6 +20,23 @@
   transition: filter 0.3s ease;
 }
 
+/* Full logo SVG (spade + text) */
+.logo-svg-full {
+  height: 40px;
+  width: auto;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4));
+  transition: filter 0.3s ease;
+}
+
+.logo-compact .logo-svg-full {
+  height: 32px;
+}
+
+.logo-full:hover .logo-svg-full,
+.logo-compact:hover .logo-svg-full {
+  filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.8));
+}
+
 .logo-animated .logo-spade {
   animation: logo-pulse 3s ease-in-out infinite;
 }

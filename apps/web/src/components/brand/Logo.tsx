@@ -3,7 +3,7 @@ import './styles/brand.css';
 /**
  * VyreJack Logo Component
  *
- * DEGEN UX branded logo with CSS animations
+ * Full SVG logo with spade symbol and text
  * Variants: full (desktop), compact (mobile), icon (minimal)
  */
 
@@ -21,7 +21,6 @@ export function Logo({
   className = '',
 }: LogoProps) {
   const animatedClass = animated ? 'logo-animated' : '';
-  const text = variant === 'vyrecasino' ? 'VYRECASINO' : 'VYREJACK';
 
   if (size === 'icon') {
     return (
@@ -31,35 +30,21 @@ export function Logo({
     );
   }
 
-  if (size === 'compact') {
-    // Full name even on mobile for brand recognition
-    return (
-      <div className={`logo-compact ${animatedClass} ${className}`}>
-        <SpadeIcon />
-        <div className="logo-text-wrapper">
-          <span className="logo-text">{text}</span>
-        </div>
-      </div>
-    );
-  }
+  // Full and compact use the complete logo SVG
+  const sizeClass = size === 'compact' ? 'logo-compact' : 'logo-full';
 
-  // Full logo (desktop)
   return (
-    <div className={`logo-full ${animatedClass} ${className}`}>
-      <SpadeIcon />
-      <div className="logo-text-wrapper">
-        <span className="logo-text">{text}</span>
-      </div>
+    <div className={`${sizeClass} ${animatedClass} ${className}`}>
+      <FullLogo variant={variant} />
     </div>
   );
 }
 
 /**
  * Spade Icon - SVG with DEGEN gradient
- * Uses unique IDs to prevent collision when multiple instances exist
+ * Used for icon-only mode and loaders
  */
 function SpadeIcon() {
-  // Generate unique ID to prevent SVG gradient collision
   const uniqueId = Math.random().toString(36).substring(2, 8);
   const gradientId = `spadeGrad-${uniqueId}`;
   const glowId = `spadeGlow-${uniqueId}`;
@@ -86,7 +71,6 @@ function SpadeIcon() {
           </feMerge>
         </filter>
       </defs>
-      {/* Spade body */}
       <path
         d="M50 5 C50 5 15 40 15 55 C15 70 30 75 42 68 C40 78 35 85 30 90 L70 90 C65 85 60 78 58 68 C70 75 85 70 85 55 C85 40 50 5 50 5 Z"
         fill={`url(#${gradientId})`}
@@ -97,35 +81,98 @@ function SpadeIcon() {
 }
 
 /**
+ * Full Logo SVG - Spade + Text in one SVG
+ * Uses gradient text and glow effects
+ */
+function FullLogo({ variant }: { variant: 'vyrejack' | 'vyrecasino' }) {
+  const uniqueId = Math.random().toString(36).substring(2, 8);
+  const gradientId = `logoGrad-${uniqueId}`;
+  const textGradientId = `textGrad-${uniqueId}`;
+  const glowId = `logoGlow-${uniqueId}`;
+
+  const text = variant === 'vyrecasino' ? 'VYRECASINO' : 'VYREJACK';
+  // Adjust viewBox width based on text length
+  const viewBoxWidth = variant === 'vyrecasino' ? 380 : 320;
+
+  return (
+    <svg
+      className="logo-svg-full"
+      viewBox={`0 0 ${viewBoxWidth} 50`}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label={text}
+    >
+      <defs>
+        {/* Spade gradient */}
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#a855f7" />
+          <stop offset="50%" stopColor="#ec4899" />
+          <stop offset="100%" stopColor="#8b5cf6" />
+        </linearGradient>
+
+        {/* Text gradient */}
+        <linearGradient id={textGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#a855f7" />
+          <stop offset="50%" stopColor="#ec4899" />
+          <stop offset="100%" stopColor="#8b5cf6" />
+        </linearGradient>
+
+        {/* Glow filter */}
+        <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="1.5" result="glow" />
+          <feMerge>
+            <feMergeNode in="glow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {/* Spade icon - scaled to fit height */}
+      <g transform="translate(0, 2) scale(0.45)">
+        <path
+          d="M50 5 C50 5 15 40 15 55 C15 70 30 75 42 68 C40 78 35 85 30 90 L70 90 C65 85 60 78 58 68 C70 75 85 70 85 55 C85 40 50 5 50 5 Z"
+          fill={`url(#${gradientId})`}
+          filter={`url(#${glowId})`}
+        />
+      </g>
+
+      {/* Logo text */}
+      <text
+        x="55"
+        y="36"
+        fontFamily="'Inter', 'Segoe UI', system-ui, sans-serif"
+        fontSize="28"
+        fontWeight="900"
+        letterSpacing="4"
+        fill={`url(#${textGradientId})`}
+        filter={`url(#${glowId})`}
+      >
+        {text}
+      </text>
+    </svg>
+  );
+}
+
+/**
  * VyreJack Loader Component
  *
- * CSS-only loading animation (no Framer Motion)
- * Inspired by VeriFi loader pattern
+ * CSS-only loading animation
  */
 export function VyreJackLoader({ message = 'DEALING...' }: { message?: string }) {
   return (
     <div className="vyrejack-loader">
-      {/* Outer rotating ring */}
       <div className="loader-ring">
         <div className="loader-dot" />
       </div>
-
-      {/* Glow background */}
       <div className="loader-glow" />
-
-      {/* Center logo with pulse */}
       <div className="loader-center">
         <SpadeIcon />
       </div>
-
-      {/* Particles */}
       <div className="loader-particles">
         {[...Array(6)].map((_, i) => (
           <div key={i} className={`loader-particle particle-${i}`} />
         ))}
       </div>
-
-      {/* Loading text */}
       <div className="loader-text">
         <span>{message}</span>
         <div className="loader-dots">
@@ -137,3 +184,6 @@ export function VyreJackLoader({ message = 'DEALING...' }: { message?: string })
     </div>
   );
 }
+
+// Export SpadeIcon for use elsewhere
+export { SpadeIcon };

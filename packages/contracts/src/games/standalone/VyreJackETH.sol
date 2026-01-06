@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import { IVRFConsumer } from "../../interfaces/IVRFConsumer.sol";
 import { IVRFCoordinator } from "../../interfaces/IVRFCoordinator.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title VyreJack
@@ -28,6 +29,8 @@ import { IVRFCoordinator } from "../../interfaces/IVRFCoordinator.sol";
  *   5. Rate limiting: Prevents rapid-fire betting attacks
  */
 contract VyreJackETH is IVRFConsumer {
+    using SafeCast for uint256;
+
     // ==================== CONSTANTS ====================
 
     /// @notice Rise Chain Testnet VRF Coordinator (default)
@@ -813,7 +816,7 @@ contract VyreJackETH is IVRFConsumer {
     function _randomToCard(
         uint256 random
     ) internal pure returns (uint8) {
-        return uint8(random % CARDS_PER_DECK);
+        return (random % CARDS_PER_DECK).toUint8();
     }
 
     /**
@@ -994,7 +997,7 @@ contract VyreJackETH is IVRFConsumer {
             numNumbers = 1;
         }
 
-        uint256 newRequestId = coordinator.requestRandomNumbers(uint32(numNumbers), seed);
+        uint256 newRequestId = coordinator.requestRandomNumbers(numNumbers.toUint32(), seed);
 
         vrfRequests[newRequestId] = VRFRequest({
             player: player, requestType: requestType, fulfilled: false, timestamp: block.timestamp

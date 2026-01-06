@@ -16,6 +16,7 @@ pragma solidity ^0.8.28;
 import { IVyreGame } from "../../interfaces/IVyreGame.sol";
 import { IVRFConsumer } from "../../interfaces/IVRFConsumer.sol";
 import { IVRFCoordinator } from "../../interfaces/IVRFCoordinator.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title  VyreJackCore
@@ -38,6 +39,7 @@ contract VyreJackCore is IVyreGame, IVRFConsumer {
     // ----------------------------------------------------------------------
     //  CONSTANTS
     // ----------------------------------------------------------------------
+    using SafeCast for uint256;
 
     /// @notice Rise Chain Testnet VRF Coordinator address (fallback if not provided)
     address public constant DEFAULT_VRF_COORDINATOR = 0x9d57aB4517ba97349551C876a01a7580B1338909;
@@ -579,7 +581,7 @@ contract VyreJackCore is IVyreGame, IVRFConsumer {
     ) internal pure returns (uint8) {
         // Safe: modulo CARDS_PER_DECK (52) always returns 0-51, fits in uint8
         uint256 cardIndex = randomNumber % CARDS_PER_DECK;
-        return uint8(cardIndex);
+        return cardIndex.toUint8();
     }
 
     function calculateHandValue(

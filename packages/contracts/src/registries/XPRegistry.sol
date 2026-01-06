@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.28;
 
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /* --------------------------------------------------------------------------
  * XPREGISTRY — PLAYER EXPERIENCE AND LEVEL TRACKING
  * -------------------------------------------------------------------------
@@ -25,6 +27,8 @@ pragma solidity ^0.8.28;
  *         - Level 50: 100,000 XP (Casino Owner!)
  */
 contract XPRegistry {
+    using SafeCast for uint256;
+
     // ----------------------------------------------------------------------
     //  STORAGE
     // ----------------------------------------------------------------------
@@ -130,36 +134,36 @@ contract XPRegistry {
 
         // Levels 60+: 200,000 + (level-60) * 100,000
         if (playerXP >= 200_000) {
-            return uint8(60 + (playerXP - 200_000) / 100_000);
+            return (60 + (playerXP - 200_000) / 100_000).toUint8();
         }
 
         // Levels 50-59
         if (playerXP >= 100_000) {
-            return uint8(50 + (playerXP - 100_000) / 10_000);
+            return (50 + (playerXP - 100_000) / 10_000).toUint8();
         }
 
         // Levels 40-49
         if (playerXP >= 40_000) {
-            return uint8(40 + (playerXP - 40_000) / 6000);
+            return (40 + (playerXP - 40_000) / 6000).toUint8();
         }
 
         // Levels 30-39
         if (playerXP >= 15_000) {
-            return uint8(30 + (playerXP - 15_000) / 2500);
+            return (30 + (playerXP - 15_000) / 2500).toUint8();
         }
 
         // Levels 20-29
         if (playerXP >= 5000) {
-            return uint8(20 + (playerXP - 5000) / 1000);
+            return (20 + (playerXP - 5000) / 1000).toUint8();
         }
 
         // Levels 10-19
         if (playerXP >= 1000) {
-            return uint8(10 + (playerXP - 1000) / 400);
+            return (10 + (playerXP - 1000) / 400).toUint8();
         }
 
         // Levels 1-9
-        return uint8(1 + playerXP / 125);
+        return (1 + playerXP / 125).toUint8();
     }
 
     /**

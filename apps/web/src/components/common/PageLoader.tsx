@@ -1,6 +1,6 @@
 /**
- * PageLoader - Loading fallback for lazy-loaded pages
- * Uses same casino theme as AppLoader for unified experience
+ * PageLoader - Minimalist page transition loader
+ * Matches AppLoader style for unified experience
  */
 
 import './page-loader.css';
@@ -10,18 +10,12 @@ export function PageLoader() {
     <div className="page-loader">
       <div className="page-loader-glow" />
       <div className="page-loader-content">
-        {/* Bouncing Chips */}
-        <div className="page-loader-chips">
-          <span className="pl-chip" />
-          <span className="pl-chip" />
-          <span className="pl-chip" />
+        {/* Simple pulsing dot */}
+        <div className="page-loader-dots">
+          <span className="loader-dot" />
+          <span className="loader-dot" />
+          <span className="loader-dot" />
         </div>
-
-        {/* Shimmer Bar */}
-        <div className="page-loader-shimmer">
-          <div className="pl-shimmer-bar" />
-        </div>
-
         <p className="page-loader-text">Loading...</p>
       </div>
     </div>

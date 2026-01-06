@@ -1,6 +1,6 @@
 /**
- * AppLoader - Casino-themed splash screen
- * Preloads Rise Wallet + Viem while showing premium animation
+ * AppLoader - Minimalist casino splash screen
+ * Clean design: Logo + shimmer progress bar only
  */
 
 import { useState, useEffect } from 'preact/hooks';
@@ -66,37 +66,22 @@ export function AppLoader({ onLoadComplete, minimumDisplayTime = 2000 }: AppLoad
 
   return (
     <div className="app-loader">
-      <div className="app-loader-bg-glow" />
+      {/* Background glow */}
+      <div className="app-loader-glow" />
 
       <div className="app-loader-content">
-        {/* Logo */}
+        {/* VyreCasino Logo - centered and properly sized */}
         <div className="app-loader-logo">
-          <Logo className="loader-brand-logo" />
+          <Logo variant="vyrecasino" size="full" animated={false} />
         </div>
 
-        {/* Bouncing Chips */}
-        <div className="app-loader-chips">
-          <span className="loader-chip" />
-          <span className="loader-chip" />
-          <span className="loader-chip" />
-        </div>
-
-        {/* Shimmer Progress Bar */}
+        {/* Clean shimmer progress bar */}
         <div className="app-loader-progress">
           <div className="app-loader-progress-fill" style={{ width: `${loadingProgress}%` }} />
-          <div className="app-loader-shimmer" />
         </div>
 
-        {/* Status */}
+        {/* Status text */}
         <p className="app-loader-status">{statusText}</p>
-
-        {/* Card Symbols */}
-        <div className="app-loader-cards">
-          <span className="loader-card">♠</span>
-          <span className="loader-card">♥</span>
-          <span className="loader-card">♦</span>
-          <span className="loader-card">♣</span>
-        </div>
       </div>
     </div>
   );

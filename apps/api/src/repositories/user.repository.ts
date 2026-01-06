@@ -9,7 +9,12 @@ import { randomBytes } from 'crypto';
 import prisma from '../db/client';
 import { Prisma } from '@prisma/client';
 import type { User } from '@prisma/client';
-import { BASE_XP, calculateLevelFromXp, getXpRequiredForLevel, getLevelProgress } from '@risejack/shared';
+import {
+  BASE_XP,
+  calculateLevelFromXp,
+  getXpRequiredForLevel,
+  getLevelProgress,
+} from '@vyrejack/shared';
 
 const DEFAULT_CHAIN_ID = 713715; // Rise Testnet
 

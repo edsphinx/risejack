@@ -9,7 +9,7 @@ import { Hono } from 'hono';
 import { EventService } from '../services';
 import { requireAdmin, sanitizeError } from '../middleware/admin';
 import { isValidWalletAddress, isValidUUID, sanitizeString } from '../middleware';
-import type { LogEventRequest, ApiError } from '@risejack/shared';
+import type { LogEventRequest, ApiError } from '@vyrejack/shared';
 import type { Prisma } from '@prisma/client';
 
 const events = new Hono();

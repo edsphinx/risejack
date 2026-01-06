@@ -5,7 +5,7 @@
  */
 
 import { UserRepository, GameRepository } from '../repositories';
-import type { UserProfile, UserStats, UserProfileResponse, VipTier } from '@risejack/shared';
+import type { UserProfile, UserStats, UserProfileResponse, VipTier } from '@vyrejack/shared';
 
 export async function getUserProfile(walletAddress: string): Promise<UserProfileResponse | null> {
   const user = await UserRepository.getUserWithStats(walletAddress);

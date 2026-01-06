@@ -9,7 +9,7 @@
  */
 
 import type { Context, Next } from 'hono';
-import type { ApiError } from '@risejack/shared';
+import type { ApiError } from '@vyrejack/shared';
 import { timingSafeEqual as cryptoTimingSafeEqual } from 'crypto';
 
 /**

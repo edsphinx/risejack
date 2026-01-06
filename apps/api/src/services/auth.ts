@@ -8,7 +8,16 @@ import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { verifyMessage, type Address } from 'viem';
 import { randomBytes } from 'crypto';
 
-// In-memory nonce store (use Redis in production for multi-instance)
+/**
+ * WARNING: In-memory nonce store - NOT SUITABLE FOR PRODUCTION
+ *
+ * For production deployments:
+ * - Use Redis for multi-instance support
+ * - Nonces are lost on server restart (replay attack window)
+ * - Consider using database-backed storage
+ *
+ * TODO: Replace with Redis client (upstash/redis or ioredis)
+ */
 const nonceStore = new Map<string, { nonce: string; expiresAt: number }>();
 
 // Clean expired nonces every 5 minutes

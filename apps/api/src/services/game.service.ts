@@ -5,7 +5,7 @@
  */
 
 import { UserRepository, GameRepository } from '../repositories';
-import type { GameRecord, GameHistoryResponse, GameType } from '@risejack/shared';
+import type { GameRecord, GameHistoryResponse, GameType } from '@vyrejack/shared';
 
 export async function getGameHistory(
   walletAddress: string,

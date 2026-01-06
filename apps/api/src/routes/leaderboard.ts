@@ -7,7 +7,7 @@
 
 import { Hono } from 'hono';
 import { LeaderboardService } from '../services';
-import type { LeaderboardPeriod, LeaderboardMetric, ApiError } from '@risejack/shared';
+import type { LeaderboardPeriod, LeaderboardMetric, ApiError } from '@vyrejack/shared';
 
 const leaderboard = new Hono();
 

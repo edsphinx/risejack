@@ -5,7 +5,7 @@
  */
 
 import { UserRepository, ReferralRepository } from '../repositories';
-import type { ReferralStats, RefereeInfo, ReferralEarningRecord, GameType } from '@risejack/shared';
+import type { ReferralStats, RefereeInfo, ReferralEarningRecord, GameType } from '@vyrejack/shared';
 
 export async function getReferralStats(walletAddress: string): Promise<ReferralStats | null> {
   const user = await UserRepository.findUserByWallet(walletAddress);

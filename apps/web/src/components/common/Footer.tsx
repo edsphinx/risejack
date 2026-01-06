@@ -137,11 +137,14 @@ export function Footer() {
         <p className="contract-info">
           Contract:{' '}
           <a
-            href="https://testnet.explorer.riselabs.xyz/address/0x..."
+            href={`https://testnet.explorer.riselabs.xyz/address/${import.meta.env.VITE_CONTRACT_ADDRESS || '0x6A82D6e6dC0A0fBd89d7FA3F26fe4E8Fbf330cb3'}`}
             target="_blank"
             rel="noopener noreferrer"
           >
-            0x...verified
+            {(
+              import.meta.env.VITE_CONTRACT_ADDRESS || '0x6A82D6e6dC0A0fBd89d7FA3F26fe4E8Fbf330cb3'
+            ).slice(0, 6)}
+            ...verified
           </a>
         </p>
         <p className="powered-by">

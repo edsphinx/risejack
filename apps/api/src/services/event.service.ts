@@ -5,7 +5,7 @@
  */
 
 import { UserRepository, EventRepository } from '../repositories';
-import type { EventType, FunnelEntry, FunnelResponse } from '@risejack/shared';
+import type { EventType, FunnelEntry, FunnelResponse } from '@vyrejack/shared';
 import type { Prisma } from '@prisma/client';
 
 const VALID_EVENT_TYPES: EventType[] = [

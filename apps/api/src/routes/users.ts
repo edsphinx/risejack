@@ -8,7 +8,7 @@
 import { Hono } from 'hono';
 import { UserService, GameService } from '../services';
 import { isValidWalletAddress, sanitizeError } from '../middleware';
-import type { ApiError } from '@risejack/shared';
+import type { ApiError } from '@vyrejack/shared';
 
 const users = new Hono();
 

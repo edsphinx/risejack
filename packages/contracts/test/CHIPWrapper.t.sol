@@ -437,6 +437,73 @@ contract CHIPWrapperTest is Test {
         assertEq(usdcOut, 1000e6);
     }
 
+    // ==================== CONSTRUCTOR VALIDATION ====================
+
+    function test_ConstructorZeroUsdc() public {
+        vm.expectRevert("CHIPWrapper: zero usdc");
+        new CHIPWrapper(address(0), address(chip), treasury, owner);
+    }
+
+    function test_ConstructorZeroChip() public {
+        vm.expectRevert("CHIPWrapper: zero chip");
+        new CHIPWrapper(address(usdc), address(0), treasury, owner);
+    }
+
+    function test_ConstructorZeroTreasury() public {
+        vm.expectRevert("CHIPWrapper: zero treasury");
+        new CHIPWrapper(address(usdc), address(chip), address(0), owner);
+    }
+
+    function test_ConstructorZeroOwner() public {
+        vm.expectRevert("CHIPWrapper: zero owner");
+        new CHIPWrapper(address(usdc), address(chip), treasury, address(0));
+    }
+
+    // ==================== ADDITIONAL COVERAGE ====================
+
+    function test_WithdrawAndDepositFlow() public {
+        // Test multiple deposit/withdraw cycles to verify state tracking
+        vm.startPrank(alice);
+        usdc.approve(address(wrapper), DEPOSIT_AMOUNT * 2);
+
+        // First deposit
+        uint256 chip1 = wrapper.deposit(DEPOSIT_AMOUNT);
+        assertEq(wrapper.totalDeposited(), DEPOSIT_AMOUNT);
+
+        // Second deposit
+        uint256 chip2 = wrapper.deposit(DEPOSIT_AMOUNT);
+        assertEq(wrapper.totalDeposited(), DEPOSIT_AMOUNT * 2);
+
+        // Withdraw first batch
+        wrapper.withdraw(chip1);
+        assertGt(wrapper.totalWithdrawn(), 0);
+
+        // Withdraw second batch
+        wrapper.withdraw(chip2);
+
+        vm.stopPrank();
+
+        // Verify all CHIP burned
+        assertEq(chip.balanceOf(alice), 0);
+    }
+
+    function test_CollectFees() public {
+        // Set withdraw fee to 1%
+        wrapper.setWithdrawFee(100);
+
+        vm.startPrank(alice);
+        usdc.approve(address(wrapper), DEPOSIT_AMOUNT);
+        uint256 chipMinted = wrapper.deposit(DEPOSIT_AMOUNT);
+
+        // Withdraw - should accrue fees
+        wrapper.withdraw(chipMinted);
+        vm.stopPrank();
+
+        // Verify fees collected
+        assertGt(wrapper.totalFeesCollected(), 0);
+        assertGt(usdc.balanceOf(treasury), 0);
+    }
+
     // ==================== FUZZ TESTS ====================
 
     function testFuzz_DepositWithdrawRoundtrip(

@@ -68,8 +68,9 @@
 
 /* Clean progress bar with shimmer */
 .app-loader-progress {
-  width: 200px;
-  height: 4px;
+  width: 280px;
+  max-width: 80vw;
+  height: 3px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 2px;
   overflow: hidden;

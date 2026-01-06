@@ -403,4 +403,35 @@ contract TokenFactoryTest is Test {
 
         vm.stopPrank();
     }
+
+    // ==================== CONSTRUCTOR VALIDATION ====================
+
+    function test_ConstructorZeroXpRegistry() public {
+        vm.expectRevert("TokenFactory: zero xpRegistry");
+        new TokenFactory(address(0), address(uniFactory), address(uniRouter), address(chip), owner);
+    }
+
+    function test_ConstructorZeroFactory() public {
+        vm.expectRevert("TokenFactory: zero factory");
+        new TokenFactory(address(xpRegistry), address(0), address(uniRouter), address(chip), owner);
+    }
+
+    function test_ConstructorZeroRouter() public {
+        vm.expectRevert("TokenFactory: zero router");
+        new TokenFactory(address(xpRegistry), address(uniFactory), address(0), address(chip), owner);
+    }
+
+    function test_ConstructorZeroChip() public {
+        vm.expectRevert("TokenFactory: zero chip");
+        new TokenFactory(
+            address(xpRegistry), address(uniFactory), address(uniRouter), address(0), owner
+        );
+    }
+
+    function test_ConstructorZeroOwner() public {
+        vm.expectRevert("TokenFactory: zero owner");
+        new TokenFactory(
+            address(xpRegistry), address(uniFactory), address(uniRouter), address(chip), address(0)
+        );
+    }
 }

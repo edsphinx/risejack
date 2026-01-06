@@ -71,6 +71,9 @@ contract PriceOracle is ReentrancyGuard {
     event PriceUpdated(address indexed token, uint256 twap, uint256 spot);
     event CircuitBreakerTriggered(address indexed token, uint256 changePercent);
     event CircuitBreakerReset(address indexed token);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event CircuitBreakerThresholdUpdated(uint256 newThresholdBps);
+    event MinLiquidityUpdated(uint256 newMinLiquidity);
 
     // ==================== MODIFIERS ====================
 
@@ -303,18 +306,22 @@ contract PriceOracle is ReentrancyGuard {
     ) external onlyOwner {
         require(bps >= 500 && bps <= 5000, "PriceOracle: 5-50%");
         circuitBreakerBps = bps;
+        emit CircuitBreakerThresholdUpdated(bps);
     }
 
     function setMinLiquidity(
         uint256 amount
     ) external onlyOwner {
         minLiquidity = amount;
+        emit MinLiquidityUpdated(amount);
     }
 
     function transferOwnership(
         address newOwner
     ) external onlyOwner {
         require(newOwner != address(0), "PriceOracle: zero owner");
+        address oldOwner = owner;
         owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
     }
 }

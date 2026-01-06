@@ -65,6 +65,11 @@ contract MemeTokenSink {
     );
 
     event TokenCreatorRegistered(address indexed token, address indexed creator);
+    event GameAuthorized(address indexed game);
+    event GameRevoked(address indexed game);
+    event SharesUpdated(uint256 burnShareBps, uint256 creatorShareBps, uint256 casinoShareBps);
+    event TreasuryUpdated(address indexed newTreasury);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     // ==================== MODIFIERS ====================
 
@@ -172,12 +177,14 @@ contract MemeTokenSink {
     ) external onlyOwner {
         require(game != address(0), "MemeTokenSink: zero game");
         authorizedGames[game] = true;
+        emit GameAuthorized(game);
     }
 
     function revokeGame(
         address game
     ) external onlyOwner {
         authorizedGames[game] = false;
+        emit GameRevoked(game);
     }
 
     function setShares(
@@ -189,6 +196,7 @@ contract MemeTokenSink {
         burnShareBps = _burnBps;
         creatorShareBps = _creatorBps;
         casinoShareBps = _casinoBps;
+        emit SharesUpdated(_burnBps, _creatorBps, _casinoBps);
     }
 
     function setTreasury(
@@ -196,12 +204,15 @@ contract MemeTokenSink {
     ) external onlyOwner {
         require(_treasury != address(0), "MemeTokenSink: zero treasury");
         treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
     }
 
     function transferOwnership(
         address newOwner
     ) external onlyOwner {
         require(newOwner != address(0), "MemeTokenSink: zero owner");
+        address oldOwner = owner;
         owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
     }
 }

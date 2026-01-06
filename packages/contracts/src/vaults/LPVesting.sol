@@ -73,6 +73,7 @@ contract LPVesting is ReentrancyGuard {
 
     event LockerAuthorized(address indexed locker);
     event LockerRevoked(address indexed locker);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     // ==================== MODIFIERS ====================
 
@@ -268,6 +269,8 @@ contract LPVesting is ReentrancyGuard {
         address newOwner
     ) external onlyOwner {
         require(newOwner != address(0), "LPVesting: zero owner");
+        address oldOwner = owner;
         owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
     }
 }

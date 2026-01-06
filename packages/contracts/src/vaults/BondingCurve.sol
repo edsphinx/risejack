@@ -188,6 +188,9 @@ contract BondingCurve is ReentrancyGuard {
     event TokenGraduated(
         address indexed token, address indexed lpPair, uint256 chipLiquidity, uint256 tokenLiquidity
     );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event GraduationThresholdUpdated(uint256 newThreshold);
+    event CreationFeeUpdated(uint256 newFee);
 
     // ==================== MODIFIERS ====================
 
@@ -462,12 +465,14 @@ contract BondingCurve is ReentrancyGuard {
         uint256 threshold
     ) external onlyOwner {
         graduationThreshold = threshold;
+        emit GraduationThresholdUpdated(threshold);
     }
 
     function setCreationFee(
         uint256 fee
     ) external onlyOwner {
         creationFee = fee;
+        emit CreationFeeUpdated(fee);
     }
 
     function setTradingFee(
@@ -481,6 +486,8 @@ contract BondingCurve is ReentrancyGuard {
         address newOwner
     ) external onlyOwner {
         require(newOwner != address(0), "BondingCurve: zero owner");
+        address oldOwner = owner;
         owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
     }
 }

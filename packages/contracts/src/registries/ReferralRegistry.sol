@@ -91,6 +91,10 @@ contract ReferralRegistry is ReentrancyGuard {
         uint8 level
     );
     event EarningsClaimed(address indexed referrer, address indexed token, uint256 amount);
+    event SharesUpdated(uint256 directShareBps, uint256 indirectShareBps);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event CallerAuthorized(address indexed caller);
+    event CallerRevoked(address indexed caller);
 
     // ==================== MODIFIERS ====================
 
@@ -251,12 +255,14 @@ contract ReferralRegistry is ReentrancyGuard {
     ) external onlyOwner {
         require(caller != address(0), "ReferralRegistry: zero caller");
         authorizedCallers[caller] = true;
+        emit CallerAuthorized(caller);
     }
 
     function revokeCaller(
         address caller
     ) external onlyOwner {
         authorizedCallers[caller] = false;
+        emit CallerRevoked(caller);
     }
 
     function setShares(
@@ -266,6 +272,7 @@ contract ReferralRegistry is ReentrancyGuard {
         require(_directBps + _indirectBps <= 10_000, "ReferralRegistry: shares exceed 100%");
         directShareBps = _directBps;
         indirectShareBps = _indirectBps;
+        emit SharesUpdated(_directBps, _indirectBps);
     }
 
     function setTreasury(
@@ -285,6 +292,8 @@ contract ReferralRegistry is ReentrancyGuard {
         address newOwner
     ) external onlyOwner {
         require(newOwner != address(0), "ReferralRegistry: zero owner");
+        address oldOwner = owner;
         owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
     }
 }

@@ -14,6 +14,7 @@ pragma solidity ^0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title  MemeToken
@@ -87,6 +88,8 @@ interface IUniswapV2Router02 {
  *         4. Minimum CHIP liquidity required
  */
 contract TokenFactory {
+    using SafeERC20 for IERC20;
+
     // ----------------------------------------------------------------------
     //  STORAGE
     // ----------------------------------------------------------------------
@@ -220,11 +223,11 @@ contract TokenFactory {
 
         // Collect fee
         if (creationFee > 0) {
-            IERC20(chipToken).transferFrom(msg.sender, owner, creationFee);
+            IERC20(chipToken).safeTransferFrom(msg.sender, owner, creationFee);
         }
 
         // Collect CHIP for LP
-        IERC20(chipToken).transferFrom(msg.sender, address(this), chipAmount);
+        IERC20(chipToken).safeTransferFrom(msg.sender, address(this), chipAmount);
 
         // Create token
         MemeToken memeToken = new MemeToken(name, symbol, totalSupply, address(this));
@@ -257,7 +260,7 @@ contract TokenFactory {
         );
 
         // Transfer creator share
-        IERC20(token).transfer(msg.sender, creatorAmount);
+        IERC20(token).safeTransfer(msg.sender, creatorAmount);
 
         // Emit before recording to reduce stack depth
         emit TokenCreated(

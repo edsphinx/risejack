@@ -497,7 +497,7 @@ contract VyreCasino is ReentrancyGuard {
         uint256 betAmount
     ) internal {
         if (address(xpRegistry) != address(0)) {
-            uint256 xp = (betAmount / 1e18) * xpPerBet;
+            uint256 xp = (betAmount * xpPerBet) / 1e18;
             if (xp > 0) {
                 xpRegistry.addXP(player, xp);
                 emit XPAwarded(player, xp);

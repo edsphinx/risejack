@@ -271,6 +271,8 @@ contract TableVault is ERC4626, ReentrancyGuard {
  * @notice Factory for creating TableVault instances
  */
 contract TableVaultFactory {
+    using SafeERC20 for IERC20;
+
     /// @notice XP Registry for level verification
     IXPRegistry public immutable xpRegistry;
 
@@ -317,7 +319,7 @@ contract TableVaultFactory {
 
         // Collect fee
         if (creationFee > 0) {
-            chip.transferFrom(msg.sender, owner, creationFee);
+            chip.safeTransferFrom(msg.sender, owner, creationFee);
         }
 
         // Create vault

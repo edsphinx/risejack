@@ -1,12 +1,15 @@
-# RiseJack Smart Contracts
+# VyreCasino Smart Contracts
 
 On-chain Blackjack game with provably fair randomness via Rise VRF.
 
-## Deployed Contracts
+## Architecture
 
-| Network | Contract | Address | Verified |
-|---------|----------|---------|----------|
-| Rise Testnet | RiseJack | [`0x8a0AaDE6ebDaEF9993084a29a46BD1C93eC6001a`](https://explorer.testnet.riselabs.xyz/address/0x8a0aade6ebdaef9993084a29a46bd1c93ec6001a) | ✅ |
+| Contract         | Coverage   | Purpose                                  |
+| ---------------- | ---------- | ---------------------------------------- |
+| VyreCasino.sol   | **95.45%** | Orchestrator - house edge, referrals, XP |
+| VyreTreasury.sol | **94.20%** | Secure vault with daily limits           |
+| VyreJackCore.sol | **95.79%** | Pure blackjack game logic                |
+| VyreJackETH.sol  | Passing    | Standalone ETH blackjack                 |
 
 ## Features
 
@@ -14,6 +17,8 @@ On-chain Blackjack game with provably fair randomness via Rise VRF.
 - **Provably Fair**: Rise VRF for card dealing
 - **House Protection**: Daily limits, circuit breaker, exposure tracking
 - **Anti-Bot**: Infinite deck prevents card counting
+- **Two-Step Ownership**: Secure admin transfers
+- **12 UX Events**: Frontend-optimized event emissions
 
 ## Quick Start
 
@@ -24,8 +29,11 @@ forge install
 # Build
 forge build
 
-# Test
+# Test (170+ tests)
 forge test
+
+# Coverage
+forge coverage --match-contract VyreJackCoreTest
 
 # Deploy to Rise Testnet
 source .env
@@ -48,5 +56,6 @@ RPC_URL=https://testnet.riselabs.xyz
 
 ## Documentation
 
+- [Code Conventions](./CONVENTIONS.md)
 - [Production Roadmap](./PRODUCTION_ROADMAP.md)
 - [Deployment Changelog](./DEPLOYMENTS.md)

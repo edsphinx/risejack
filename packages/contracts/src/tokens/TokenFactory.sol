@@ -259,23 +259,27 @@ contract TokenFactory {
         // Transfer creator share
         IERC20(token).transfer(msg.sender, creatorAmount);
 
+        // Emit before recording to reduce stack depth
+        emit TokenCreated(
+            msg.sender, token, lpPair, name, symbol, totalSupply, chipAmount, lpAmount
+        );
+
         // Record token info
+        // Safely calculate lock end time (avoid overflow when lpLockDuration is max uint256)
         tokenInfo[token] = TokenInfo({
             token: token,
             creator: msg.sender,
             lpPair: lpPair,
             lpAmount: lpAmount,
-            lpLockedUntil: block.timestamp + lpLockDuration,
+            lpLockedUntil: lpLockDuration == type(uint256).max
+                ? type(uint256).max
+                : block.timestamp + lpLockDuration,
             createdAt: block.timestamp
         });
 
         lockedLP[lpPair] += lpAmount;
         allTokens.push(token);
         tokensBy[msg.sender].push(token);
-
-        emit TokenCreated(
-            msg.sender, token, lpPair, name, symbol, totalSupply, chipAmount, lpAmount
-        );
     }
 
     // ==================== VIEW FUNCTIONS ====================

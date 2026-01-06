@@ -5,6 +5,7 @@
  */
 
 import { Hono } from 'hono';
+import { rateLimiter } from 'hono-rate-limiter';
 import * as AuthService from '../services/auth';
 import { UserService } from '../services';
 import { isValidWalletAddress, sanitizeError } from '../middleware';
@@ -12,18 +13,26 @@ import type { ApiError } from '@vyrejack/shared';
 
 const auth = new Hono();
 
+// Rate limiting for auth endpoints - 10 requests per 15 minutes per IP
+const authRateLimit = rateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 10, // limit each IP to 10 requests per windowMs
+  standardHeaders: 'draft-6',
+  keyGenerator: (c) => c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown',
+});
+
 /**
  * GET /auth/nonce
  * Generate a nonce for wallet signature
  */
-auth.get('/nonce', async (c) => {
+auth.get('/nonce', authRateLimit, async (c) => {
   const wallet = c.req.query('wallet');
 
   if (!isValidWalletAddress(wallet)) {
     return c.json({ error: 'Valid wallet address required' } satisfies ApiError, 400);
   }
 
-  const nonce = AuthService.generateNonce(wallet!);
+  const nonce = await AuthService.generateNonce(wallet!);
   const message = AuthService.getSignMessage(wallet!, nonce);
 
   return c.json({
@@ -36,7 +45,7 @@ auth.get('/nonce', async (c) => {
  * POST /auth/verify
  * Verify wallet signature and issue JWT
  */
-auth.post('/verify', async (c) => {
+auth.post('/verify', authRateLimit, async (c) => {
   const body = await c.req.json<{
     wallet?: string;
     signature?: string;

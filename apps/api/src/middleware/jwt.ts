@@ -25,6 +25,11 @@ export const jwtAuth = async (c: Context, next: Next) => {
 
   const token = authHeader.slice(7);
 
+  // Validate token length to prevent DoS attacks
+  if (token.length > 2048) {
+    return c.json({ error: 'Token too long' }, 400);
+  }
+
   try {
     const payload = await AuthService.verifyToken(token);
 

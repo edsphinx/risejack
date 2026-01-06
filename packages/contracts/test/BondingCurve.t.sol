@@ -134,7 +134,77 @@ contract BondingCurveTest is Test {
         assertEq(curve.graduationThreshold(), 60_000e18);
     }
 
-    // ==================== LAUNCH TOKEN ====================
+    function test_ConstructorZeroChip() public {
+        vm.expectRevert("BondingCurve: zero chip");
+        new BondingCurve(
+            address(0),
+            address(uniFactory),
+            address(uniRouter),
+            address(lpVesting),
+            address(xpRegistry),
+            owner
+        );
+    }
+
+    function test_ConstructorZeroFactory() public {
+        vm.expectRevert("BondingCurve: zero factory");
+        new BondingCurve(
+            address(chip),
+            address(0),
+            address(uniRouter),
+            address(lpVesting),
+            address(xpRegistry),
+            owner
+        );
+    }
+
+    function test_ConstructorZeroRouter() public {
+        vm.expectRevert("BondingCurve: zero router");
+        new BondingCurve(
+            address(chip),
+            address(uniFactory),
+            address(0),
+            address(lpVesting),
+            address(xpRegistry),
+            owner
+        );
+    }
+
+    function test_ConstructorZeroVesting() public {
+        vm.expectRevert("BondingCurve: zero vesting");
+        new BondingCurve(
+            address(chip),
+            address(uniFactory),
+            address(uniRouter),
+            address(0),
+            address(xpRegistry),
+            owner
+        );
+    }
+
+    function test_ConstructorZeroXPRegistry() public {
+        vm.expectRevert("BondingCurve: zero xpRegistry");
+        new BondingCurve(
+            address(chip),
+            address(uniFactory),
+            address(uniRouter),
+            address(lpVesting),
+            address(0),
+            owner
+        );
+    }
+
+    function test_ConstructorZeroOwner() public {
+        vm.expectRevert("BondingCurve: zero owner");
+        new BondingCurve(
+            address(chip),
+            address(uniFactory),
+            address(uniRouter),
+            address(lpVesting),
+            address(xpRegistry),
+            address(0)
+        );
+    }
 
     function test_LaunchToken() public {
         vm.prank(creator);

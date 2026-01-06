@@ -82,17 +82,18 @@ function SpadeIcon() {
 
 /**
  * Full Logo SVG - Spade + Text in one SVG
- * Uses gradient text and glow effects
+ * Uses gradient text, glow effects, and 3D shadow
  */
 function FullLogo({ variant }: { variant: 'vyrejack' | 'vyrecasino' }) {
   const uniqueId = Math.random().toString(36).substring(2, 8);
   const gradientId = `logoGrad-${uniqueId}`;
   const textGradientId = `textGrad-${uniqueId}`;
   const glowId = `logoGlow-${uniqueId}`;
+  const shadowId = `shadow3d-${uniqueId}`;
 
   const text = variant === 'vyrecasino' ? 'VYRECASINO' : 'VYREJACK';
   // Adjust viewBox width based on text length
-  const viewBoxWidth = variant === 'vyrecasino' ? 380 : 320;
+  const viewBoxWidth = variant === 'vyrecasino' ? 360 : 300;
 
   return (
     <svg
@@ -125,25 +126,53 @@ function FullLogo({ variant }: { variant: 'vyrejack' | 'vyrecasino' }) {
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+
+        {/* 3D shadow filter */}
+        <filter id={shadowId} x="-10%" y="-10%" width="130%" height="140%">
+          <feDropShadow
+            dx="1.5"
+            dy="2"
+            stdDeviation="0.5"
+            floodColor="#000000"
+            floodOpacity="0.6"
+          />
+        </filter>
       </defs>
 
-      {/* Spade icon - scaled to fit height */}
-      <g transform="translate(0, 2) scale(0.45)">
+      {/* Spade icon - closer to text with 3D effect */}
+      <g transform="translate(2, 2) scale(0.45)" filter={`url(#${shadowId})`}>
         <path
           d="M50 5 C50 5 15 40 15 55 C15 70 30 75 42 68 C40 78 35 85 30 90 L70 90 C65 85 60 78 58 68 C70 75 85 70 85 55 C85 40 50 5 50 5 Z"
           fill={`url(#${gradientId})`}
-          filter={`url(#${glowId})`}
+          stroke="#1a1a1a"
+          strokeWidth="1.5"
         />
       </g>
 
-      {/* Logo text */}
+      {/* Text black outline for 3D depth */}
       <text
-        x="55"
+        x="48"
         y="36"
         fontFamily="'Inter', 'Segoe UI', system-ui, sans-serif"
         fontSize="28"
         fontWeight="900"
-        letterSpacing="4"
+        letterSpacing="3"
+        stroke="#1a1a1a"
+        strokeWidth="2"
+        fill="none"
+        filter={`url(#${shadowId})`}
+      >
+        {text}
+      </text>
+
+      {/* Logo text with gradient */}
+      <text
+        x="48"
+        y="36"
+        fontFamily="'Inter', 'Segoe UI', system-ui, sans-serif"
+        fontSize="28"
+        fontWeight="900"
+        letterSpacing="3"
         fill={`url(#${textGradientId})`}
         filter={`url(#${glowId})`}
       >

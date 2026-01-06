@@ -48,20 +48,10 @@
   z-index: 1;
 }
 
-/* Logo container - centered */
-.app-loader-logo {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.app-loader-logo .logo-full {
-  width: 280px;
-  max-width: 80vw;
-}
-
-.app-loader-logo .logo-svg-full {
-  width: 100%;
+/* Logo image - simple and centered */
+.app-loader-logo-img {
+  width: 320px;
+  max-width: 85vw;
   height: auto;
   filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.4));
 }

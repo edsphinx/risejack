@@ -1,10 +1,9 @@
 /**
  * AppLoader - Minimalist casino splash screen
- * Clean design: Logo + shimmer progress bar only
+ * Uses static SVG logo for simplicity
  */
 
 import { useState, useEffect } from 'preact/hooks';
-import { Logo } from '@/components/brand/Logo';
 import './app-loader.css';
 
 interface AppLoaderProps {
@@ -66,21 +65,17 @@ export function AppLoader({ onLoadComplete, minimumDisplayTime = 2000 }: AppLoad
 
   return (
     <div className="app-loader">
-      {/* Background glow */}
       <div className="app-loader-glow" />
 
       <div className="app-loader-content">
-        {/* VyreCasino Logo - centered and properly sized */}
-        <div className="app-loader-logo">
-          <Logo variant="vyrecasino" size="full" animated={false} />
-        </div>
+        {/* Static SVG logo - simple and clean */}
+        <img src="/vyrecasino-logo.svg" alt="VyreCasino" className="app-loader-logo-img" />
 
-        {/* Clean shimmer progress bar */}
+        {/* Progress bar */}
         <div className="app-loader-progress">
           <div className="app-loader-progress-fill" style={{ width: `${loadingProgress}%` }} />
         </div>
 
-        {/* Status text */}
         <p className="app-loader-status">{statusText}</p>
       </div>
     </div>

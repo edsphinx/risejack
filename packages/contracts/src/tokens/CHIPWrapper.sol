@@ -57,6 +57,9 @@ contract CHIPWrapper is ReentrancyGuard {
     /// @notice Owner
     address public owner;
 
+    /// @notice Pending owner for two-step transfer
+    address public pendingOwner;
+
     /// @notice Withdrawal fee in bps (50 = 0.5%)
     uint256 public withdrawFeeBps = 50;
 
@@ -81,6 +84,9 @@ contract CHIPWrapper is ReentrancyGuard {
     event Withdrawn(address indexed user, uint256 chipBurned, uint256 usdcReturned, uint256 fee);
     event FeesCollected(address indexed treasury, uint256 amount);
     event FeeUpdated(string feeType, uint256 newBps);
+    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
+    event OwnershipTransferStarted(address indexed currentOwner, address indexed pendingOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Paused(bool isPaused);
 
     // ==================== MODIFIERS ====================
@@ -253,7 +259,9 @@ contract CHIPWrapper is ReentrancyGuard {
         address _treasury
     ) external onlyOwner {
         require(_treasury != address(0), "CHIPWrapper: zero treasury");
+        address oldTreasury = treasury;
         treasury = _treasury;
+        emit TreasuryUpdated(oldTreasury, _treasury);
     }
 
     function setPaused(
@@ -267,7 +275,16 @@ contract CHIPWrapper is ReentrancyGuard {
         address newOwner
     ) external onlyOwner {
         require(newOwner != address(0), "CHIPWrapper: zero owner");
-        owner = newOwner;
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
+
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner, "CHIPWrapper: not pending owner");
+        address oldOwner = owner;
+        owner = pendingOwner;
+        pendingOwner = address(0);
+        emit OwnershipTransferred(oldOwner, msg.sender);
     }
 
     // Emergency: recover stuck tokens (not USDC)

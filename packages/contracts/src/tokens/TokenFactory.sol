@@ -106,6 +106,9 @@ contract TokenFactory {
     /// @notice Owner
     address public owner;
 
+    /// @notice Pending owner for two-step transfer
+    address public pendingOwner;
+
     /// @notice Token creation fee (in CHIP)
     uint256 public creationFee = 1000e18; // 1000 CHIP
 
@@ -155,6 +158,9 @@ contract TokenFactory {
 
     event FeeUpdated(uint256 newFee);
     event MinLiquidityUpdated(uint256 newMin);
+    event CreatorShareUpdated(uint256 newBps);
+    event OwnershipTransferStarted(address indexed currentOwner, address indexed pendingOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     // ==================== MODIFIERS ====================
 
@@ -315,13 +321,23 @@ contract TokenFactory {
     ) external onlyOwner {
         require(bps <= 5000, "TokenFactory: max 50%");
         creatorShareBps = bps;
+        emit CreatorShareUpdated(bps);
     }
 
     function transferOwnership(
         address newOwner
     ) external onlyOwner {
         require(newOwner != address(0), "TokenFactory: zero owner");
-        owner = newOwner;
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
+
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner, "TokenFactory: not pending owner");
+        address oldOwner = owner;
+        owner = pendingOwner;
+        pendingOwner = address(0);
+        emit OwnershipTransferred(oldOwner, msg.sender);
     }
 
     // NOTE: No function to withdraw LP tokens - they are locked forever

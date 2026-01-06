@@ -195,4 +195,94 @@ contract LPVestingTest is Test {
         vm.expectRevert("LPVesting: zero owner");
         vesting.transferOwnership(address(0));
     }
+
+    function test_AuthorizeLockerZeroAddress() public {
+        vm.expectRevert("LPVesting: zero locker");
+        vesting.authorizeLocker(address(0));
+    }
+
+    // ==================== VIEW FUNCTIONS ====================
+
+    function test_IsLockedDuringVesting() public {
+        vm.prank(locker);
+        vesting.lockLP(address(lp), 10_000e18, beneficiary);
+
+        assertTrue(vesting.isLocked(address(lp), beneficiary));
+    }
+
+    function test_IsLockedAfterFullClaim() public {
+        vm.prank(locker);
+        vesting.lockLP(address(lp), 10_000e18, beneficiary);
+
+        // Full vesting
+        vm.warp(block.timestamp + 400 days);
+
+        vm.prank(beneficiary);
+        vesting.claim(address(lp));
+
+        // After full claim
+        assertFalse(vesting.isLocked(address(lp), beneficiary));
+    }
+
+    function test_IsLockedNoVesting() public view {
+        assertFalse(vesting.isLocked(address(lp), beneficiary));
+    }
+
+    function test_PartialClaim() public {
+        vm.prank(locker);
+        vesting.lockLP(address(lp), 10_000e18, beneficiary);
+
+        // 7 months - partial vesting
+        vm.warp(block.timestamp + 210 days);
+
+        vm.prank(beneficiary);
+        vesting.claim(address(lp));
+
+        uint256 firstClaim = lp.balanceOf(beneficiary);
+        assertGt(firstClaim, 0);
+        assertLt(firstClaim, 10_000e18);
+
+        // 10 months - more vesting
+        vm.warp(block.timestamp + 90 days);
+
+        vm.prank(beneficiary);
+        vesting.claim(address(lp));
+
+        uint256 totalClaimed = lp.balanceOf(beneficiary);
+        assertGt(totalClaimed, firstClaim);
+    }
+
+    function test_GetClaimableAfterPartialClaim() public {
+        vm.prank(locker);
+        vesting.lockLP(address(lp), 10_000e18, beneficiary);
+
+        // 7 months
+        vm.warp(block.timestamp + 210 days);
+
+        vm.prank(beneficiary);
+        vesting.claim(address(lp));
+
+        // Check claimable is 0 right after claim
+        uint256 claimable = vesting.getClaimableAmount(address(lp), beneficiary);
+        assertEq(claimable, 0);
+
+        // 8 months - more unlocked
+        vm.warp(block.timestamp + 30 days);
+        claimable = vesting.getClaimableAmount(address(lp), beneficiary);
+        assertGt(claimable, 0);
+    }
+
+    function test_LockLPAlreadyExists() public {
+        vm.prank(locker);
+        vesting.lockLP(address(lp), 5000e18, beneficiary);
+
+        // Second lock should add to existing
+        vm.prank(locker);
+        vesting.lockLP(address(lp), 5000e18, beneficiary);
+
+        (address lpToken, address ben, uint256 total,,, bool exists) =
+            vesting.vestings(address(lp), beneficiary);
+        assertEq(total, 10_000e18);
+        assertTrue(exists);
+    }
 }

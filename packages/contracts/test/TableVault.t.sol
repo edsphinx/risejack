@@ -254,4 +254,321 @@ contract TableVaultTest is Test {
         vm.expectRevert("TableVault: only creator");
         vault.setPerformanceFee(2000);
     }
+
+    // ==================== VAULT REDEEM ====================
+
+    function test_VaultRedeem() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Redeem Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        vm.startPrank(player1);
+        chip.approve(vaultAddr, 1000e18);
+        uint256 shares = vault.deposit(1000e18, player1);
+
+        uint256 assets = vault.redeem(shares / 2, player1, player1);
+        vm.stopPrank();
+
+        assertGt(assets, 0);
+    }
+
+    // ==================== GAME FUNCTIONS ====================
+
+    function test_AuthorizeGame() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Game Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        address game = address(0x5555);
+        vm.prank(creator);
+        vault.authorizeGame(game);
+
+        assertTrue(vault.authorizedGames(game));
+    }
+
+    function test_AuthorizeGameOnlyCreator() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Game Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        vm.prank(player1);
+        vm.expectRevert("TableVault: only creator");
+        vault.authorizeGame(address(0x5555));
+    }
+
+    function test_RevokeGame() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Game Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        address game = address(0x5555);
+        vm.prank(creator);
+        vault.authorizeGame(game);
+
+        vm.prank(creator);
+        vault.revokeGame(game);
+
+        assertFalse(vault.authorizedGames(game));
+    }
+
+    function test_RecordProfit() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Profit Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        // Deposit first
+        vm.startPrank(player1);
+        chip.approve(vaultAddr, 1000e18);
+        vault.deposit(1000e18, player1);
+        vm.stopPrank();
+
+        // Authorize game
+        address game = address(0x5555);
+        vm.prank(creator);
+        vault.authorizeGame(game);
+
+        // Give game tokens and approve
+        chip.mint(game, 500e18);
+        vm.startPrank(game);
+        chip.approve(vaultAddr, 500e18);
+        vault.recordProfit(500e18);
+        vm.stopPrank();
+
+        // Fees should be accumulated
+        (,,,,, uint256 fees) = vault.getVaultInfo();
+        assertGt(fees, 0);
+    }
+
+    function test_RecordProfitZeroAmount() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Profit Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        address game = address(0x5555);
+        vm.prank(creator);
+        vault.authorizeGame(game);
+
+        vm.prank(game);
+        vm.expectRevert("TableVault: zero profit");
+        vault.recordProfit(0);
+    }
+
+    function test_RecordProfitNotAuthorized() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Profit Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        vm.prank(player1);
+        vm.expectRevert("TableVault: not authorized game");
+        vault.recordProfit(100e18);
+    }
+
+    function test_RecordLoss() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Loss Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        // Deposit first
+        vm.startPrank(player1);
+        chip.approve(vaultAddr, 1000e18);
+        vault.deposit(1000e18, player1);
+        vm.stopPrank();
+
+        // Authorize game
+        address game = address(0x5555);
+        vm.prank(creator);
+        vault.authorizeGame(game);
+
+        uint256 assetsBefore = vault.totalAssets();
+
+        vm.prank(game);
+        vault.recordLoss(200e18);
+
+        assertEq(vault.totalAssets(), assetsBefore - 200e18);
+        assertEq(chip.balanceOf(game), 200e18);
+    }
+
+    function test_RecordLossZeroAmount() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Loss Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        address game = address(0x5555);
+        vm.prank(creator);
+        vault.authorizeGame(game);
+
+        vm.prank(game);
+        vm.expectRevert("TableVault: zero loss");
+        vault.recordLoss(0);
+    }
+
+    function test_RecordLossExceedsAssets() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Loss Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        vm.startPrank(player1);
+        chip.approve(vaultAddr, 100e18);
+        vault.deposit(100e18, player1);
+        vm.stopPrank();
+
+        address game = address(0x5555);
+        vm.prank(creator);
+        vault.authorizeGame(game);
+
+        vm.prank(game);
+        vm.expectRevert("TableVault: loss exceeds assets");
+        vault.recordLoss(200e18);
+    }
+
+    function test_RecordLossNotAuthorized() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Loss Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        vm.prank(player1);
+        vm.expectRevert("TableVault: not authorized game");
+        vault.recordLoss(100e18);
+    }
+
+    // ==================== CLAIM FEES ====================
+
+    function test_ClaimFees() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Fee Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        // Deposit
+        vm.startPrank(player1);
+        chip.approve(vaultAddr, 1000e18);
+        vault.deposit(1000e18, player1);
+        vm.stopPrank();
+
+        // Authorize game and record profit
+        address game = address(0x5555);
+        vm.prank(creator);
+        vault.authorizeGame(game);
+
+        chip.mint(game, 500e18);
+        vm.startPrank(game);
+        chip.approve(vaultAddr, 500e18);
+        vault.recordProfit(500e18);
+        vm.stopPrank();
+
+        // Claim fees
+        uint256 creatorBalanceBefore = chip.balanceOf(creator);
+
+        vm.prank(creator);
+        vault.claimFees();
+
+        assertGt(chip.balanceOf(creator), creatorBalanceBefore);
+
+        // Fees should be zero now
+        (,,,,, uint256 fees) = vault.getVaultInfo();
+        assertEq(fees, 0);
+    }
+
+    function test_ClaimFeesNoFees() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("No Fee Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        vm.prank(creator);
+        vm.expectRevert("TableVault: no fees");
+        vault.claimFees();
+    }
+
+    // ==================== COOLDOWN ====================
+
+    function test_SetWithdrawalCooldown() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Cooldown Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        vm.prank(creator);
+        vault.setWithdrawalCooldown(1 days);
+
+        assertEq(vault.withdrawalCooldown(), 1 days);
+    }
+
+    function test_SetWithdrawalCooldownMaxOneWeek() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Cooldown Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        vm.prank(creator);
+        vm.expectRevert("TableVault: max 7 days");
+        vault.setWithdrawalCooldown(8 days);
+    }
+
+    function test_WithdrawDuringCooldown() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Cooldown Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        // Set 1 day cooldown
+        vm.prank(creator);
+        vault.setWithdrawalCooldown(1 days);
+
+        // Deposit
+        vm.startPrank(player1);
+        chip.approve(vaultAddr, 1000e18);
+        vault.deposit(1000e18, player1);
+
+        // Try to withdraw immediately
+        vm.expectRevert("TableVault: cooldown not passed");
+        vault.withdraw(500e18, player1, player1);
+        vm.stopPrank();
+    }
+
+    function test_WithdrawAfterCooldown() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Cooldown Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        // Set 1 day cooldown
+        vm.prank(creator);
+        vault.setWithdrawalCooldown(1 days);
+
+        // Deposit
+        vm.startPrank(player1);
+        chip.approve(vaultAddr, 1000e18);
+        vault.deposit(1000e18, player1);
+
+        // Warp past cooldown
+        vm.warp(block.timestamp + 2 days);
+
+        // Should work now
+        vault.withdraw(500e18, player1, player1);
+        vm.stopPrank();
+    }
+
+    // ==================== VIEW FUNCTIONS ====================
+
+    function test_AvailableBankroll() public {
+        vm.prank(creator);
+        address vaultAddr = factory.createVault("Bankroll Table");
+        TableVault vault = TableVault(vaultAddr);
+
+        // Deposit
+        vm.startPrank(player1);
+        chip.approve(vaultAddr, 1000e18);
+        vault.deposit(1000e18, player1);
+        vm.stopPrank();
+
+        assertEq(vault.availableBankroll(), 1000e18);
+    }
+
+    // ==================== FACTORY VIEW ====================
+
+    function test_GetAllVaults() public {
+        vm.prank(creator);
+        factory.createVault("Vault 1");
+
+        vm.prank(creator);
+        factory.createVault("Vault 2");
+
+        address[] memory vaults = factory.getAllVaults();
+        assertEq(vaults.length, 2);
+    }
 }

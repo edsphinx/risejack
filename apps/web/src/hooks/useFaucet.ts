@@ -15,6 +15,10 @@ export interface UseFaucetReturn {
   isLoading: boolean;
   error: string | null;
 
+  // User balance
+  userBalance: bigint;
+  hasEnoughChips: boolean;
+
   // Claim
   isClaiming: boolean;
   txHash: string | null;
@@ -28,6 +32,9 @@ export interface UseFaucetReturn {
   timeUntilClaim: number;
 }
 
+// Minimum CHIP balance below which user can claim from faucet (100 CHIP)
+const CLAIM_THRESHOLD = 100n * 10n ** 18n;
+
 export function useFaucet(): UseFaucetReturn {
   const { address, isConnected } = useWallet();
 
@@ -36,21 +43,27 @@ export function useFaucet(): UseFaucetReturn {
   const [error, setError] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [userBalance, setUserBalance] = useState<bigint>(0n);
 
   // Countdown state (decrements every second)
   const [timeUntilClaim, setTimeUntilClaim] = useState(0);
 
-  // Fetch faucet status
+  // Fetch faucet status and user balance
   const refresh = useCallback(async () => {
     if (!address || !isConnected) {
       setStatus(null);
+      setUserBalance(0n);
       setIsLoading(false);
       return;
     }
 
     try {
-      const faucetStatus = await FaucetService.getFaucetStatus(address);
+      const [faucetStatus, balance] = await Promise.all([
+        FaucetService.getFaucetStatus(address),
+        FaucetService.getUserChipBalance(address),
+      ]);
       setStatus(faucetStatus);
+      setUserBalance(balance);
       setTimeUntilClaim(faucetStatus.timeUntilClaim);
       setError(null);
     } catch (err) {
@@ -117,37 +130,53 @@ export function useFaucet(): UseFaucetReturn {
     }
   }, [address, isConnected, refresh]);
 
+  // User has enough CHIP if balance >= threshold
+  const hasEnoughChips = userBalance >= CLAIM_THRESHOLD;
+
   return {
     status,
     isLoading,
     error,
+    userBalance,
+    hasEnoughChips,
     isClaiming,
     txHash,
     claim,
     refresh,
-    canClaim: timeUntilClaim <= 0 && (status?.canClaim ?? false),
+    // Can only claim if: cooldown expired AND contract allows AND user has low balance
+    canClaim: timeUntilClaim <= 0 && (status?.canClaim ?? false) && !hasEnoughChips,
     timeUntilClaim,
   };
 }
 
 /**
  * Hook to check if user can claim (for auto-opening modal)
- * Lightweight version that only checks claim availability
+ * Only returns true if:
+ * 1. Contract cooldown allows claim
+ * 2. User has 0 CHIP balance (not just low balance)
+ *
+ * This prevents the popup from auto-opening for users who already have CHIP.
+ * Manual click on "Get CHIP" button will still work.
  */
 export function useFaucetCanClaim(): boolean {
   const { address, isConnected } = useWallet();
-  const [canClaim, setCanClaim] = useState(false);
+  const [shouldAutoOpen, setShouldAutoOpen] = useState(false);
 
   useEffect(() => {
     if (!address || !isConnected) {
-      setCanClaim(false);
+      setShouldAutoOpen(false);
       return;
     }
 
-    FaucetService.canUserClaim(address)
-      .then(setCanClaim)
-      .catch(() => setCanClaim(false));
+    // Check both: can claim from contract AND user has 0 balance
+    Promise.all([FaucetService.canUserClaim(address), FaucetService.getUserChipBalance(address)])
+      .then(([canClaim, userBalance]) => {
+        // Only auto-open if user can claim AND has zero CHIP
+        const hasZeroBalance = userBalance === 0n;
+        setShouldAutoOpen(canClaim && hasZeroBalance);
+      })
+      .catch(() => setShouldAutoOpen(false));
   }, [address, isConnected]);
 
-  return canClaim;
+  return shouldAutoOpen;
 }

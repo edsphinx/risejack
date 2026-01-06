@@ -220,11 +220,39 @@ async function sendClaimTransaction(address: `0x${string}`): Promise<`0x${string
   console.log('[FaucetService] Passkey txHash:', txHash);
   return txHash;
 }
+/**
+ * Get user's CHIP token balance
+ * Used to check if user should be allowed to claim more from faucet
+ */
+async function getUserChipBalance(userAddress: `0x${string}`): Promise<bigint> {
+  try {
+    const { CHIP_TOKEN_ADDRESS } = await import('@/lib/faucet');
+    const balance = await publicClient.readContract({
+      address: CHIP_TOKEN_ADDRESS,
+      abi: [
+        {
+          name: 'balanceOf',
+          type: 'function',
+          stateMutability: 'view',
+          inputs: [{ name: 'account', type: 'address' }],
+          outputs: [{ type: 'uint256' }],
+        },
+      ],
+      functionName: 'balanceOf',
+      args: [userAddress],
+    });
+    return balance as bigint;
+  } catch (err) {
+    console.error('[FaucetService] Failed to get user CHIP balance:', err);
+    return 0n;
+  }
+}
 
 export const FaucetService = {
   getFaucetStatus,
   canUserClaim,
   getFaucetBalance,
+  getUserChipBalance,
   waitForTransaction,
   sendClaimTransaction,
 

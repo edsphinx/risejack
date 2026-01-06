@@ -234,3 +234,35 @@
   color: rgba(255, 255, 255, 0.4);
   font-size: 12px;
 }
+
+/* Has Balance State - User already has enough CHIP */
+.faucet-has-balance {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(234, 179, 8, 0.1));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 14px;
+}
+
+.has-balance-icon {
+  font-size: 32px;
+}
+
+.has-balance-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.has-balance-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #a78bfa;
+}
+
+.has-balance-subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}

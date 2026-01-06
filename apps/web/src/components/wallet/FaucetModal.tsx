@@ -62,7 +62,9 @@ export function FaucetModal({ isOpen, onClose }: FaucetModalProps) {
           <>
             <FaucetInfo amountPerClaim={formattedAmount} />
 
-            {faucet.canClaim ? (
+            {faucet.hasEnoughChips ? (
+              <FaucetHasBalance userBalance={faucet.userBalance} />
+            ) : faucet.canClaim ? (
               <FaucetClaimButton onClick={faucet.claim} isLoading={faucet.isClaiming} />
             ) : (
               <FaucetCooldown timeRemaining={faucet.timeUntilClaim} />
@@ -136,6 +138,23 @@ function FaucetCooldown({ timeRemaining }: FaucetCooldownProps) {
     <div className="faucet-cooldown">
       <span className="cooldown-icon">⏱️</span>
       <span>Next claim in {formatTime(timeRemaining)}</span>
+    </div>
+  );
+}
+
+interface FaucetHasBalanceProps {
+  userBalance: bigint;
+}
+
+function FaucetHasBalance({ userBalance }: FaucetHasBalanceProps) {
+  const balanceFormatted = Number(userBalance / 10n ** 18n).toLocaleString();
+  return (
+    <div className="faucet-has-balance">
+      <span className="has-balance-icon">💰</span>
+      <div className="has-balance-text">
+        <span className="has-balance-title">You have {balanceFormatted} CHIP!</span>
+        <span className="has-balance-subtitle">Use your CHIP first before claiming more</span>
+      </div>
     </div>
   );
 }

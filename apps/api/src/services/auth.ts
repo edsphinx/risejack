@@ -7,6 +7,7 @@
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { verifyMessage, type Address } from 'viem';
 import { randomBytes } from 'crypto';
+import Redis from 'ioredis';
 
 /**
  * Nonce Storage - Redis for production, in-memory for development
@@ -20,7 +21,23 @@ import { randomBytes } from 'crypto';
 const REDIS_URL = process.env.REDIS_URL;
 const USE_REDIS = !!REDIS_URL;
 
-// In-memory fallback for development
+// Redis client (lazy initialized)
+let redisClient: Redis | null = null;
+
+function getRedis(): Redis {
+  if (!redisClient && REDIS_URL) {
+    redisClient = new Redis(REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times) => Math.min(times * 100, 3000),
+      lazyConnect: true,
+    });
+    redisClient.on('error', (err) => console.error('Redis connection error:', err));
+    redisClient.on('connect', () => console.log('✅ Connected to Redis'));
+  }
+  return redisClient!;
+}
+
+// In-memory fallback for development (when no Redis URL)
 const inMemoryNonceStore = new Map<string, { nonce: string; expiresAt: number }>();
 
 // Clean expired nonces every 5 minutes (only for in-memory store)
@@ -38,41 +55,51 @@ if (!USE_REDIS) {
   );
 }
 
-// Redis helper functions using fetch (works with Redis REST APIs like Upstash)
-// For Redis Labs, use ioredis package instead
+// Redis helper functions
 async function redisSet(key: string, value: string, ttlSeconds: number): Promise<void> {
-  if (!USE_REDIS || !REDIS_URL) return;
-  // Simple HTTP-based Redis for serverless (Upstash-compatible)
-  // For Redis Labs with ioredis, replace this implementation
+  if (!USE_REDIS) {
+    // In-memory fallback
+    inMemoryNonceStore.set(key, { nonce: value, expiresAt: Date.now() + ttlSeconds * 1000 });
+    return;
+  }
   try {
-    // Parse URL to validate format, but use in-memory for now
-    // TODO: Implement ioredis for proper Redis Labs connection
-    new URL(REDIS_URL);
-    // Fallback: store in memory if Redis connection fails
-    inMemoryNonceStore.set(key.replace('nonce:', ''), {
-      nonce: value,
-      expiresAt: Date.now() + ttlSeconds * 1000,
-    });
+    await getRedis().setex(key, ttlSeconds, value);
   } catch (error) {
     console.error('Redis SET error, using in-memory fallback:', error);
-    inMemoryNonceStore.set(key.replace('nonce:', ''), {
-      nonce: value,
-      expiresAt: Date.now() + ttlSeconds * 1000,
-    });
+    inMemoryNonceStore.set(key, { nonce: value, expiresAt: Date.now() + ttlSeconds * 1000 });
   }
 }
 
 async function redisGet(key: string): Promise<string | null> {
-  if (!USE_REDIS) return null;
-  // Fallback to in-memory
-  const stored = inMemoryNonceStore.get(key.replace('nonce:', ''));
-  return stored?.nonce || null;
+  if (!USE_REDIS) {
+    // In-memory fallback
+    const stored = inMemoryNonceStore.get(key);
+    if (!stored || stored.expiresAt < Date.now()) {
+      inMemoryNonceStore.delete(key);
+      return null;
+    }
+    return stored.nonce;
+  }
+  try {
+    return await getRedis().get(key);
+  } catch (error) {
+    console.error('Redis GET error, using in-memory fallback:', error);
+    const stored = inMemoryNonceStore.get(key);
+    return stored?.nonce || null;
+  }
 }
 
 async function redisDel(key: string): Promise<void> {
-  if (!USE_REDIS) return;
-  // Fallback to in-memory
-  inMemoryNonceStore.delete(key.replace('nonce:', ''));
+  if (!USE_REDIS) {
+    inMemoryNonceStore.delete(key);
+    return;
+  }
+  try {
+    await getRedis().del(key);
+  } catch (error) {
+    console.error('Redis DEL error:', error);
+    inMemoryNonceStore.delete(key);
+  }
 }
 
 export interface AuthPayload extends JWTPayload {

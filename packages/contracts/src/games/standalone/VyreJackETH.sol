@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import { IVRFConsumer } from "../../interfaces/IVRFConsumer.sol";
 import { IVRFCoordinator } from "../../interfaces/IVRFCoordinator.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title VyreJack
@@ -28,7 +29,7 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
  *   4. Circuit breaker: Emergency pause on anomalous losses
  *   5. Rate limiting: Prevents rapid-fire betting attacks
  */
-contract VyreJackETH is IVRFConsumer {
+contract VyreJackETH is IVRFConsumer, ReentrancyGuard {
     using SafeCast for uint256;
 
     // ==================== CONSTANTS ====================
@@ -774,7 +775,7 @@ contract VyreJackETH is IVRFConsumer {
     function _safePayout(
         address to,
         uint256 amount
-    ) internal {
+    ) internal nonReentrant {
         (bool success,) = to.call{ value: amount }("");
         if (!success) {
             // If transfer fails, store for manual withdrawal

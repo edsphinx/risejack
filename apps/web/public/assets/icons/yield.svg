@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <!-- Stack of 3 casino chips representing growing yield -->
+  <ellipse cx="12" cy="18" rx="8" ry="3" fill="#a855f7"/>
+  <ellipse cx="12" cy="18" rx="8" ry="3" stroke="#8b5cf6" stroke-width="1"/>
+  
+  <ellipse cx="12" cy="14" rx="8" ry="3" fill="#c084fc"/>
+  <ellipse cx="12" cy="14" rx="8" ry="3" stroke="#a855f7" stroke-width="1"/>
+  
+  <ellipse cx="12" cy="10" rx="8" ry="3" fill="#e879f9"/>
+  <ellipse cx="12" cy="10" rx="8" ry="3" stroke="#d946ef" stroke-width="1"/>
+  
+  <!-- Arrow pointing up -->
+  <path d="M12 2 L15 6 L13 6 L13 8 L11 8 L11 6 L9 6 Z" fill="#fbbf24"/>
+</svg>

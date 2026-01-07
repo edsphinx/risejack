@@ -179,6 +179,17 @@
   border-color: rgba(139, 92, 246, 0.5);
 }
 
+.hero-cta-secondary button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.hero-cta-secondary .cta-yield-icon {
+  width: 18px;
+  height: 18px;
+}
+
 /* ==================== FEATURED GAME CARD ==================== */
 
 /* Hero right - expanded for solo leaderboard */

@@ -82,7 +82,10 @@ export function Home() {
               <button onClick={() => setFaucetOpen(true)} className="hero-cta-chip">
                 <ChipIcon size={18} /> Get CHIP
               </button>
-              <button onClick={navigateToStake}>📈 Earn Yield</button>
+              <button onClick={navigateToStake} className="hero-cta-yield">
+                <img src="/assets/icons/yield.svg" alt="" className="cta-yield-icon" />
+                Earn Yield
+              </button>
             </div>
           </div>
 

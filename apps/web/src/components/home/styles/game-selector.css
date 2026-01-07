@@ -1,0 +1,188 @@
+/* Game Version Selector Styles */
+
+.game-selector-section {
+  padding: 4rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.game-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+/* Base Card */
+.game-version-card {
+  position: relative;
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(20, 20, 35, 0.9));
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  overflow: hidden;
+}
+
+.game-version-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.game-version-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+  border-radius: 16px;
+}
+
+.game-version-card:hover::before {
+  opacity: 0.1;
+}
+
+/* Color Variants */
+.game-version-amber {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.game-version-amber:hover {
+  border-color: rgba(245, 158, 11, 0.6);
+  box-shadow: 0 20px 40px rgba(245, 158, 11, 0.15);
+}
+
+.game-version-amber::before {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.game-version-amber .version-cta {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.game-version-blue {
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.game-version-blue:hover {
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15);
+}
+
+.game-version-blue::before {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.game-version-blue .version-cta {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.game-version-emerald {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.game-version-emerald:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 0 20px 40px rgba(16, 185, 129, 0.15);
+}
+
+.game-version-emerald::before {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.game-version-emerald .version-cta {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+/* Badge */
+.version-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Header */
+.version-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.version-token-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.version-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.version-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.version-token {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Description */
+.version-description {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 1rem;
+  line-height: 1.4;
+}
+
+/* CTA */
+.version-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  transition: transform 0.2s;
+}
+
+.game-version-card:hover .version-cta {
+  transform: scale(1.02);
+}
+
+.cta-arrow {
+  transition: transform 0.2s;
+}
+
+.game-version-card:hover .cta-arrow {
+  transform: translateX(4px);
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .game-selector-section {
+    padding: 2rem 1rem;
+  }
+
+  .game-selector-grid {
+    grid-template-columns: 1fr;
+  }
+}

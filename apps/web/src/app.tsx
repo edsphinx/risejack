@@ -18,6 +18,8 @@ import './components/wallet/styles/mobile-header.css';
 const Home = lazy(() => import('./pages/Home'));
 const VyreJack = lazy(() => import('./pages/VyreJack'));
 const VyreJackEth = lazy(() => import('./pages/games/VyreJackEth'));
+const VyreJackChip = lazy(() => import('./pages/games/VyreJackChip'));
+const VyreJackUsdc = lazy(() => import('./pages/games/VyreJackUsdc'));
 const Swap = lazy(() => import('./pages/Swap'));
 const Stake = lazy(() => import('./pages/Stake'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
@@ -332,6 +334,8 @@ export function App() {
                 <Route path="/" component={Home} />
                 <Route path="/vyrejack" component={VyreJack} />
                 <Route path="/games/vyrejack-eth" component={VyreJackEth} />
+                <Route path="/games/vyrejack-chip" component={VyreJackChip} />
+                <Route path="/games/vyrejack-usdc" component={VyreJackUsdc} />
                 <Route path="/swap" component={Swap} />
                 <Route path="/stake" component={Stake} />
                 <Route path="/leaderboard" component={LeaderboardPage} />

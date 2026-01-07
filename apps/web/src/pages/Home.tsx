@@ -8,7 +8,7 @@ import { useLocation } from 'wouter-preact';
 import { Logo } from '@/components/brand/Logo';
 import { ChipIcon } from '@/components/icons/ChipIcon';
 import { useWallet } from '@/context/WalletContext';
-import { FeaturedGameCard } from '@/components/home/FeaturedGameCard';
+import { GameVersionSelector } from '@/components/home/GameVersionSelector';
 import { LiveStats } from '@/components/home/LiveStats';
 import { LiveWinsTicker } from '@/components/home/LiveWinsTicker';
 import { ComingSoonCard } from '@/components/home/ComingSoonCard';
@@ -35,7 +35,8 @@ export function Home() {
   const [, setLocation] = useLocation();
   const wallet = useWallet();
 
-  const navigateToGame = () => setLocation('/vyrejack');
+  // Hero CTA → CHIP version (featured)
+  const navigateToGame = () => setLocation('/games/vyrejack-chip');
   const navigateToStake = () => setLocation('/stake');
 
   // Faucet modal state
@@ -106,18 +107,8 @@ export function Home() {
       {/* Powered by Rise - Showcasing Rise Chain tech */}
       <PoweredByRise />
 
-      {/* Featured Games Section */}
-      <section className="featured-section">
-        <h2 className="section-title">🔥 Featured Game</h2>
-        <FeaturedGameCard
-          title="VYREJACK"
-          description="Classic Blackjack • Instant Payouts"
-          playersCount={LIVE_STATS.playersOnline}
-          potAmount={LIVE_STATS.totalPot}
-          onClick={navigateToGame}
-          showCTA={true}
-        />
-      </section>
+      {/* Game Version Selector - Choose CHIP, USDC, or ETH */}
+      <GameVersionSelector />
 
       {/* Coming Soon Games */}
       <section className="games-section">

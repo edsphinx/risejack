@@ -281,7 +281,7 @@ export function GameBoard() {
                         cards={lastHand?.dealerCards || game.gameData?.dealerCards || []}
                         value={lastHand?.dealerValue ?? game.dealerValue ?? undefined}
                         isDealer
-                        hideSecond={canPlay && !gameResult}
+                        hideSecond={!gameResult}
                         result={gameResult === 'lose' ? 'win' : null}
                         hideValue
                       />

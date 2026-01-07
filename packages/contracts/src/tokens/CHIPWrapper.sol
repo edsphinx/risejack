@@ -2,19 +2,20 @@
 pragma solidity ^0.8.28;
 
 /* --------------------------------------------------------------------------
- * CHIPWRAPPER — USDC TO CHIP 1:1 EXCHANGE
+ * CHIPWRAPPER — MULTI-ASSET TO CHIP EXCHANGE
  * -------------------------------------------------------------------------
- * Deposit & Mint model ensuring 100% USDC backing for all CHIP tokens.
+ * Deposit & Mint model with oracle-based pricing.
+ * Users can buy CHIP with ETH, USDC, USDT, or WBTC at current USD prices.
  *
- * - Deposit: USDC → CHIP (0% fee)
- * - Withdraw: CHIP → USDC (0.5% fee)
- * - Solvency: CHIP supply always ≤ USDC reserves
- * - Decimal Handling: USDC (6 dec) ↔ CHIP (18 dec)
+ * - 1 CHIP = 1 USD (backed by deposited assets)
+ * - Deposit: Asset → CHIP (0% fee, oracle pricing)
+ * - Withdraw: CHIP → USDC (0.5% fee, 1:1)
  * ------------------------------------------------------------------------*/
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 
 interface IMintableBurnable {
     function mint(
@@ -31,21 +32,29 @@ interface IMintableBurnable {
  * @title  CHIPWrapper
  * @author edsphinx
  * @custom:company Blocketh
- * @notice 1:1 USDC ⟷ CHIP exchange (Deposit & Mint model)
- * @dev Every CHIP in circulation is backed by 1 USDC in this vault
+ * @notice Multi-asset CHIP minting with Rise Chain oracle pricing
+ * @dev Every CHIP is worth 1 USD, backed by deposited assets
  *
- * FLOW:
- * - Deposit: User sends USDC → Contract mints CHIP (0% fee)
- * - Withdraw: User sends CHIP → Contract burns CHIP, returns USDC (0.5% fee)
- *
- * GUARANTEE: Total CHIP supply ≤ USDC balance (100% solvency)
+ * SUPPORTED ASSETS:
+ * - ETH  (native, via depositETH)
+ * - USDC (ERC20, via deposit or depositToken)
+ * - USDT (ERC20, via depositToken)
+ * - WBTC (ERC20, via depositToken)
  */
 contract CHIPWrapper is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    // ==================== CONSTANTS ====================
+
+    /// @notice Oracle price decimals (Rise oracles use 8)
+    uint256 public constant ORACLE_DECIMALS = 8;
+
+    /// @notice CHIP token decimals
+    uint256 public constant CHIP_DECIMALS = 18;
+
     // ==================== STATE ====================
 
-    /// @notice USDC token (backing asset)
+    /// @notice USDC token (primary backing asset for withdrawals)
     IERC20 public immutable usdc;
 
     /// @notice CHIP token (casino chips)
@@ -69,18 +78,43 @@ contract CHIPWrapper is ReentrancyGuard {
     /// @notice Paused state
     bool public paused;
 
-    /// @notice Total deposits ever (for stats)
+    // ==================== MULTI-ASSET SUPPORT ====================
+
+    /// @notice Asset configuration for oracle-based deposits
+    struct AssetConfig {
+        address token; // Token address (address(0) for ETH)
+        address oracle; // Price oracle address
+        uint8 decimals; // Token decimals (18 for ETH, 6 for USDC/USDT, 8 for WBTC)
+        bool enabled; // Is asset enabled for deposit
+    }
+
+    /// @notice Supported assets by key (e.g., "ETH", "USDC", "USDT", "WBTC")
+    mapping(bytes32 => AssetConfig) public supportedAssets;
+
+    /// @notice List of asset keys for iteration
+    bytes32[] public assetKeys;
+
+    // ==================== STATS ====================
+
+    /// @notice Total deposits ever (in USD value, 18 decimals)
     uint256 public totalDeposited;
 
-    /// @notice Total withdrawals ever (for stats)
+    /// @notice Total withdrawals ever (in USDC, 6 decimals)
     uint256 public totalWithdrawn;
 
-    /// @notice Total fees collected ever
+    /// @notice Total fees collected ever (in USDC, 6 decimals)
     uint256 public totalFeesCollected;
 
     // ==================== EVENTS ====================
 
     event Deposited(address indexed user, uint256 usdcAmount, uint256 chipMinted);
+    event DepositedAsset(
+        address indexed user,
+        bytes32 indexed assetKey,
+        uint256 assetAmount,
+        uint256 chipMinted,
+        uint256 usdValue
+    );
     event Withdrawn(address indexed user, uint256 chipBurned, uint256 usdcReturned, uint256 fee);
     event FeesCollected(address indexed treasury, uint256 amount);
     event FeeUpdated(string feeType, uint256 newBps);
@@ -88,6 +122,8 @@ contract CHIPWrapper is ReentrancyGuard {
     event OwnershipTransferStarted(address indexed currentOwner, address indexed pendingOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Paused(bool isPaused);
+    event AssetAdded(bytes32 indexed key, address token, address oracle, uint8 decimals);
+    event AssetUpdated(bytes32 indexed key, bool enabled);
 
     // ==================== MODIFIERS ====================
 
@@ -120,12 +156,99 @@ contract CHIPWrapper is ReentrancyGuard {
         owner = _owner;
     }
 
-    // ==================== DEPOSIT (USDC → CHIP) ====================
+    // ==================== DEPOSIT ETH ====================
 
     /**
-     * @notice Deposit USDC and receive CHIP 1:1
+     * @notice Deposit ETH and receive CHIP at current USD price
+     * @return chipAmount CHIP minted (18 decimals)
+     */
+    function depositETH() external payable nonReentrant whenNotPaused returns (uint256 chipAmount) {
+        require(msg.value > 0, "CHIPWrapper: zero amount");
+
+        bytes32 key = keccak256("ETH");
+        AssetConfig memory config = supportedAssets[key];
+        require(config.enabled, "CHIPWrapper: ETH not supported");
+        require(config.oracle != address(0), "CHIPWrapper: ETH oracle not set");
+
+        // Get ETH price in USD (8 decimals from oracle)
+        int256 ethPrice = IPriceOracle(config.oracle).latest_answer();
+        require(ethPrice > 0, "CHIPWrapper: invalid ETH price");
+
+        // Calculate USD value in 18 decimals
+        // ETH is 18 decimals, oracle is 8 decimals
+        // usdValue = (ethAmount * price) / 10^8
+        uint256 usdValue = (msg.value * uint256(ethPrice)) / (10 ** ORACLE_DECIMALS);
+
+        // Apply deposit fee
+        uint256 fee = (usdValue * depositFeeBps) / 10_000;
+        chipAmount = usdValue - fee;
+
+        // Mint CHIP to user
+        chip.mint(msg.sender, chipAmount);
+
+        totalDeposited += usdValue;
+
+        emit DepositedAsset(msg.sender, key, msg.value, chipAmount, usdValue);
+    }
+
+    // ==================== DEPOSIT TOKEN (ORACLE-BASED) ====================
+
+    /**
+     * @notice Deposit any supported token and receive CHIP at current USD price
+     * @param assetKey The asset key (e.g., keccak256("USDC"), keccak256("USDT"), keccak256("WBTC"))
+     * @param amount Token amount in token's native decimals
+     * @return chipAmount CHIP minted (18 decimals)
+     */
+    function depositToken(
+        bytes32 assetKey,
+        uint256 amount
+    ) external nonReentrant whenNotPaused returns (uint256 chipAmount) {
+        require(amount > 0, "CHIPWrapper: zero amount");
+
+        AssetConfig memory config = supportedAssets[assetKey];
+        require(config.enabled, "CHIPWrapper: asset not supported");
+        require(config.token != address(0), "CHIPWrapper: use depositETH for ETH");
+        require(config.oracle != address(0), "CHIPWrapper: oracle not set");
+
+        // Transfer token to contract
+        IERC20(config.token).safeTransferFrom(msg.sender, address(this), amount);
+
+        // Get price from oracle (8 decimals)
+        int256 price = IPriceOracle(config.oracle).latest_answer();
+        require(price > 0, "CHIPWrapper: invalid price");
+
+        // Normalize amount to 18 decimals
+        uint256 normalizedAmount;
+        if (config.decimals < 18) {
+            normalizedAmount = amount * (10 ** (18 - config.decimals));
+        } else if (config.decimals > 18) {
+            normalizedAmount = amount / (10 ** (config.decimals - 18));
+        } else {
+            normalizedAmount = amount;
+        }
+
+        // Calculate USD value: normalizedAmount * price / 10^8
+        uint256 usdValue = (normalizedAmount * uint256(price)) / (10 ** ORACLE_DECIMALS);
+
+        // Apply deposit fee
+        uint256 fee = (usdValue * depositFeeBps) / 10_000;
+        chipAmount = usdValue - fee;
+
+        // Mint CHIP to user
+        chip.mint(msg.sender, chipAmount);
+
+        totalDeposited += usdValue;
+
+        emit DepositedAsset(msg.sender, assetKey, amount, chipAmount, usdValue);
+    }
+
+    // ==================== LEGACY DEPOSIT (USDC 1:1) ====================
+
+    /**
+     * @notice Deposit USDC and receive CHIP 1:1 (legacy, no oracle)
+     * @dev Kept for backward compatibility
      * @param amount USDC amount (6 decimals)
-     * @return chipAmount CHIP minted (18 decimals, adjusted)
+     * @return chipAmount CHIP minted (18 decimals)
      */
     function deposit(
         uint256 amount
@@ -151,7 +274,7 @@ contract CHIPWrapper is ReentrancyGuard {
         // Mint CHIP to user
         chip.mint(msg.sender, chipAmount);
 
-        totalDeposited += amount;
+        totalDeposited += netAmount * 1e12;
 
         emit Deposited(msg.sender, amount, chipAmount);
     }
@@ -199,25 +322,97 @@ contract CHIPWrapper is ReentrancyGuard {
     // ==================== VIEW FUNCTIONS ====================
 
     /**
-     * @notice Get total USDC reserves (backing all CHIP)
+     * @notice Get total USDC reserves
      */
     function getReserves() external view returns (uint256) {
         return usdc.balanceOf(address(this));
     }
 
     /**
-     * @notice Check if 100% solvent (reserves >= CHIP supply)
+     * @notice Get quote for ETH deposit
+     * @param ethAmount ETH amount in wei
+     * @return chipOut Expected CHIP output
+     * @return usdValue USD value (18 decimals)
      */
-    function isSolvent() external view returns (bool) {
-        uint256 reserves = usdc.balanceOf(address(this));
-        uint256 chipSupply = IERC20(address(chip)).totalSupply();
-        // CHIP is 18 decimals, USDC is 6, adjust
-        uint256 chipInUsdc = chipSupply / 1e12;
-        return reserves >= chipInUsdc;
+    function quoteDepositETH(
+        uint256 ethAmount
+    ) external view returns (uint256 chipOut, uint256 usdValue) {
+        bytes32 key = keccak256("ETH");
+        AssetConfig memory config = supportedAssets[key];
+        if (!config.enabled || config.oracle == address(0)) {
+            return (0, 0);
+        }
+
+        int256 ethPrice = IPriceOracle(config.oracle).latest_answer();
+        if (ethPrice <= 0) {
+            return (0, 0);
+        }
+
+        usdValue = (ethAmount * uint256(ethPrice)) / (10 ** ORACLE_DECIMALS);
+        uint256 fee = (usdValue * depositFeeBps) / 10_000;
+        chipOut = usdValue - fee;
     }
 
     /**
-     * @notice Get quote for deposit
+     * @notice Get quote for token deposit
+     * @param assetKey The asset key
+     * @param amount Token amount in native decimals
+     * @return chipOut Expected CHIP output
+     * @return usdValue USD value (18 decimals)
+     */
+    function quoteDepositToken(
+        bytes32 assetKey,
+        uint256 amount
+    ) external view returns (uint256 chipOut, uint256 usdValue) {
+        AssetConfig memory config = supportedAssets[assetKey];
+        if (!config.enabled || config.oracle == address(0)) {
+            return (0, 0);
+        }
+
+        int256 price = IPriceOracle(config.oracle).latest_answer();
+        if (price <= 0) {
+            return (0, 0);
+        }
+
+        // Normalize to 18 decimals
+        uint256 normalizedAmount;
+        if (config.decimals < 18) {
+            normalizedAmount = amount * (10 ** (18 - config.decimals));
+        } else if (config.decimals > 18) {
+            normalizedAmount = amount / (10 ** (config.decimals - 18));
+        } else {
+            normalizedAmount = amount;
+        }
+
+        usdValue = (normalizedAmount * uint256(price)) / (10 ** ORACLE_DECIMALS);
+        uint256 fee = (usdValue * depositFeeBps) / 10_000;
+        chipOut = usdValue - fee;
+    }
+
+    /**
+     * @notice Get all supported asset keys
+     */
+    function getSupportedAssetKeys() external view returns (bytes32[] memory) {
+        return assetKeys;
+    }
+
+    /**
+     * @notice Get current price from oracle
+     * @param assetKey The asset key
+     * @return price Price in 8 decimals
+     */
+    function getAssetPrice(
+        bytes32 assetKey
+    ) external view returns (int256 price) {
+        AssetConfig memory config = supportedAssets[assetKey];
+        if (config.oracle == address(0)) {
+            return 0;
+        }
+        return IPriceOracle(config.oracle).latest_answer();
+    }
+
+    /**
+     * @notice Get quote for legacy USDC deposit
      */
     function quoteDeposit(
         uint256 usdcAmount
@@ -237,7 +432,57 @@ contract CHIPWrapper is ReentrancyGuard {
         usdcOut = grossUsdc - fee;
     }
 
-    // ==================== ADMIN ====================
+    // ==================== ADMIN: ASSET MANAGEMENT ====================
+
+    /**
+     * @notice Add a new supported asset
+     * @param key Unique key (use keccak256 of ticker, e.g., keccak256("ETH"))
+     * @param token Token address (address(0) for ETH)
+     * @param oracle Oracle address
+     * @param decimals Token decimals
+     */
+    function addSupportedAsset(
+        bytes32 key,
+        address token,
+        address oracle,
+        uint8 decimals
+    ) external onlyOwner {
+        require(oracle != address(0), "CHIPWrapper: zero oracle");
+        require(supportedAssets[key].oracle == address(0), "CHIPWrapper: asset exists");
+
+        supportedAssets[key] =
+            AssetConfig({ token: token, oracle: oracle, decimals: decimals, enabled: true });
+
+        assetKeys.push(key);
+
+        emit AssetAdded(key, token, oracle, decimals);
+    }
+
+    /**
+     * @notice Enable or disable an asset
+     */
+    function setSupportedAssetEnabled(
+        bytes32 key,
+        bool enabled
+    ) external onlyOwner {
+        require(supportedAssets[key].oracle != address(0), "CHIPWrapper: asset not found");
+        supportedAssets[key].enabled = enabled;
+        emit AssetUpdated(key, enabled);
+    }
+
+    /**
+     * @notice Update oracle for an asset
+     */
+    function updateAssetOracle(
+        bytes32 key,
+        address oracle
+    ) external onlyOwner {
+        require(oracle != address(0), "CHIPWrapper: zero oracle");
+        require(supportedAssets[key].oracle != address(0), "CHIPWrapper: asset not found");
+        supportedAssets[key].oracle = oracle;
+    }
+
+    // ==================== ADMIN: FEES & OWNERSHIP ====================
 
     function setDepositFee(
         uint256 bps
@@ -287,12 +532,26 @@ contract CHIPWrapper is ReentrancyGuard {
         emit OwnershipTransferred(oldOwner, msg.sender);
     }
 
-    // Emergency: recover stuck tokens (not USDC)
+    // ==================== ADMIN: EMERGENCY ====================
+
+    /**
+     * @notice Recover stuck tokens (not primary reserves)
+     * @dev Allows recovering non-USDC tokens or excess ETH
+     */
     function emergencyRecover(
         address token,
         uint256 amount
     ) external onlyOwner {
-        require(token != address(usdc), "CHIPWrapper: cannot recover reserves");
-        IERC20(token).safeTransfer(owner, amount);
+        if (token == address(0)) {
+            // Recover ETH
+            payable(owner).transfer(amount);
+        } else {
+            IERC20(token).safeTransfer(owner, amount);
+        }
     }
+
+    /**
+     * @notice Receive ETH (for depositETH)
+     */
+    receive() external payable { }
 }

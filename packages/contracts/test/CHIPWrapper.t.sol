@@ -225,7 +225,8 @@ contract CHIPWrapperTest is Test {
         // But there's also initial supply from CHIPToken constructor
         // This test verifies the calculation doesn't revert
         // In production, CHIPToken would be owned by wrapper from start
-        wrapper.isSolvent(); // Just verify it doesn't revert
+        // NOTE: isSolvent() removed in multi-asset upgrade - solvency is more complex now
+        // wrapper.isSolvent(); // Just verify it doesn't revert
     }
 
     function test_QuoteDeposit() public view {

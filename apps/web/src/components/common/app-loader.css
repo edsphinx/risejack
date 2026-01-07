@@ -91,6 +91,8 @@
   right: 0;
   transform: translateY(-50%);
   color: #ec4899;
+  font-size: 1.7rem;
+  /* Slightly smaller to match proportions */
 }
 
 .card-diamond {

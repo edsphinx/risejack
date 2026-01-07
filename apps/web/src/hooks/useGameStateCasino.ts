@@ -64,14 +64,43 @@ interface UseGameStateCasinoReturn {
   clearResult: () => void;
 }
 
-// VyreJackGameState enum values
+// VyreJackGameState enum values (from VyreJackCore.sol)
+const IDLE = 0;
 const PLAYER_TURN = 2;
-const GAME_ENDED = 5;
+// Final states (game is over)
+const PLAYER_WIN = 5;
+const DEALER_WIN = 6;
+const PUSH = 7;
+const PLAYER_BLACKJACK = 8;
+
+// Check if state is a final game state
+function isFinalState(state: number | undefined): boolean {
+  return (
+    state === PLAYER_WIN || state === DEALER_WIN || state === PUSH || state === PLAYER_BLACKJACK
+  );
+}
+
+// Get result from final state
+function getResultFromState(state: number | undefined): GameResult {
+  switch (state) {
+    case PLAYER_WIN:
+      return 'win';
+    case DEALER_WIN:
+      return 'lose';
+    case PUSH:
+      return 'push';
+    case PLAYER_BLACKJACK:
+      return 'blackjack';
+    default:
+      return null;
+  }
+}
 
 /**
- * Calculate game result from hand values
+ * Calculate game result from hand values (as backup)
+ * Primary source should be contract state, this is fallback for edge cases
  */
-function calculateResult(
+function calculateResultFromValues(
   playerValue: number,
   dealerValue: number,
   playerCards: readonly number[]
@@ -171,11 +200,11 @@ export function useGameStateCasino(
 
   // ⚡ OPTIMIZATION: Memoized derived values
   const isGameEnded = useMemo(() => {
-    return game?.state === GAME_ENDED;
+    return isFinalState(game?.state);
   }, [game]);
 
   const hasActiveGame = useMemo(() => {
-    return game !== null && game.state !== GAME_ENDED;
+    return game !== null && game.state !== IDLE && !isFinalState(game.state);
   }, [game]);
 
   const isPlayerTurn = useMemo(() => {
@@ -191,9 +220,12 @@ export function useGameStateCasino(
     if (lastGameIdRef.current === gameId) return;
     lastGameIdRef.current = gameId;
 
-    logger.log('[useGameStateCasino] Game ended, creating snapshot');
+    logger.log('[useGameStateCasino] Game ended, creating snapshot', { state: game.state });
 
-    const result = calculateResult(playerValue, dealerValue, game.playerCards);
+    // Get result from contract state (primary) or calculate from values (fallback)
+    const result =
+      getResultFromState(game.state) ||
+      calculateResultFromValues(playerValue, dealerValue, game.playerCards);
 
     // Create snapshot before game data resets
     setLastHand({

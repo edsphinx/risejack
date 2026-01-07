@@ -369,3 +369,68 @@
 .wallet-section {
   position: relative;
 }
+
+/* ==================== ASSET BALANCE ROWS ==================== */
+/* Asset list with approval status indicators */
+
+.dropdown-assets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.dropdown-balance-asset {
+  padding: 0.5rem 0;
+}
+
+.dropdown-balance-asset .asset-info {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.asset-icon {
+  font-size: 1rem;
+}
+
+/* Approved indicator (green checkmark) */
+.asset-approved {
+  color: #22c55e;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: rgba(34, 197, 94, 0.15);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  margin-left: 0.25rem;
+}
+
+/* Approve button (for unapproved tokens) */
+.asset-approve-btn {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85rem;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 0.25rem;
+}
+
+.asset-approve-btn:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.5);
+  transform: scale(1.05);
+}
+
+.asset-approve-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* USDC balance color */
+.dropdown-balance-asset:nth-child(2) .dropdown-balance-value {
+  color: #38bdf8;
+}

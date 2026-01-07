@@ -10,6 +10,7 @@ import { WalletTrigger } from './WalletTrigger';
 import { WalletDropdown } from './WalletDropdown';
 import { clearRiseWalletData } from '@/lib/walletRecovery';
 import { useChipBalance } from '@/hooks/useChipBalance';
+import { useAssetBalances } from '@/hooks/useAssetBalances';
 import './styles/header.css';
 import './styles/desktop-dropdown.css';
 
@@ -33,8 +34,11 @@ export function WalletConnect({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Get CHIP balance
+  // Get CHIP balance (for trigger display)
   const { displayBalance: chipBalance } = useChipBalance();
+
+  // Get all asset balances with approval status
+  const { assets, refresh: refreshAssets } = useAssetBalances(account as `0x${string}` | null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -121,6 +125,7 @@ export function WalletConnect({
           address={account || ''}
           balance={balanceString || ''}
           chipBalance={chipBalance}
+          assets={assets}
           hasSessionKey={hasSessionKey}
           sessionExpiry={sessionExpiry}
           copied={copied}
@@ -130,6 +135,7 @@ export function WalletConnect({
           onRevokeSession={onRevokeSession}
           onDisconnect={handleDisconnect}
           onResetWallet={handleResetWallet}
+          onRefreshAssets={refreshAssets}
         />
       )}
     </div>

@@ -1,16 +1,27 @@
 /**
- * WalletDropdown - The dropdown panel showing wallet details (presentation only)
- * All event handlers are passed as props
+ * WalletDropdown - The dropdown panel showing wallet details
+ *
+ * 🆕 Features:
+ * - CHIP and USDC balances with approval status
+ * - Manual approval button for unapproved tokens
+ * - Visual indicators for approved/unapproved assets
  */
 
+import { useState } from 'preact/hooks';
 import { formatEthBalance, formatSessionTime } from '@/lib/formatters';
 import { ChipIcon } from '@/components/icons/ChipIcon';
+import { TokenService } from '@/services/token.service';
+import { CHIP_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS, VYRECASINO_ADDRESS } from '@/lib/contract';
+import { ERC20_ABI } from '@vyrejack/shared';
+import { logger } from '@/lib/logger';
 import type { TimeRemaining } from '@vyrejack/shared';
+import type { AssetInfo } from '@/hooks/useAssetBalances';
 
 interface WalletDropdownProps {
   address: string;
   balance: string; // ETH balance
-  chipBalance: string; // CHIP balance (display formatted)
+  chipBalance: string; // CHIP balance (display formatted) - legacy, still used
+  assets: AssetInfo[]; // New: array of assets with approval status
   hasSessionKey: boolean;
   sessionExpiry: TimeRemaining | null;
   copied: boolean;
@@ -20,12 +31,13 @@ interface WalletDropdownProps {
   onRevokeSession: () => void;
   onDisconnect: () => void;
   onResetWallet: () => void;
+  onRefreshAssets: () => Promise<void>;
 }
 
 export function WalletDropdown({
   address,
   balance,
-  chipBalance,
+  assets,
   hasSessionKey,
   sessionExpiry,
   copied,
@@ -35,6 +47,7 @@ export function WalletDropdown({
   onRevokeSession,
   onDisconnect,
   onResetWallet,
+  onRefreshAssets,
 }: WalletDropdownProps) {
   return (
     <div className="wallet-dropdown">
@@ -42,9 +55,10 @@ export function WalletDropdown({
       <WalletInfoSection
         address={address}
         balance={balance}
-        chipBalance={chipBalance}
+        assets={assets}
         copied={copied}
         onCopyAddress={onCopyAddress}
+        onRefreshAssets={onRefreshAssets}
       />
 
       {/* Session Key Section */}
@@ -78,17 +92,19 @@ export function WalletDropdown({
 interface WalletInfoSectionProps {
   address: string;
   balance: string;
-  chipBalance: string;
+  assets: AssetInfo[];
   copied: boolean;
   onCopyAddress: () => void;
+  onRefreshAssets: () => Promise<void>;
 }
 
 function WalletInfoSection({
   address,
   balance,
-  chipBalance,
+  assets,
   copied,
   onCopyAddress,
+  onRefreshAssets,
 }: WalletInfoSectionProps) {
   return (
     <div className="dropdown-section">
@@ -104,12 +120,16 @@ function WalletInfoSection({
         </button>
       </div>
 
-      {/* CHIP Balance: amount + chip icon */}
-      <div className="dropdown-balance-row dropdown-balance-chip">
-        <span className="dropdown-balance-label">CHIP Balance</span>
-        <span className="dropdown-balance-value">
-          {chipBalance} <ChipIcon size={18} />
-        </span>
+      {/* Asset Balances with Approval Status */}
+      <div className="dropdown-assets">
+        {assets.map((asset) => (
+          <AssetBalanceRow
+            key={asset.symbol}
+            asset={asset}
+            accountAddress={address}
+            onApproved={onRefreshAssets}
+          />
+        ))}
       </div>
 
       {/* ETH Balance */}
@@ -117,6 +137,81 @@ function WalletInfoSection({
         <span className="dropdown-balance-label">ETH Balance</span>
         <span className="dropdown-balance-value">{formatEthBalance(balance, 6)} Ξ</span>
       </div>
+    </div>
+  );
+}
+
+interface AssetBalanceRowProps {
+  asset: AssetInfo;
+  accountAddress: string;
+  onApproved: () => Promise<void>;
+}
+
+function AssetBalanceRow({ asset, accountAddress, onApproved }: AssetBalanceRowProps) {
+  const [isApproving, setIsApproving] = useState(false);
+
+  const handleApprove = async () => {
+    setIsApproving(true);
+
+    try {
+      const { createWalletClient, custom } = await import('viem');
+      const { riseTestnet } = await import('@/lib/contract');
+
+      const walletClient = createWalletClient({
+        chain: riseTestnet,
+        transport: custom((window as any).ethereum),
+      });
+
+      const tokenAddress = asset.symbol === 'CHIP' ? CHIP_TOKEN_ADDRESS : USDC_TOKEN_ADDRESS;
+      const maxApproval = BigInt(
+        '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      );
+
+      const hash = await walletClient.writeContract({
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [VYRECASINO_ADDRESS, maxApproval],
+        account: accountAddress as `0x${string}`,
+      });
+
+      logger.log('[AssetBalanceRow] Approval tx sent:', hash);
+
+      await TokenService.publicClient.waitForTransactionReceipt({ hash });
+
+      logger.log('[AssetBalanceRow] Approval confirmed!');
+
+      await onApproved();
+    } catch (error) {
+      logger.error('[AssetBalanceRow] Approval failed:', error);
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  return (
+    <div className="dropdown-balance-row dropdown-balance-asset">
+      <div className="asset-info">
+        <span className="asset-icon">{asset.icon}</span>
+        <span className="dropdown-balance-label">{asset.symbol}</span>
+        {asset.isApproved ? (
+          <span className="asset-approved" title="Approved for VyreCasino">
+            ✓
+          </span>
+        ) : (
+          <button
+            className="asset-approve-btn"
+            onClick={handleApprove}
+            disabled={isApproving}
+            title={`Approve ${asset.symbol} for VyreCasino`}
+          >
+            {isApproving ? '...' : '🔓'}
+          </button>
+        )}
+      </div>
+      <span className="dropdown-balance-value">
+        {asset.balance} {asset.symbol === 'CHIP' && <ChipIcon size={16} />}
+      </span>
     </div>
   );
 }

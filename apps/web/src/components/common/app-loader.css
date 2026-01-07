@@ -56,10 +56,10 @@
   filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.4));
 }
 
-/* Clean progress bar with shimmer */
+/* Clean progress bar with shimmer - same width as logo */
 .app-loader-progress {
-  width: 280px;
-  max-width: 80vw;
+  width: 320px;
+  max-width: 85vw;
   height: 3px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 2px;

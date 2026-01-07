@@ -17,13 +17,13 @@ import './styles/casino-table.css';
 
 export interface GameTableProps {
   // Dealer state
-  dealerCards: number[];
+  dealerCards: readonly number[];
   dealerValue?: number;
   dealerIsSoft?: boolean;
   hideSecond?: boolean;
 
   // Player state
-  playerCards: number[];
+  playerCards: readonly number[];
   playerValue?: number;
   playerIsSoft?: boolean;
 

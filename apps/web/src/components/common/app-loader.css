@@ -50,7 +50,7 @@
 
 /* Logo image - simple and centered */
 .app-loader-logo-img {
-  width: 320px;
+  width: 260px;
   max-width: 85vw;
   height: auto;
   filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.4));
@@ -58,7 +58,7 @@
 
 /* Clean progress bar with shimmer - same width as logo */
 .app-loader-progress {
-  width: 320px;
+  width: 260px;
   max-width: 85vw;
   height: 3px;
   background: rgba(255, 255, 255, 0.08);

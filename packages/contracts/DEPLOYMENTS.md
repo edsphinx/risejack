@@ -9,14 +9,14 @@
 **Deployed via Safe SDK with multisig ownership**  
 **New Features:** Multi-asset CHIPWrapper, Permit2 gasless approvals, Oracle pricing
 
-### CHIPToken (v4 - With contractURI)
+### CHIPToken (v4.1 - 500M/500M Distribution)
 
 **Contract:** CHIPToken (ERC20)  
-**Address:** [`0x8bA98863bCd8E58a2Cb695185116a44833bd72D4`](https://explorer.testnet.riselabs.xyz/address/0x8bA98863bCd8E58a2Cb695185116a44833bd72D4)  
+**Address:** [`0x4B882AF56262d2786754E38600589fc1347FdF1E`](https://explorer.testnet.riselabs.xyz/address/0x4B882AF56262d2786754E38600589fc1347FdF1E)  
 **Symbol:** CHIP  
-**Initial Supply:** 1,000,000,000 CHIP  
+**Initial Supply:** 1,000,000,000 CHIP (500M deployer, 500M treasury)  
 **Owner:** CHIPWrapper (for mint/burn)  
-**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0x8bA98863bCd8E58a2Cb695185116a44833bd72D4#code)
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0x4B882AF56262d2786754E38600589fc1347FdF1E#code)
 
 **Features:**
 
@@ -24,12 +24,12 @@
 - EIP-2612 Permit for gasless approvals
 - Burnable
 
-### CHIPWrapper (NEW)
+### CHIPWrapper (v4.1)
 
 **Contract:** CHIPWrapper (Multi-Asset Minting)  
-**Address:** [`0xA53E226c71f983658323c877c6da017B5bfc5493`](https://explorer.testnet.riselabs.xyz/address/0xA53E226c71f983658323c877c6da017B5bfc5493)  
-**Owner:** SAFE Multisig  
-**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0xA53E226c71f983658323c877c6da017B5bfc5493#code)
+**Address:** [`0xA24d573d133F80E4494F92f345c4b857a6e2e036`](https://explorer.testnet.riselabs.xyz/address/0xA24d573d133F80E4494F92f345c4b857a6e2e036)  
+**Owner:** Deployer (pending SAFE transfer for production)  
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0xA24d573d133F80E4494F92f345c4b857a6e2e036#code)
 
 **Features:**
 

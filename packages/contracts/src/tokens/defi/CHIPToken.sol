@@ -8,12 +8,13 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title CHIPToken
- * @dev The native gaming currency of RISECASINO.
+ * @dev The native gaming currency of VyreCasino.
  * Features:
  * - Standard ERC20
  * - Burnable (for deflationary mechanics)
  * - Permit (gasless approvals)
  * - Owner minting (controlled by MasterChef/Game contracts initially, then DAO)
+ * - ERC-7572 contractURI for metadata/icon
  */
 contract CHIPToken is ERC20, ERC20Burnable, ERC20Permit, Ownable {
     constructor(
@@ -42,5 +43,14 @@ contract CHIPToken is ERC20, ERC20Burnable, ERC20Permit, Ownable {
         uint256 amount
     ) public onlyOwner {
         _burn(from, amount);
+    }
+
+    /**
+     * @dev Returns URI for contract-level metadata (ERC-7572).
+     * Includes token name, symbol, decimals, description, and image URL.
+     * Used by wallets to display token icon and info.
+     */
+    function contractURI() external pure returns (string memory) {
+        return "https://vyre.top/tokens/chip.json";
     }
 }

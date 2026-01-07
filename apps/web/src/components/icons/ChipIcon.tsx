@@ -93,18 +93,11 @@ export function ChipIcon({ size = 20, className = '' }: ChipIconProps) {
       {/* Center denomination area */}
       <circle cx="16" cy="16" r="5" fill="url(#chipDenomGradient)" />
 
-      {/* $ or value symbol */}
-      <text
-        x="16"
-        y="18.5"
-        textAnchor="middle"
-        fontSize="7"
-        fontWeight="bold"
-        fill="#fff"
-        style={{ fontFamily: 'monospace' }}
-      >
-        $
-      </text>
+      {/* Ethereum logo */}
+      <g transform="translate(12, 11) scale(0.4)">
+        <path d="M10 0L0 10L10 14L20 10L10 0Z" fill="#fff" opacity="0.9" />
+        <path d="M10 15L0 11L10 20L20 11L10 15Z" fill="#fff" opacity="0.7" />
+      </g>
 
       {/* Gradients */}
       <defs>

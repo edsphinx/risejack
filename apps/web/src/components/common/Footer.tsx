@@ -3,10 +3,13 @@
  */
 
 import { Logo } from '@/components/brand/Logo';
+import { VYRECASINO_ADDRESS } from '@/lib/contract';
 import './Footer.css';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const explorerUrl = `https://explorer.testnet.riselabs.xyz/address/${VYRECASINO_ADDRESS}`;
+  const shortAddress = `${VYRECASINO_ADDRESS.slice(0, 6)}...verified`;
 
   return (
     <footer className="casino-footer">
@@ -136,12 +139,8 @@ export function Footer() {
         <p>© {currentYear} VyreCasino. All rights reserved.</p>
         <p className="contract-info">
           VyreCasino:{' '}
-          <a
-            href="https://explorer.testnet.riselabs.xyz/address/0xd320e654D43B66c4Bd5275c43B968E066A363A5e"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            0xd320...verified
+          <a href={explorerUrl} target="_blank" rel="noopener noreferrer">
+            {shortAddress}
           </a>
         </p>
         <p className="powered-by">

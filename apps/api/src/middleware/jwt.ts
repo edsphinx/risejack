@@ -25,7 +25,10 @@ export const jwtAuth = async (c: Context, next: Next) => {
 
   const token = authHeader.slice(7);
 
-  // Validate token length to prevent DoS attacks
+  // Validate token content and length to prevent DoS attacks
+  if (token.length === 0) {
+    return c.json({ error: 'Token required' }, 400);
+  }
   if (token.length > 2048) {
     return c.json({ error: 'Token too long' }, 400);
   }
@@ -61,7 +64,10 @@ export const optionalJwtAuth = async (c: Context, next: Next) => {
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
 
-    // Validate token length to prevent DoS attacks
+    // Validate token content and length to prevent DoS attacks
+    if (token.length === 0) {
+      return c.json({ error: 'Token required' }, 400);
+    }
     if (token.length > 2048) {
       return c.json({ error: 'Token too long' }, 400);
     }

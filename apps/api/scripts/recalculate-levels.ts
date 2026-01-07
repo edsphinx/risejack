@@ -13,6 +13,12 @@ import { BASE_XP } from '@vyrejack/shared';
 
 async function recalculateLevels() {
   console.log('🔄 Recalculating all user levels...');
+
+  // Validate BASE_XP to prevent division by zero
+  if (!BASE_XP || BASE_XP <= 0) {
+    throw new Error(`Invalid BASE_XP value: ${BASE_XP}. Must be a positive number.`);
+  }
+
   console.log(`   Formula: level = FLOOR(SQRT(xp / ${BASE_XP}))`);
 
   // Get count before update

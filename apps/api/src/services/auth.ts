@@ -44,8 +44,9 @@ function getRedis(): Redis {
 const inMemoryNonceStore = new Map<string, { nonce: string; expiresAt: number }>();
 
 // Clean expired nonces every 5 minutes (only for in-memory store)
+let cleanupInterval: ReturnType<typeof setInterval> | null = null;
 if (!USE_REDIS) {
-  setInterval(
+  cleanupInterval = setInterval(
     () => {
       const now = Date.now();
       for (const [key, value] of inMemoryNonceStore.entries()) {
@@ -56,6 +57,15 @@ if (!USE_REDIS) {
     },
     5 * 60 * 1000
   );
+}
+
+// Export cleanup function for graceful shutdown
+export function cleanup() {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+  inMemoryNonceStore.clear();
 }
 
 // Redis helper functions

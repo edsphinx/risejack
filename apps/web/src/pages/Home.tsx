@@ -70,10 +70,10 @@ export function Home() {
             </h1>
 
             <p className="hero-subtitle">
-              VyreJack with CHIP tokens • Web2 speed, blockchain security
+              VyreJack with CHIP tokens • Web2-like UX, trustless under the hood
               <br />
               <span className="hero-subtitle-tech">
-                Powered by Rise Chain's 10ms blocks • Provably fair smart contracts
+                3-10ms Shreds • Enshrined VRF • Provably fair smart contracts
               </span>
             </p>
 

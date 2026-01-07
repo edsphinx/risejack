@@ -83,16 +83,9 @@ export function Home() {
             </div>
           </div>
 
-          {/* Right - Featured Game */}
+          {/* Right - Leaderboard (expanded) */}
           <div className="hero-right">
             <LeaderboardPreview />
-            <FeaturedGameCard
-              title="VYREJACK"
-              description="Classic Blackjack • Instant Payouts"
-              playersCount={LIVE_STATS.playersOnline}
-              potAmount={LIVE_STATS.totalPot}
-              onClick={navigateToGame}
-            />
           </div>
         </div>
       </section>
@@ -105,6 +98,19 @@ export function Home() {
 
       {/* Powered by Rise - Showcasing Rise Chain tech */}
       <PoweredByRise />
+
+      {/* Featured Games Section */}
+      <section className="featured-section">
+        <h2 className="section-title">🔥 Featured Game</h2>
+        <FeaturedGameCard
+          title="VYREJACK"
+          description="Classic Blackjack • Instant Payouts"
+          playersCount={LIVE_STATS.playersOnline}
+          potAmount={LIVE_STATS.totalPot}
+          onClick={navigateToGame}
+          showCTA={true}
+        />
+      </section>
 
       {/* Coming Soon Games */}
       <section className="games-section">

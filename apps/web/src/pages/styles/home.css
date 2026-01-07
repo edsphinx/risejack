@@ -175,9 +175,23 @@
 
 /* ==================== FEATURED GAME CARD ==================== */
 
+/* Hero right - expanded for solo leaderboard */
 .hero-right {
   display: flex;
   justify-content: center;
+  align-items: center;
+}
+
+/* Featured section (standalone) */
+.featured-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.featured-section .featured-game-card {
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 .featured-game-card {
@@ -218,7 +232,6 @@
 }
 
 @keyframes pulse-badge {
-
   0%,
   100% {
     transform: scale(1);

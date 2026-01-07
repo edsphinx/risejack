@@ -78,7 +78,7 @@ export function Home() {
             />
 
             <div className="hero-cta-secondary">
-              <button onClick={() => setFaucetOpen(true)}>🚰 Get CHIP</button>
+              <button onClick={() => setFaucetOpen(true)}>🪙 Get CHIP</button>
               <button onClick={navigateToStake}>📈 Earn Yield</button>
             </div>
           </div>

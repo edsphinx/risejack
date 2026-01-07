@@ -115,3 +115,12 @@
   font-size: 1rem;
   font-family: monospace;
 }
+
+.leaderboard-row .lvl {
+  font-weight: 600;
+  color: #fbbf24;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.5rem;
+  background: rgba(251, 191, 36, 0.1);
+  border-radius: 6px;
+}

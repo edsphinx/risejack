@@ -60,12 +60,12 @@ export const GAME_CALLS = [
  */
 export const SPEND_LIMITS = [
     {
-        limit: '0x56BC75E2D63100000', // 100 CHIP in wei as hex (18 decimals)
+        limit: '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', // Unlimited CHIP (max uint256)
         period: 'day' as const,
         token: CHIP_ADDRESS,
     },
     {
-        limit: '0x5F5E100', // 100 USDC in wei as hex (6 decimals = 100,000,000)
+        limit: '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', // Unlimited USDC (max uint256)
         period: 'day' as const,
         token: USDC_ADDRESS,
     },

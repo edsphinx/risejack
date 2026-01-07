@@ -17,6 +17,7 @@ import './components/wallet/styles/mobile-header.css';
 // Lazy-loaded pages - each becomes a separate chunk
 const Home = lazy(() => import('./pages/Home'));
 const VyreJack = lazy(() => import('./pages/VyreJack'));
+const VyreJackEth = lazy(() => import('./pages/games/VyreJackEth'));
 const Swap = lazy(() => import('./pages/Swap'));
 const Stake = lazy(() => import('./pages/Stake'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
@@ -24,7 +25,7 @@ const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
 function Header() {
   const [location, setLocation] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const isGame = location === '/vyrejack';
+  const isGame = location === '/vyrejack' || location.startsWith('/games/vyrejack');
 
   // Use global wallet context
   const wallet = useWallet();
@@ -330,6 +331,7 @@ export function App() {
               <Switch>
                 <Route path="/" component={Home} />
                 <Route path="/vyrejack" component={VyreJack} />
+                <Route path="/games/vyrejack-eth" component={VyreJackEth} />
                 <Route path="/swap" component={Swap} />
                 <Route path="/stake" component={Stake} />
                 <Route path="/leaderboard" component={LeaderboardPage} />

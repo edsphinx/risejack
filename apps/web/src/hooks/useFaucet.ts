@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import { useWallet } from '@/context/WalletContext';
 import { FaucetService, type FaucetStatus } from '@/services/faucet.service';
+import { emitBalanceChange } from '@/lib/balanceEvents';
 
 export interface UseFaucetReturn {
   // Status
@@ -114,6 +115,9 @@ export function useFaucet(): UseFaucetReturn {
       // Show success immediately with tx hash
       setTxHash(hash);
       setIsClaiming(false);
+
+      // Update header balance immediately
+      emitBalanceChange();
 
       // Update UI immediately - assume success
       // Set cooldown to ~1 hour (3600 seconds)

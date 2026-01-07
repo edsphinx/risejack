@@ -1,6 +1,65 @@
-# RiseJack Deployment Changelog
+# VyreCasino Deployment Changelog
 
 ## Rise Testnet
+
+---
+
+## VyreCasino Architecture v2.0 - 2026-01-06
+
+**Deployed via Safe SDK with multisig ownership**
+
+### VyreTreasury
+
+**Contract:** VyreTreasury  
+**Address:** [`0x53052Fc42f81bf211a81C5b99Ec1fAAc42522644`](https://explorer.testnet.riselabs.xyz/address/0x53052Fc42f81bf211a81C5b99Ec1fAAc42522644)  
+**Owner:** SAFE Multisig `0x108ca5cf713cb0b964d187f19cd7b7d317841c31`  
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0x53052Fc42f81bf211a81C5b99Ec1fAAc42522644#code)
+
+**Treasury Balances:**
+
+| Token | Amount    |
+| ----- | --------- |
+| CHIP  | 8,000,000 |
+| USDC  | 500       |
+
+### VyreCasino
+
+**Contract:** VyreCasino (Central Orchestrator)  
+**Address:** [`0xB841E36b03801B658aaB347F696232f99b844d83`](https://explorer.testnet.riselabs.xyz/address/0xB841E36b03801B658aaB347F696232f99b844d83)  
+**Owner:** SAFE Multisig  
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0xB841E36b03801B658aaB347F696232f99b844d83#code)
+
+**Configuration:**
+
+| Setting            | Value                                        |
+| ------------------ | -------------------------------------------- |
+| Treasury           | `0x53052Fc42f81bf211a81C5b99Ec1fAAc42522644` |
+| CHIP Token         | `0x18cA3c414bD08C74622C3E3bFE7464903d95602A` |
+| House Edge         | 2% (200 bps)                                 |
+| Whitelisted Tokens | CHIP, USDC                                   |
+
+### VyreJackCore
+
+**Contract:** VyreJackCore (Blackjack Game)  
+**Address:** [`0x4a9b126eD3B0a686c803ace5dfA5d220b7b7496B`](https://explorer.testnet.riselabs.xyz/address/0x4a9b126eD3B0a686c803ace5dfA5d220b7b7496B)  
+**Owner:** SAFE Multisig  
+**VRF Coordinator:** `0x9d57aB4517ba97349551C876a01a7580B1338909`  
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0x4a9b126eD3B0a686c803ace5dfA5d220b7b7496B#code)
+
+### Ownership Structure
+
+```
+SAFE Multisig (2/3) ─────────────────────────────────────────
+│                       0x108ca5cf...31                      │
+├────────────────┬──────────────────┬────────────────────────┤
+▼                ▼                  ▼
+VyreTreasury    VyreCasino        VyreJackCore
+(holds funds)   (orchestrator)    (game logic)
+```
+
+---
+
+### VyreJackETH v1.0.1 (Standalone) - 2024-12-29
 
 ### v1.0.1 - 2024-12-29
 

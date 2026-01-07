@@ -135,16 +135,13 @@ export function Footer() {
       <div className="footer-bottom">
         <p>© {currentYear} VyreCasino. All rights reserved.</p>
         <p className="contract-info">
-          Contract:{' '}
+          VyreCasino:{' '}
           <a
-            href={`https://testnet.explorer.riselabs.xyz/address/${import.meta.env.VITE_CONTRACT_ADDRESS || '0x6A82D6e6dC0A0fBd89d7FA3F26fe4E8Fbf330cb3'}`}
+            href="https://explorer.testnet.riselabs.xyz/address/0xB841E36b03801B658aaB347F696232f99b844d83"
             target="_blank"
             rel="noopener noreferrer"
           >
-            {(
-              import.meta.env.VITE_CONTRACT_ADDRESS || '0x6A82D6e6dC0A0fBd89d7FA3F26fe4E8Fbf330cb3'
-            ).slice(0, 6)}
-            ...verified
+            0xB841...verified
           </a>
         </p>
         <p className="powered-by">

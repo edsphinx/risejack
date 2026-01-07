@@ -155,28 +155,34 @@ function AssetBalanceRow({ asset, accountAddress, onApproved }: AssetBalanceRowP
 
     try {
       const { getProvider } = await import('@/lib/riseWallet');
-      const { riseTestnet } = await import('@/lib/contract');
-      const { createWalletClient, custom } = await import('viem');
+      const { encodeFunctionData } = await import('viem');
 
       const provider = getProvider();
-
-      const walletClient = createWalletClient({
-        chain: riseTestnet,
-        transport: custom(provider),
-      });
 
       const tokenAddress = asset.symbol === 'CHIP' ? CHIP_TOKEN_ADDRESS : USDC_TOKEN_ADDRESS;
       const maxApproval = BigInt(
         '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
       );
 
-      const hash = await walletClient.writeContract({
-        address: tokenAddress,
+      // Encode the approve function call
+      const data = encodeFunctionData({
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [VYRECASINO_ADDRESS, maxApproval],
-        account: accountAddress as `0x${string}`,
       });
+
+      // Use eth_sendTransaction (works with Rise Wallet Porto)
+      const hash = (await provider.request({
+        method: 'eth_sendTransaction',
+        params: [
+          {
+            from: accountAddress as `0x${string}`,
+            to: tokenAddress,
+            data,
+            value: '0x0',
+          },
+        ],
+      })) as `0x${string}`;
 
       logger.log('[AssetBalanceRow] Approval tx sent:', hash);
 

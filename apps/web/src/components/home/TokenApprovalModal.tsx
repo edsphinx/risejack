@@ -6,16 +6,12 @@
 
 import { useState } from 'preact/hooks';
 import { useLocation } from 'wouter-preact';
+import { encodeFunctionData } from 'viem';
 import { useWallet } from '@/context/WalletContext';
 import { TokenService } from '@/services/token.service';
 import { getProvider } from '@/lib/riseWallet';
 import { ChipIcon } from '@/components/icons/ChipIcon';
-import {
-  CHIP_TOKEN_ADDRESS,
-  USDC_TOKEN_ADDRESS,
-  VYRECASINO_ADDRESS,
-  riseTestnet,
-} from '@/lib/contract';
+import { CHIP_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS, VYRECASINO_ADDRESS } from '@/lib/contract';
 import { ERC20_ABI } from '@vyrejack/shared';
 import { logger } from '@/lib/logger';
 import type { TokenType } from '@/hooks/useGameNavigation';
@@ -61,35 +57,40 @@ export function TokenApprovalModal({ tokenType, onClose, onApproved }: TokenAppr
     setError(null);
 
     try {
-      // Get Rise Wallet provider (not window.ethereum)
+      // Get Rise Wallet provider
       const provider = getProvider();
 
-      const { createWalletClient, custom } = await import('viem');
-
-      const walletClient = createWalletClient({
-        chain: riseTestnet,
-        transport: custom(provider),
-      });
-
-      // Request unlimited approval
+      // Max approval amount
       const maxApproval = BigInt(
         '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
       );
 
-      logger.log('[TokenApprovalModal] Requesting approval for:', tokenInfo.name);
-
-      const hash = await walletClient.writeContract({
-        address: tokenInfo.address,
+      // Encode the approve function call
+      const data = encodeFunctionData({
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [VYRECASINO_ADDRESS, maxApproval],
-        account: wallet.address as `0x${string}`,
       });
 
-      logger.log('[TokenApprovalModal] Approval tx sent:', hash);
+      logger.log('[TokenApprovalModal] Requesting approval for:', tokenInfo.name);
+
+      // Use eth_sendTransaction (works with Rise Wallet Porto)
+      const txHash = (await provider.request({
+        method: 'eth_sendTransaction',
+        params: [
+          {
+            from: wallet.address,
+            to: tokenInfo.address,
+            data,
+            value: '0x0',
+          },
+        ],
+      })) as `0x${string}`;
+
+      logger.log('[TokenApprovalModal] Approval tx sent:', txHash);
 
       // Wait for confirmation
-      await TokenService.publicClient.waitForTransactionReceipt({ hash });
+      await TokenService.publicClient.waitForTransactionReceipt({ hash: txHash });
 
       logger.log('[TokenApprovalModal] Approval confirmed!');
 

@@ -10,10 +10,18 @@ import { GAME_PERMISSIONS } from '@/lib/gamePermissions';
 import { logger } from '@/lib/logger';
 
 // Storage prefix
-const STORAGE_PREFIX = 'risejack.sessionKey';
+const STORAGE_PREFIX = 'vyrejack.sessionKey';
 
-// Session key expiry (1 hour)
-const SESSION_EXPIRY_SECONDS = 3600;
+// Session key expiry - "Infinite" (~10 years) for keyless experience
+// Security: Rise Wallet (Porto) requires PIN/Passkey to unlock, so this is safe
+// Users can always recover via social login if they lose device
+const SESSION_EXPIRY_SECONDS = 10 * 365 * 24 * 60 * 60; // ~10 years = 315,360,000 seconds
+
+// Flag to indicate long-duration mode (affects UI behavior)
+export const SESSION_KEY_LONG_DURATION = true;
+
+// Threshold for showing expiry warnings (not really needed with infinite keys)
+export const EXPIRY_WARNING_THRESHOLD_HOURS = 24;
 
 // Module-level cache
 let activeKeyPair: SessionKeyData | null = null;

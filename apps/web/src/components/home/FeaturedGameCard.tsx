@@ -1,5 +1,6 @@
 /**
- * FeaturedGameCard - Highlighted game preview card (presentation only)
+ * FeaturedGameCard - Highlighted game preview card
+ * Shows game info, stats, and optional CTA button
  */
 
 interface FeaturedGameCardProps {
@@ -8,6 +9,7 @@ interface FeaturedGameCardProps {
   playersCount: number;
   potAmount: number;
   onClick: () => void;
+  showCTA?: boolean;
 }
 
 export function FeaturedGameCard({
@@ -16,9 +18,10 @@ export function FeaturedGameCard({
   playersCount,
   potAmount,
   onClick,
+  showCTA = false,
 }: FeaturedGameCardProps) {
   return (
-    <div className="featured-game-card" onClick={onClick}>
+    <div className="featured-game-card">
       <div className="game-card-badge">🔥 HOT</div>
 
       <div className="game-card-visual">
@@ -37,7 +40,12 @@ export function FeaturedGameCard({
           <span>💰 {potAmount} ETH pot</span>
         </div>
 
-        <button className="game-card-cta">PLAY NOW →</button>
+        {showCTA && (
+          <button className="game-card-cta" onClick={onClick}>
+            <img src="/assets/suits/spade.svg" alt="" className="cta-card-icon" />
+            Play Now
+          </button>
+        )}
       </div>
     </div>
   );

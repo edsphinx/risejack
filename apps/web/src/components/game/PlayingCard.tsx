@@ -1,4 +1,4 @@
-import type { PlayingCardProps } from '@risejack/shared';
+import type { PlayingCardProps } from '@vyrejack/shared';
 import { getCardDisplay, getCardImageUrl, getCardBackUrl } from '@/lib/cards';
 import './styles/playing-card.css';
 

@@ -11,12 +11,12 @@ import { ModalErrorBoundary } from './components/common/ErrorBoundary';
 import { PageLoader } from './components/common/PageLoader';
 import { AppLoader } from './components/common/AppLoader';
 import { PlayerStats } from './components/game/PlayerStats';
-import { safeParseNumber } from './lib/formatters';
+import { safeParseNumber, formatSessionTime } from './lib/formatters';
 import './components/wallet/styles/mobile-header.css';
 
 // Lazy-loaded pages - each becomes a separate chunk
 const Home = lazy(() => import('./pages/Home'));
-const RiseJack = lazy(() => import('./pages/RiseJack'));
+const VyreJack = lazy(() => import('./pages/VyreJack'));
 const Swap = lazy(() => import('./pages/Swap'));
 const Stake = lazy(() => import('./pages/Stake'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
@@ -24,7 +24,7 @@ const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
 function Header() {
   const [location, setLocation] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const isGame = location === '/risejack';
+  const isGame = location === '/vyrejack';
 
   // Use global wallet context
   const wallet = useWallet();
@@ -35,7 +35,7 @@ function Header() {
       <header className="mobile-header-compact sm:hidden">
         <div className="mobile-header-inner">
           <div className="cursor-pointer" onClick={() => setLocation('/')}>
-            <Logo size="compact" variant={isGame ? 'risejack' : 'risecasino'} />
+            <Logo size="compact" variant={isGame ? 'vyrejack' : 'vyrecasino'} />
           </div>
 
           {/* Right side: balance preview + hamburger */}
@@ -136,9 +136,7 @@ function Header() {
                         <div>
                           <div className="session-key-label">Fast Mode</div>
                           <div className="session-key-status">
-                            {wallet.hasSessionKey
-                              ? 'Active - no popups!'
-                              : 'Enable for instant gameplay'}
+                            {wallet.hasSessionKey ? 'Active' : 'Enable for instant gameplay'}
                           </div>
                         </div>
                       </div>
@@ -146,7 +144,7 @@ function Header() {
                         <div className="session-key-actions">
                           {wallet.sessionExpiry && !wallet.sessionExpiry.expired && (
                             <span className="session-key-time">
-                              {wallet.sessionExpiry.hours}h {wallet.sessionExpiry.minutes}m
+                              {formatSessionTime(wallet.sessionExpiry)}
                             </span>
                           )}
                           <button
@@ -215,7 +213,7 @@ function Header() {
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-6">
             <div className="cursor-pointer" onClick={() => setLocation('/')}>
-              <Logo size="full" variant={isGame ? 'risejack' : 'risecasino'} />
+              <Logo size="full" variant={isGame ? 'vyrejack' : 'vyrecasino'} />
             </div>
             <nav className="hidden md:flex gap-4 text-xs font-bold text-gray-400 tracking-wider">
               <button
@@ -331,7 +329,7 @@ export function App() {
             <Suspense fallback={<PageLoader />}>
               <Switch>
                 <Route path="/" component={Home} />
-                <Route path="/risejack" component={RiseJack} />
+                <Route path="/vyrejack" component={VyreJack} />
                 <Route path="/swap" component={Swap} />
                 <Route path="/stake" component={Stake} />
                 <Route path="/leaderboard" component={LeaderboardPage} />

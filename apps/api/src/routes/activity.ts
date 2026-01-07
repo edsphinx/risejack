@@ -6,7 +6,7 @@
 
 import { Hono } from 'hono';
 import prisma from '../db/client';
-import type { ApiError } from '@risejack/shared';
+import type { ApiError } from '@vyrejack/shared';
 
 const activity = new Hono();
 

@@ -41,6 +41,14 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Chip icon styling in trigger */
+.wallet-trigger-chip .chip-icon {
+  flex-shrink: 0;
 }
 
 .wallet-trigger-right {
@@ -186,6 +194,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: 0.5rem;
 }
 
 .dropdown-balance-label {
@@ -193,14 +202,33 @@
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .dropdown-balance-value {
   font-family: monospace;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #fbbf24;
-  text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+}
+
+/* CHIP balance styling */
+.dropdown-balance-chip {
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.dropdown-balance-chip .dropdown-balance-value {
+  color: #c4b5fd;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+/* ETH balance styling */
+.dropdown-balance-eth .dropdown-balance-value {
+  font-size: 0.9rem;
+  color: #94a3b8;
 }
 
 /* Session section */
@@ -208,12 +236,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .dropdown-session-info {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .dropdown-session-icon {
@@ -239,12 +271,13 @@
 
 .dropdown-session-time {
   font-family: monospace;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #4ade80;
   background: rgba(34, 197, 94, 0.15);
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.4rem;
   border-radius: 6px;
+  white-space: nowrap;
 }
 
 .dropdown-btn-enable {

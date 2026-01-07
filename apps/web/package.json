@@ -1,5 +1,5 @@
 {
-  "name": "@risejack/web",
+  "name": "@vyrejack/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "clean": "rm -rf dist node_modules/.vite"
   },
   "dependencies": {
-    "@risejack/shared": "workspace:*",
+    "@vyrejack/shared": "workspace:*",
     "ox": "0.9.8",
     "preact": "^10.25.4",
     "rise-wallet": "0.3.0",

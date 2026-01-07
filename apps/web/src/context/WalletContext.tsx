@@ -1,5 +1,5 @@
 /**
- * WalletContext - Global wallet session state for RISECASINO
+ * WalletContext - Global wallet session state for VYRECASINO
  *
  * Provides wallet connection, session key, and balance state
  * to all components in the app without redundant hook calls.
@@ -8,7 +8,7 @@
 import { createContext } from 'preact';
 import { useContext } from 'preact/hooks';
 import { useRiseWallet } from '@/hooks/useRiseWallet';
-import type { UseRiseWalletReturn } from '@risejack/shared';
+import type { UseRiseWalletReturn } from '@vyrejack/shared';
 
 // Create context with undefined default (will be provided by WalletProvider)
 const WalletContext = createContext<UseRiseWalletReturn | undefined>(undefined);

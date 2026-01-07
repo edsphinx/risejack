@@ -12,8 +12,8 @@ import { useContractState } from './useContractState';
 import { useGameActions, type GameEndData } from './useGameActions';
 import { useGameEvents, type GameEndEvent, type CardDealtEvent } from './useGameEvents';
 import { logger } from '@/lib/logger';
-import type { UseRiseWalletReturn } from '@risejack/shared';
-import type { GameData, HandValue, BetLimits, GameResult } from '@risejack/shared';
+import type { UseRiseWalletReturn } from '@vyrejack/shared';
+import type { GameData, HandValue, BetLimits, GameResult } from '@vyrejack/shared';
 
 // Card accumulator for smooth display
 interface CardAccumulator {

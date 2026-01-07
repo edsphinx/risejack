@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { Script, console } from "forge-std/Script.sol";
-import { RiseJack } from "../src/RiseJack.sol";
+import { VyreJackETH } from "../src/games/standalone/VyreJackETH.sol";
 import { MockVRFCoordinator } from "../src/mocks/MockVRFCoordinator.sol";
 
 contract DeployScript is Script {
@@ -31,8 +31,8 @@ contract DeployScript is Script {
             console.log("Using Rise Testnet VRF Coordinator");
         }
 
-        RiseJack risejack = new RiseJack(vrfCoordinator);
-        console.log("RiseJack deployed to:", address(risejack));
+        VyreJackETH risejack = new VyreJackETH(vrfCoordinator, vm.envAddress("TREASURY"));
+        console.log("VyreJackETH deployed to:", address(risejack));
 
         // Fund contract for payouts (optional, can be done later)
         if (isLocal) {
@@ -59,7 +59,7 @@ contract DeployLocal is Script {
         console.log("Mock VRF Coordinator:", address(mockVRF));
 
         // Deploy Blackjack with Mock VRF
-        RiseJack risejack = new RiseJack(address(mockVRF));
+        VyreJackETH risejack = new VyreJackETH(address(mockVRF), msg.sender);
         console.log("Blackjack:", address(risejack));
 
         // Fund contract
@@ -82,8 +82,8 @@ contract DeployTestnet is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy with default Rise VRF (address(0) triggers default)
-        RiseJack risejack = new RiseJack(address(0));
-        console.log("RiseJack deployed to:", address(risejack));
+        VyreJackETH risejack = new VyreJackETH(address(0), vm.envAddress("TREASURY"));
+        console.log("VyreJackETH deployed to:", address(risejack));
 
         // Configure for testnet: 0 cooldown for fast testing
         risejack.setGameCooldown(0);

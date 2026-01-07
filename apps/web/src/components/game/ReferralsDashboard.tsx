@@ -218,7 +218,7 @@ export function ReferralsDashboard() {
                 💡 <strong>How it works:</strong>
               </p>
               <p>• Share your link with friends</p>
-              <p>• They play RiseJack and you earn 10% of house edge</p>
+              <p>• They play VyreJack and you earn 10% of house edge</p>
               <p>• Earnings accumulate and are claimable monthly in CHIP</p>
             </div>
           </>

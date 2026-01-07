@@ -8,7 +8,7 @@
 import { useCallback, useRef } from 'preact/hooks';
 import { logEvent } from '@/lib/api';
 import { logger } from '@/lib/logger';
-import type { EventType } from '@risejack/shared';
+import type { EventType } from '@vyrejack/shared';
 
 interface UseEventLoggerOptions {
   walletAddress?: string | null;

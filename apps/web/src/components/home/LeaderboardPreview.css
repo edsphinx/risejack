@@ -1,0 +1,130 @@
+/* LeaderboardPreview Styles */
+.leaderboard-preview {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(30, 27, 75, 0.95) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  width: 100%;
+  max-width: 480px;
+}
+
+@media (min-width: 900px) {
+  .leaderboard-preview {
+    min-width: 400px;
+  }
+}
+
+.leaderboard-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.leaderboard-preview-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #f5f5f5;
+}
+
+.view-all-btn {
+  background: transparent;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  color: #a78bfa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-all-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #a78bfa;
+}
+
+.leaderboard-loading,
+.leaderboard-empty {
+  text-align: center;
+  color: #9ca3af;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  /* Smooth transitions for all changes */
+  transition: all 0.3s ease-out;
+}
+
+.leaderboard-row:hover {
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.leaderboard-row.rank-1 {
+  background: linear-gradient(90deg, rgba(234, 179, 8, 0.15) 0%, rgba(30, 27, 75, 0.5) 100%);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.leaderboard-row.rank-2 {
+  background: linear-gradient(90deg, rgba(192, 192, 192, 0.1) 0%, rgba(30, 27, 75, 0.5) 100%);
+}
+
+.leaderboard-row.rank-3 {
+  background: linear-gradient(90deg, rgba(205, 127, 50, 0.1) 0%, rgba(30, 27, 75, 0.5) 100%);
+}
+
+.leaderboard-row .rank {
+  font-size: 1.1rem;
+  min-width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.leaderboard-row .player-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.leaderboard-row .display-name {
+  font-weight: 500;
+  color: #f5f5f5;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaderboard-row .lvl {
+  font-weight: 600;
+  color: #fbbf24;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(251, 191, 36, 0.15);
+  border-radius: 6px;
+  flex-shrink: 0;
+  min-width: 55px;
+  text-align: center;
+}
+
+.leaderboard-row .xp {
+  font-weight: 700;
+  color: #a78bfa;
+  font-size: 0.9rem;
+  font-family: monospace;
+  flex-shrink: 0;
+  min-width: 80px;
+  text-align: right;
+}

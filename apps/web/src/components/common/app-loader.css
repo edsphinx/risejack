@@ -1,210 +1,156 @@
-/* AppLoader - Premium animated splash screen */
+/* AppLoader - Casino neon theme with orbiting cards */
 
 .app-loader {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #0f0f1a 0%, #1a0a2e 50%, #0f0f1a 100%);
-    overflow: hidden;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0a0612 0%, #120a1e 50%, #0a0612 100%);
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* Neon purple/pink glow background */
+.loader-neon-bg {
+  position: absolute;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(
+    circle,
+    rgba(168, 85, 247, 0.2) 0%,
+    rgba(236, 72, 153, 0.1) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: neon-pulse 3s ease-in-out infinite;
+}
+
+@keyframes neon-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.3);
+    opacity: 0.9;
+  }
+}
+
+/* Orbiting cards container */
+.cards-orbit {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  animation: orbit-rotate 8s linear infinite;
+}
+
+@keyframes orbit-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Individual orbiting cards */
+.orbit-card {
+  position: absolute;
+  font-size: 2rem;
+  text-shadow:
+    0 0 15px currentColor,
+    0 0 30px currentColor;
+  animation: card-counter-rotate 8s linear infinite;
+}
+
+@keyframes card-counter-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+/* Position cards at corners of orbit */
+.card-spade {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #8b5cf6;
+}
+
+.card-heart {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  color: #ec4899;
+  font-size: 1.3rem;
+  /* 75% to match proportions */
+}
+
+.card-diamond {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #f59e0b;
+}
+
+.card-club {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  color: #10b981;
 }
 
 .app-loader-content {
-    position: relative;
-    z-index: 10;
-    text-align: center;
-    animation: fadeIn 0.5s ease-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  z-index: 1;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Logo with neon glow */
+.loader-logo-wrapper {
+  animation: logo-neon-glow 2s ease-in-out infinite;
 }
 
-/* Animated Logo - Cards */
-.app-loader-logo {
-    position: relative;
-    height: 100px;
-    margin-bottom: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.loader-logo-wrapper .logo-full {
+  width: 240px;
+  max-width: 70vw;
 }
 
-.loader-card {
-    position: absolute;
-    font-size: 3rem;
-    filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.5));
-    animation: cardFloat 3s ease-in-out infinite;
+.loader-logo-wrapper .logo-svg-full {
+  width: 100%;
+  height: auto;
 }
 
-.loader-card.card-1 {
-    transform: translateX(-50px) rotate(-15deg);
-    animation-delay: 0s;
+@keyframes logo-neon-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.4))
+      drop-shadow(0 0 30px rgba(168, 85, 247, 0.2));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 25px rgba(236, 72, 153, 0.5))
+      drop-shadow(0 0 50px rgba(236, 72, 153, 0.3));
+  }
 }
 
-.loader-card.card-2 {
-    transform: translateY(-10px);
-    animation-delay: 0.3s;
-    font-size: 4rem;
-}
-
-.loader-card.card-3 {
-    transform: translateX(50px) rotate(15deg);
-    animation-delay: 0.6s;
-}
-
-@keyframes cardFloat {
-
-    0%,
-    100% {
-        transform: translateY(0) rotate(var(--rotate, 0deg));
-    }
-
-    50% {
-        transform: translateY(-15px) rotate(var(--rotate, 0deg));
-    }
-}
-
-.card-1 {
-    --rotate: -15deg;
-}
-
-.card-2 {
-    --rotate: 0deg;
-}
-
-.card-3 {
-    --rotate: 15deg;
-}
-
-/* Title */
-.app-loader-title {
-    font-size: 2.5rem;
-    font-weight: 900;
-    letter-spacing: 0.05em;
-    margin-bottom: 2rem;
-}
-
-.title-rise {
-    background: linear-gradient(135deg, #a855f7, #ec4899);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.title-casino {
-    color: white;
-    margin-left: 0.3em;
-    text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
-}
-
-/* Progress bar */
-.app-loader-progress {
-    width: 200px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    margin: 0 auto 1.5rem;
-    overflow: hidden;
-}
-
-.app-loader-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #a855f7, #ec4899);
-    border-radius: 2px;
-    transition: width 0.3s ease-out;
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
-}
-
-/* Status text */
-.app-loader-status {
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.875rem;
-    margin: 0;
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 0.6;
-    }
-
-    50% {
-        opacity: 1;
-    }
-}
-
-/* Background particles */
-.app-loader-bg {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-}
-
-.loader-particle {
-    position: absolute;
-    width: 300px;
-    height: 300px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
-    animation: particleFloat 8s ease-in-out infinite;
-}
-
-.loader-particle.p1 {
-    top: -150px;
-    left: -100px;
-    animation-delay: 0s;
-}
-
-.loader-particle.p2 {
-    bottom: -100px;
-    right: -100px;
-    animation-delay: 2s;
-}
-
-.loader-particle.p3 {
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    animation-delay: 4s;
-    background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%);
-}
-
-@keyframes particleFloat {
-
-    0%,
-    100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.5;
-    }
-
-    50% {
-        transform: translate(30px, -30px) scale(1.1);
-        opacity: 0.8;
-    }
-}
-
-/* Fade out animation when loading complete */
-.app-loader.fade-out {
-    animation: fadeOut 0.3s ease-out forwards;
-}
-
-@keyframes fadeOut {
-    to {
-        opacity: 0;
-        visibility: hidden;
-    }
+/* Status text with subtle neon */
+.loader-status {
+  color: #a78bfa;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+  margin: 0;
 }

@@ -12,7 +12,7 @@ import type {
   LeaderboardPeriod,
   LeaderboardMetric,
   VipTier,
-} from '@risejack/shared';
+} from '@vyrejack/shared';
 import type { Prisma } from '@prisma/client';
 
 export async function getCachedLeaderboard(

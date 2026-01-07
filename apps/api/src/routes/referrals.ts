@@ -8,7 +8,7 @@
 import { Hono } from 'hono';
 import { ReferralService, UserService } from '../services';
 import { isValidWalletAddress, isValidReferralCode, sanitizeError } from '../middleware';
-import type { ApiError } from '@risejack/shared';
+import type { ApiError } from '@vyrejack/shared';
 
 const referrals = new Hono();
 

@@ -91,7 +91,7 @@ export function Leaderboard() {
 
     try {
       const result = await getLiveLeaderboard(metric, 10);
-      setData(result as LeaderboardData);
+      setData(result as unknown as LeaderboardData);
     } catch (err) {
       setError('Failed to load leaderboard');
       console.error('Leaderboard error:', err);
@@ -122,11 +122,10 @@ export function Leaderboard() {
               key={m}
               type="button"
               onClick={() => setMetric(m)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                metric === m
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${metric === m
                   ? 'bg-purple-600 text-white'
                   : 'bg-slate-700/50 text-gray-400 hover:bg-slate-700 hover:text-gray-200'
-              }`}
+                }`}
             >
               {METRIC_LABELS[m].icon} {METRIC_LABELS[m].label}
             </button>
@@ -163,9 +162,8 @@ export function Leaderboard() {
               data.entries.map((entry) => (
                 <div
                   key={entry.walletAddress}
-                  className={`flex items-center justify-between p-3 rounded-lg ${
-                    entry.rank <= 3 ? 'bg-slate-700/50' : 'bg-slate-800/30'
-                  }`}
+                  className={`flex items-center justify-between p-3 rounded-lg ${entry.rank <= 3 ? 'bg-slate-700/50' : 'bg-slate-800/30'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className={`w-8 text-center ${getRankStyle(entry.rank)}`}>

@@ -1,4 +1,4 @@
-import type { HandProps } from '@risejack/shared';
+import type { HandProps } from '@vyrejack/shared';
 import { PlayingCard } from './PlayingCard';
 import './styles/hand.css';
 

@@ -5,7 +5,7 @@
  */
 
 import prisma from '../db/client';
-import type { GameType, GameOutcome } from '@risejack/shared';
+import type { GameType, GameOutcome } from '@vyrejack/shared';
 import { Prisma } from '@prisma/client';
 
 const DEFAULT_CHAIN_ID = 713715; // Rise Testnet

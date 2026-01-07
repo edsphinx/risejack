@@ -7,7 +7,7 @@ import type {
   SessionExpiryModalProps,
   FastModeOnboardingProps,
   SessionWarningProps,
-} from '@risejack/shared';
+} from '@vyrejack/shared';
 import './styles/session-modal.css';
 
 export function SessionExpiryModal({ onExtend, onSkip, isLoading }: SessionExpiryModalProps) {
@@ -31,7 +31,9 @@ export function SessionExpiryModal({ onExtend, onSkip, isLoading }: SessionExpir
     >
       <div className="session-modal-content">
         <div className="session-modal-icon">⏰</div>
-        <h2 id="session-expiry-title" className="session-modal-title">Session Expired</h2>
+        <h2 id="session-expiry-title" className="session-modal-title">
+          Session Expired
+        </h2>
         <p className="session-modal-subtitle">
           Your Fast Mode session has ended. Extend it to continue playing without transaction
           popups.
@@ -40,12 +42,12 @@ export function SessionExpiryModal({ onExtend, onSkip, isLoading }: SessionExpir
         <div className="session-modal-benefit">
           <span className="session-modal-benefit-icon">⚡</span>
           <span className="session-modal-benefit-text">
-            Instant gameplay - no wallet confirmations for 1 hour
+            Instant gameplay - no wallet confirmations needed
           </span>
         </div>
 
         <button className="session-modal-cta" onClick={onExtend} disabled={isLoading}>
-          {isLoading ? <>⏳ Activating...</> : <>🔑 Extend Session (1 hour)</>}
+          {isLoading ? <>⏳ Activating...</> : <>🔑 Renew Session</>}
         </button>
 
         <button className="session-modal-skip" onClick={onSkip}>
@@ -78,7 +80,9 @@ export function FastModeOnboarding({ onEnable, onSkip, isLoading }: FastModeOnbo
       <div className="onboarding-modal-content">
         <div className="onboarding-header">
           <div className="onboarding-icon">🚀</div>
-          <h2 id="onboarding-title" className="onboarding-title">Enable Fast Mode</h2>
+          <h2 id="onboarding-title" className="onboarding-title">
+            Enable Fast Mode
+          </h2>
           <p className="onboarding-subtitle">Play without interruptions</p>
         </div>
 
@@ -102,10 +106,12 @@ export function FastModeOnboarding({ onEnable, onSkip, isLoading }: FastModeOnbo
           </div>
 
           <div className="onboarding-feature">
-            <span className="onboarding-feature-icon">⏱️</span>
+            <span className="onboarding-feature-icon">✴️</span>
             <div className="onboarding-feature-text">
-              <div className="onboarding-feature-title">1-Hour Sessions</div>
-              <div className="onboarding-feature-desc">Auto-expires for your security</div>
+              <div className="onboarding-feature-title">Permanent Sessions</div>
+              <div className="onboarding-feature-desc">
+                Stay logged in - just enter PIN to unlock
+              </div>
             </div>
           </div>
         </div>

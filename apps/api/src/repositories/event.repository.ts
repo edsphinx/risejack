@@ -5,7 +5,7 @@
  */
 
 import prisma from '../db/client';
-import type { EventType } from '@risejack/shared';
+import type { EventType } from '@vyrejack/shared';
 import { Prisma } from '@prisma/client';
 
 // ==================== WRITE OPERATIONS ====================

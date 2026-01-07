@@ -66,8 +66,8 @@ export function GameHistoryAPI({ compact = false }: GameHistoryAPIProps) {
       // Delay to allow indexer to process
       setTimeout(fetchGames, 3000);
     };
-    window.addEventListener('risejack:gameEnd', handleGameEnd);
-    return () => window.removeEventListener('risejack:gameEnd', handleGameEnd);
+    window.addEventListener('vyrejack:gameEnd', handleGameEnd);
+    return () => window.removeEventListener('vyrejack:gameEnd', handleGameEnd);
   }, [fetchGames]);
 
   const getOutcomeEmoji = (outcome: string) => {

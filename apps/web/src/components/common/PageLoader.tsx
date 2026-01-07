@@ -1,14 +1,23 @@
 /**
- * PageLoader - Loading fallback component for lazy-loaded pages
+ * PageLoader - Minimalist page transition loader
+ * Matches AppLoader style for unified experience
  */
 
 import './page-loader.css';
 
 export function PageLoader() {
-    return (
-        <div className="page-loader">
-            <div className="page-loader-spinner" />
-            <p className="page-loader-text">Loading...</p>
+  return (
+    <div className="page-loader">
+      <div className="page-loader-glow" />
+      <div className="page-loader-content">
+        {/* Simple pulsing dot */}
+        <div className="page-loader-dots">
+          <span className="loader-dot" />
+          <span className="loader-dot" />
+          <span className="loader-dot" />
         </div>
-    );
+        <p className="page-loader-text">Loading...</p>
+      </div>
+    </div>
+  );
 }

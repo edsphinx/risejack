@@ -5,7 +5,7 @@
  * Uses VITE_API_URL from environment.
  */
 
-import type { LogEventRequest, EventType } from '@risejack/shared';
+import type { LogEventRequest, EventType } from '@vyrejack/shared';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -100,6 +100,19 @@ export async function registerReferral(
 
 // ==================== LEADERBOARD ====================
 
+export interface LeaderboardEntry {
+    rank: number;
+    walletAddress: string;
+    displayName?: string | null;
+    value: string;  // XP, volume, or other metric value
+    vipTier?: string;
+}
+
+export interface LeaderboardResponse {
+    entries: LeaderboardEntry[];
+    total: number;
+}
+
 export async function getLeaderboard(period: 'daily' | 'weekly' | 'monthly' | 'all_time') {
     return apiRequest(`/api/leaderboard/${period}`);
 }
@@ -107,7 +120,7 @@ export async function getLeaderboard(period: 'daily' | 'weekly' | 'monthly' | 'a
 export async function getLiveLeaderboard(
     metric: 'volume' | 'biggest_win' | 'streak' | 'xp',
     limit = 50
-) {
+): Promise<LeaderboardResponse> {
     return apiRequest(`/api/leaderboard/live/${metric}?limit=${limit}`);
 }
 

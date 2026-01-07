@@ -9,11 +9,11 @@ import { useWalletConnection } from './useWalletConnection';
 import { useSessionKey } from './useSessionKey';
 import { getProvider } from '@/lib/riseWallet';
 import { logger } from '@/lib/logger';
-import type { UseRiseWalletReturn } from '@risejack/shared';
+import type { UseRiseWalletReturn } from '@vyrejack/shared';
 
 // LocalStorage keys
-const ONBOARDING_SEEN_KEY = 'risejack_fastmode_onboarding_seen';
-const SKIP_FASTMODE_KEY = 'risejack_skip_fastmode';
+const ONBOARDING_SEEN_KEY = 'vyrejack_fastmode_onboarding_seen';
+const SKIP_FASTMODE_KEY = 'vyrejack_skip_fastmode';
 
 export function useRiseWallet(): UseRiseWalletReturn {
   const connection = useWalletConnection();
@@ -125,11 +125,15 @@ export function useRiseWallet(): UseRiseWalletReturn {
     showExpiryModal,
   ]);
 
-  // Calculate warning (5 min before expiry)
+  // Calculate warning (24 hours before expiry for long-duration keys)
+  // Only show warning in last 24 hours, return hours remaining
   const expiryWarningMinutes = (() => {
     if (!sessionKey.sessionExpiry || sessionKey.sessionExpiry.expired) return null;
-    const totalMinutes = sessionKey.sessionExpiry.hours * 60 + sessionKey.sessionExpiry.minutes;
-    if (totalMinutes <= 5 && totalMinutes > 0) return totalMinutes;
+    const totalHours = sessionKey.sessionExpiry.hours;
+    // Only warn when less than 24 hours remaining
+    if (totalHours < 24 && totalHours >= 0) {
+      return sessionKey.sessionExpiry.hours * 60 + sessionKey.sessionExpiry.minutes;
+    }
     return null;
   })();
 

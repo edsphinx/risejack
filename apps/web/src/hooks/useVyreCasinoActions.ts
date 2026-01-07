@@ -1,5 +1,8 @@
 /**
- * useVyreCasinoActions - Game actions for VyreCasino architecture
+ * useVyreCasinoActions - Game WRITE actions for VyreCasino architecture
+ *
+ * ⚡ PERFORMANCE: Uses TokenService for reads (no duplicate RPC calls)
+ * 🔧 MAINTAINABILITY: ONLY handles writes, reads done via hooks/services
  *
  * Handles:
  * - Token approval (CHIP/USDC → VyreCasino)
@@ -7,8 +10,8 @@
  * - Direct calls to VyreJackCore for hit/stand/double
  *
  * Flow:
- * 1. Check token allowance
- * 2. Approve if needed
+ * 1. Check token allowance (via TokenService)
+ * 2. Approve if needed (write)
  * 3. Call VyreCasino.play(game, token, amount, data)
  * 4. For actions: call VyreJackCore.hit(), stand(), etc.
  */
@@ -22,7 +25,7 @@ import {
   clearAllSessionKeys,
   createSessionKey,
 } from '@/services/sessionKeyManager';
-import { ErrorService } from '@/services';
+import { ErrorService, TokenService } from '@/services';
 import {
   VYRECASINO_ABI,
   VYREJACKCORE_ABI,
@@ -44,10 +47,8 @@ export interface UseVyreCasinoActionsReturn {
   isLoading: boolean;
   error: string | null;
   clearError: () => void;
-  // Token management
+  // Token write actions
   approveToken: (token: `0x${string}`, amount?: bigint) => Promise<boolean>;
-  checkAllowance: (token: `0x${string}`) => Promise<bigint>;
-  getTokenBalance: (token: `0x${string}`) => Promise<bigint>;
   // Game actions
   placeBet: (betAmount: string, token?: `0x${string}`) => Promise<boolean>;
   hit: () => Promise<boolean>;
@@ -176,47 +177,8 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
   // TOKEN MANAGEMENT
   // ---------------------------------------------------------------------------
 
-  const checkAllowance = useCallback(
-    async (token: `0x${string}`): Promise<bigint> => {
-      if (!address) return 0n;
-      const provider = getProvider();
-
-      const data = encodeFunctionData({
-        abi: ERC20_ABI,
-        functionName: 'allowance',
-        args: [address, VYRECASINO_ADDRESS],
-      });
-
-      const result = (await provider.request({
-        method: 'eth_call',
-        params: [{ to: token, data }],
-      })) as `0x${string}`;
-
-      return BigInt(result);
-    },
-    [address]
-  );
-
-  const getTokenBalance = useCallback(
-    async (token: `0x${string}`): Promise<bigint> => {
-      if (!address) return 0n;
-      const provider = getProvider();
-
-      const data = encodeFunctionData({
-        abi: ERC20_ABI,
-        functionName: 'balanceOf',
-        args: [address],
-      });
-
-      const result = (await provider.request({
-        method: 'eth_call',
-        params: [{ to: token, data }],
-      })) as `0x${string}`;
-
-      return BigInt(result);
-    },
-    [address]
-  );
+  // ⚡ READS now use TokenService (cached, optimized)
+  // checkAllowance and getTokenBalance removed - use TokenService directly or useTokenBalance hook
 
   const approveToken = useCallback(
     async (token: `0x${string}`, amount: bigint = maxUint256): Promise<boolean> => {
@@ -283,13 +245,16 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
       setError(null);
 
       try {
-        // Step 1: Check allowance
-        const allowance = await checkAllowance(token);
-        logger.log('[VyreCasino] Current allowance:', formatUnits(allowance, 18));
+        // Step 1: Check allowance via TokenService (cached)
+        const allowanceState = await TokenService.getAllowance(token, address);
+        logger.log(
+          '[VyreCasino] Current allowance:',
+          allowanceState.isApproved ? 'approved' : 'need approval'
+        );
 
-        // Step 2: Approve if needed
-        if (allowance < betWei) {
-          logger.log('[VyreCasino] Approving CHIP...');
+        // Step 2: Approve if needed (check against bet amount)
+        if (allowanceState.amount < betWei) {
+          logger.log('[VyreCasino] Approving token...');
           const approved = await approveToken(token, maxUint256);
           if (!approved) return false;
         }
@@ -326,7 +291,7 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         setIsLoading(false);
       }
     },
-    [address, checkAllowance, approveToken, sendTransaction, onSuccess]
+    [address, approveToken, sendTransaction, onSuccess]
   );
 
   // Player actions go directly to VyreJackCore
@@ -384,8 +349,6 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
     error,
     clearError,
     approveToken,
-    checkAllowance,
-    getTokenBalance,
     placeBet,
     hit,
     stand,

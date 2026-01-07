@@ -9,6 +9,7 @@ import { useLocation } from 'wouter-preact';
 import { useWallet } from '@/context/WalletContext';
 import { TokenService } from '@/services/token.service';
 import { getProvider } from '@/lib/riseWallet';
+import { ChipIcon } from '@/components/icons/ChipIcon';
 import {
   CHIP_TOKEN_ADDRESS,
   USDC_TOKEN_ADDRESS,
@@ -26,12 +27,15 @@ interface TokenApprovalModalProps {
   onApproved: () => void;
 }
 
-const TOKEN_INFO: Record<
-  Exclude<TokenType, 'eth'>,
-  { name: string; icon: string; address: `0x${string}` }
-> = {
-  chip: { name: 'CHIP', icon: '🟡', address: CHIP_TOKEN_ADDRESS },
-  usdc: { name: 'USDC', icon: '💵', address: USDC_TOKEN_ADDRESS },
+interface TokenMeta {
+  name: string;
+  address: `0x${string}`;
+  color: string;
+}
+
+const TOKEN_INFO: Record<Exclude<TokenType, 'eth'>, TokenMeta> = {
+  chip: { name: 'CHIP', address: CHIP_TOKEN_ADDRESS, color: '#a78bfa' },
+  usdc: { name: 'USDC', address: USDC_TOKEN_ADDRESS, color: '#38bdf8' },
 };
 
 const ROUTES: Record<TokenType, string> = {
@@ -100,6 +104,13 @@ export function TokenApprovalModal({ tokenType, onClose, onApproved }: TokenAppr
     }
   };
 
+  const renderIcon = () => {
+    if (tokenType === 'chip') {
+      return <ChipIcon size={64} />;
+    }
+    return <span className="approval-icon-emoji">💵</span>;
+  };
+
   return (
     <div className="approval-modal-overlay" onClick={onClose}>
       <div className="approval-modal" onClick={(e) => e.stopPropagation()}>
@@ -107,13 +118,13 @@ export function TokenApprovalModal({ tokenType, onClose, onApproved }: TokenAppr
           ×
         </button>
 
-        <div className="approval-icon">{tokenInfo.icon}</div>
+        <div className="approval-icon">{renderIcon()}</div>
 
         <h2 className="approval-title">Approve {tokenInfo.name}</h2>
 
         <p className="approval-description">
-          To play VyreJack with {tokenInfo.name}, you need to approve the casino contract to spend
-          your tokens. This is a one-time approval.
+          To play VyreJack with {tokenInfo.name}, you need to approve VyreCasino to spend your
+          tokens. This is a one-time approval.
         </p>
 
         {error && (
@@ -126,7 +137,11 @@ export function TokenApprovalModal({ tokenType, onClose, onApproved }: TokenAppr
           <button className="approval-btn-cancel" onClick={onClose} disabled={isApproving}>
             Cancel
           </button>
-          <button className="approval-btn-approve" onClick={handleApprove} disabled={isApproving}>
+          <button
+            className="approval-btn-approve"
+            onClick={handleApprove}
+            disabled={isApproving || !wallet.address}
+          >
             {isApproving ? 'Approving...' : `Approve ${tokenInfo.name}`}
           </button>
         </div>

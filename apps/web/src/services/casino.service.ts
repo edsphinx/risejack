@@ -3,6 +3,15 @@
  *
  * Pure functions for reading VyreCasino state.
  * Handles house edge, referrals, whitelisted tokens, etc.
+ *
+ * ⚡ PERFORMANCE OPTIMIZATIONS:
+ * 1. Singleton publicClient (avoid recreation)
+ * 2. Promise.all for parallel reads
+ * 3. Config cache with 60s TTL (rarely changes)
+ *
+ * 🔧 MAINTAINABILITY:
+ * - Uses centralized ABIs from @vyrejack/shared
+ * - Pure functions, no React dependencies
  */
 
 import { createPublicClient, http } from 'viem';
@@ -10,16 +19,26 @@ import { VYRECASINO_ABI } from '@vyrejack/shared';
 import type { CasinoConfig } from '@vyrejack/shared';
 import { riseTestnet, VYRECASINO_ADDRESS } from '@/lib/contract';
 
-// Shared public client
+// ⚡ Shared public client - singleton pattern
 const publicClient = createPublicClient({
   chain: riseTestnet,
   transport: http(),
 });
 
+// ⚡ Config cache - rarely changes, avoid unnecessary RPC calls
+let configCache: { data: CasinoConfig; timestamp: number } | null = null;
+const CONFIG_CACHE_TTL = 60_000; // 60 seconds
+
 /**
- * Get casino configuration
+ * Get casino configuration (cached for 60s)
+ * ⚡ Saves 5 RPC calls when hitting cache
  */
 async function getConfig(): Promise<CasinoConfig> {
+  // Check cache first
+  if (configCache && Date.now() - configCache.timestamp < CONFIG_CACHE_TTL) {
+    return configCache.data;
+  }
+
   const [houseEdgeBps, referralShareBps, treasuryShareBps, buybackShareBps, paused] =
     await Promise.all([
       publicClient.readContract({
@@ -49,13 +68,18 @@ async function getConfig(): Promise<CasinoConfig> {
       }),
     ]);
 
-  return {
+  const result = {
     houseEdgeBps: Number(houseEdgeBps),
     referralShareBps: Number(referralShareBps),
     treasuryShareBps: Number(treasuryShareBps),
     buybackShareBps: Number(buybackShareBps),
     paused,
   };
+
+  // Update cache
+  configCache = { data: result, timestamp: Date.now() };
+
+  return result;
 }
 
 /**

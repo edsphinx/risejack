@@ -3,6 +3,17 @@
  *
  * Pure functions for reading token state.
  * No React dependencies - usable by frontend and backend.
+ *
+ * ⚡ PERFORMANCE OPTIMIZATIONS:
+ * 1. Singleton publicClient (avoid recreation)
+ * 2. Promise.all for parallel reads
+ * 3. decimalsCache (immutable, never expires)
+ * 4. symbolCache (immutable, never expires)
+ * 5. nameCache (immutable, never expires)
+ *
+ * 🔧 MAINTAINABILITY:
+ * - Uses centralized ABIs from @vyrejack/shared
+ * - Pure functions, no React dependencies
  */
 
 import { createPublicClient, http, formatUnits } from 'viem';
@@ -10,17 +21,20 @@ import { ERC20_ABI } from '@vyrejack/shared';
 import type { TokenBalance, AllowanceState } from '@vyrejack/shared';
 import { riseTestnet, VYRECASINO_ADDRESS } from '@/lib/contract';
 
-// Shared public client
+// ⚡ Shared public client - singleton pattern
 const publicClient = createPublicClient({
   chain: riseTestnet,
   transport: http(),
 });
 
-// Token decimals cache
+// ⚡ Token metadata caches - immutable data, cache forever
 const decimalsCache = new Map<string, number>();
+const symbolCache = new Map<string, string>();
+const nameCache = new Map<string, string>();
 
 /**
- * Get token decimals (cached)
+ * Get token decimals (cached forever - immutable)
+ * ⚡ Cache hit avoids RPC call entirely
  */
 async function getDecimals(token: `0x${string}`): Promise<number> {
   const key = token.toLowerCase();
@@ -85,25 +99,43 @@ async function getAllowance(
 }
 
 /**
- * Get token symbol
+ * Get token symbol (cached forever - immutable)
+ * ⚡ Cache hit avoids RPC call entirely
  */
 async function getSymbol(token: `0x${string}`): Promise<string> {
-  return publicClient.readContract({
+  const key = token.toLowerCase();
+  if (symbolCache.has(key)) {
+    return symbolCache.get(key)!;
+  }
+
+  const symbol = await publicClient.readContract({
     address: token,
     abi: ERC20_ABI,
     functionName: 'symbol',
   });
+
+  symbolCache.set(key, symbol);
+  return symbol;
 }
 
 /**
- * Get token name
+ * Get token name (cached forever - immutable)
+ * ⚡ Cache hit avoids RPC call entirely
  */
 async function getName(token: `0x${string}`): Promise<string> {
-  return publicClient.readContract({
+  const key = token.toLowerCase();
+  if (nameCache.has(key)) {
+    return nameCache.get(key)!;
+  }
+
+  const name = await publicClient.readContract({
     address: token,
     abi: ERC20_ABI,
     functionName: 'name',
   });
+
+  nameCache.set(key, name);
+  return name;
 }
 
 /**

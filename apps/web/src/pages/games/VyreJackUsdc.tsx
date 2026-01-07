@@ -3,12 +3,14 @@
  *
  * Uses VyreCasino architecture with USDC betting token.
  * Auto-approves via session key if available, falls back to modal.
+ * Preloads resources on mount for fast first game.
  */
 import { useState, useEffect } from 'preact/hooks';
 import { encodeFunctionData } from 'viem';
 import { GameBoardCasino } from '@/components/game/GameBoardCasino';
 import { TokenApprovalModal } from '@/components/home/TokenApprovalModal';
 import { useWallet } from '@/context/WalletContext';
+import { useGameWarmup } from '@/hooks/useGameWarmup';
 import { TokenService } from '@/services/token.service';
 import { getProvider } from '@/lib/riseWallet';
 import { USDC_TOKEN_ADDRESS, VYRECASINO_ADDRESS } from '@/lib/contract';
@@ -23,6 +25,9 @@ export function VyreJackUsdc() {
   const [isChecking, setIsChecking] = useState(false);
   const [isAutoApproving, setIsAutoApproving] = useState(false);
   const [needsManualApproval, setNeedsManualApproval] = useState(false);
+
+  // ⚡ Preload resources on mount for fast first game
+  useGameWarmup(wallet.address as `0x${string}` | null);
 
   // Check approval status and auto-approve if needed
   useEffect(() => {

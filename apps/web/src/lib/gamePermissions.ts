@@ -8,6 +8,7 @@ import {
     VYRECASINO_ADDRESS,
     VYREJACKCORE_ADDRESS,
     CHIP_TOKEN_ADDRESS,
+    USDC_TOKEN_ADDRESS,
     CHIP_FAUCET_ADDRESS,
 } from './contract';
 
@@ -22,6 +23,7 @@ export function getFunctionSelector(signature: string): `0x${string}` {
 const CASINO_ADDRESS = VYRECASINO_ADDRESS.toLowerCase() as `0x${string}`;
 const GAME_ADDRESS = VYREJACKCORE_ADDRESS.toLowerCase() as `0x${string}`;
 const CHIP_ADDRESS = CHIP_TOKEN_ADDRESS.toLowerCase() as `0x${string}`;
+const USDC_ADDRESS = USDC_TOKEN_ADDRESS.toLowerCase() as `0x${string}`;
 const FAUCET_ADDRESS = CHIP_FAUCET_ADDRESS.toLowerCase() as `0x${string}`;
 
 /**
@@ -43,19 +45,29 @@ export const GAME_CALLS = [
         to: CHIP_ADDRESS,
         signature: getFunctionSelector('approve(address,uint256)'),
     },
+    // USDC Token - Approve for betting
+    {
+        to: USDC_ADDRESS,
+        signature: getFunctionSelector('approve(address,uint256)'),
+    },
     // Faucet claim
     { to: FAUCET_ADDRESS, signature: getFunctionSelector('claim()') },
 ];
 
 /**
  * Spending limits for session key
- * Note: CHIP tokens, not ETH
+ * Note: Limits per token per day
  */
 export const SPEND_LIMITS = [
     {
-        limit: '0x56BC75E2D63100000', // 100 CHIP in wei as hex
+        limit: '0x56BC75E2D63100000', // 100 CHIP in wei as hex (18 decimals)
         period: 'day' as const,
         token: CHIP_ADDRESS,
+    },
+    {
+        limit: '0x5F5E100', // 100 USDC in wei as hex (6 decimals = 100,000,000)
+        period: 'day' as const,
+        token: USDC_ADDRESS,
     },
 ];
 

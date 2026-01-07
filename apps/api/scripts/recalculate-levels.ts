@@ -38,15 +38,17 @@ async function recalculateLevels() {
     );
   }
 
-  // Perform the update
+  // Perform the update in a transaction for data consistency
   console.log('\n🚀 Updating all levels...');
 
-  const result = await prisma.$executeRaw(
-    Prisma.sql`
-      UPDATE "User"
-      SET level = FLOOR(SQRT(xp / ${BASE_XP}))
-    `
-  );
+  const result = await prisma.$transaction(async (tx) => {
+    return await tx.$executeRaw(
+      Prisma.sql`
+        UPDATE "User"
+        SET level = FLOOR(SQRT(xp / ${BASE_XP}))
+      `
+    );
+  });
 
   console.log(`✅ Updated ${result} users`);
 

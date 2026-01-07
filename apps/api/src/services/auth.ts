@@ -34,7 +34,10 @@ function getRedis(): Redis {
     redisClient.on('error', (err) => console.error('Redis connection error:', err));
     redisClient.on('connect', () => console.log('✅ Connected to Redis'));
   }
-  return redisClient!;
+  if (!redisClient) {
+    throw new Error('Redis client not initialized');
+  }
+  return redisClient;
 }
 
 // In-memory fallback for development (when no Redis URL)

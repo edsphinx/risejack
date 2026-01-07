@@ -144,6 +144,12 @@
   cursor: not-allowed;
 }
 
+.hero-cta-primary .cta-spade-icon {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0) invert(1);
+}
+
 /* Secondary CTAs */
 .hero-cta-secondary {
   display: flex;

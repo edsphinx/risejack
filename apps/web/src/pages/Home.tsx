@@ -153,7 +153,8 @@ function HeroCTA({ isConnected, isConnecting, onConnect, onPlay }: HeroCTAProps)
 
   return (
     <button className="hero-cta-primary" onClick={onPlay}>
-      🎲 Play VyreJack Now
+      <img src="/assets/suits/spade.svg" alt="" className="cta-spade-icon" />
+      Play VyreJack Now
     </button>
   );
 }

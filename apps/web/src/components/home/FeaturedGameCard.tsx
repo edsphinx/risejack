@@ -42,7 +42,8 @@ export function FeaturedGameCard({
 
         {showCTA && (
           <button className="game-card-cta" onClick={onClick}>
-            ♠ Play Now
+            <img src="/assets/cards/AS.svg" alt="" className="cta-card-icon" />
+            Play Now
           </button>
         )}
       </div>

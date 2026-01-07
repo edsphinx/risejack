@@ -330,6 +330,16 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.game-card-cta .cta-card-icon {
+  width: 24px;
+  height: auto;
+  filter: brightness(0) invert(1);
 }
 
 .game-card-cta:hover {

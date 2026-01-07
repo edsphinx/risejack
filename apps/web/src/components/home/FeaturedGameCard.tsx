@@ -42,7 +42,7 @@ export function FeaturedGameCard({
 
         {showCTA && (
           <button className="game-card-cta" onClick={onClick}>
-            🃏 Play Now
+            ♠ Play Now
           </button>
         )}
       </div>

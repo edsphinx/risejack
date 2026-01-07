@@ -5,9 +5,13 @@
  * - Uses hooks for state management (all business logic in hooks)
  * - Passes state down to PURE UI components
  *
- * ⚡ PERFORMANCE: Uses useTokenBalance for cached balance/allowance reads
+ * ⚡ PERFORMANCE:
+ * - NO POLLING for game state (WebSocket events)
+ * - Card accumulation from real-time events
+ * - Snapshot mechanism preserves cards at game end
+ *
  * 🔧 MAINTAINABILITY:
- * - Separates reads (useTokenBalance) from writes (useVyreCasinoActions)
+ * - Separates reads (useGameStateCasino) from writes (useVyreCasinoActions)
  * - NO business logic in component - all in hooks
  */
 
@@ -43,7 +47,7 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
     refresh: refreshBalance,
   } = useTokenBalance(token, wallet.address as `0x${string}` | null);
 
-  // ⚡ Game state hook - adaptive polling + result preservation
+  // ⚡ Game state hook - WebSocket events + card accumulation + snapshots
   const {
     game,
     playerValue,
@@ -51,10 +55,11 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
     isPlayerTurn,
     hasActiveGame,
     showingResult,
-    gameResult,
-    lastHand,
-    clearResult,
-    refresh: refreshGame,
+    lastGameResult,
+    clearLastResult,
+    refetch: refetchGame,
+    snapshotCards,
+    accumulatedCards,
   } = useGameStateCasino(wallet.address as `0x${string}` | null);
 
   // Game WRITE actions hook
@@ -65,7 +70,7 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
     onSuccess: () => {
       logger.log('[GameBoardCasino] Action success, refreshing state');
       refreshBalance();
-      refreshGame();
+      refetchGame();
       // Emit global event for header balance update
       emitBalanceChange();
     },
@@ -83,25 +88,62 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
   const canBet =
     isActiveTab && wallet.isConnected && !actions.isLoading && !hasActiveGame && !showingResult;
 
-  // Callbacks for pure components
+  // Wrapped actions that take snapshot before executing
   const handlePlaceBet = useCallback(() => {
+    // Clear previous result
+    clearLastResult();
     actions.placeBet(betAmount, token);
-  }, [actions, betAmount, token]);
+  }, [actions, betAmount, token, clearLastResult]);
+
+  const handleHit = useCallback(() => {
+    snapshotCards();
+    actions.hit();
+  }, [actions, snapshotCards]);
+
+  const handleStand = useCallback(() => {
+    snapshotCards();
+    actions.stand();
+  }, [actions, snapshotCards]);
+
+  const handleDouble = useCallback(() => {
+    snapshotCards();
+    actions.double();
+  }, [actions, snapshotCards]);
 
   const handleNewGame = useCallback(() => {
-    clearResult();
+    clearLastResult();
     refreshBalance();
-    refreshGame();
-  }, [clearResult, refreshBalance, refreshGame]);
+    refetchGame();
+  }, [clearLastResult, refreshBalance, refetchGame]);
 
-  // Determine which cards/values to display (use snapshot during result)
-  const displayPlayerCards =
-    showingResult && lastHand ? lastHand.playerCards : game?.playerCards || [];
-  const displayDealerCards =
-    showingResult && lastHand ? lastHand.dealerCards : game?.dealerCards || [];
-  const displayPlayerValue = showingResult && lastHand ? lastHand.playerValue : playerValue;
-  const displayDealerValue = showingResult && lastHand ? lastHand.dealerValue : dealerValue;
-  const displayBet = showingResult && lastHand ? lastHand.bet : game?.bet;
+  // Determine which cards/values to display
+  // Priority: accumulated > snapshot (lastGameResult) > contract state
+  const displayPlayerCards = useMemo(() => {
+    if (showingResult && lastGameResult) {
+      return lastGameResult.playerCards;
+    }
+    if (accumulatedCards.playerCards.length >= 2) {
+      return accumulatedCards.playerCards;
+    }
+    return game?.playerCards ?? [];
+  }, [showingResult, lastGameResult, accumulatedCards, game]);
+
+  const displayDealerCards = useMemo(() => {
+    if (showingResult && lastGameResult) {
+      return lastGameResult.dealerCards;
+    }
+    if (accumulatedCards.dealerCards.length >= 1) {
+      return accumulatedCards.dealerCards;
+    }
+    return game?.dealerCards ?? [];
+  }, [showingResult, lastGameResult, accumulatedCards, game]);
+
+  const displayPlayerValue =
+    showingResult && lastGameResult ? lastGameResult.playerValue : playerValue;
+  const displayDealerValue =
+    showingResult && lastGameResult ? lastGameResult.dealerValue : dealerValue;
+  const displayBet = showingResult && lastGameResult ? lastGameResult.bet : game?.bet;
+  const displayResult = showingResult && lastGameResult ? lastGameResult.result : null;
 
   // Hide dealer's second card during player turn (not during result)
   const hideSecondCard = isPlayerTurn && !showingResult;
@@ -132,7 +174,7 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
           playerValue={displayPlayerValue}
           betAmount={displayBet ? (Number(displayBet) / 1e18).toString() : undefined}
           tokenSymbol={tokenSymbol}
-          gameResult={gameResult}
+          gameResult={displayResult}
         />
 
         {/* Controls */}
@@ -143,10 +185,10 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
                 // Show result message and "New Game" button
                 <div className="text-center py-4">
                   <p className="text-white text-lg mb-2">
-                    {gameResult === 'win' && '🎉 You Won!'}
-                    {gameResult === 'lose' && '😔 Better luck next time'}
-                    {gameResult === 'push' && '🤝 Push - Bet returned'}
-                    {gameResult === 'blackjack' && '🃏 BLACKJACK!'}
+                    {displayResult === 'win' && '🎉 You Won!'}
+                    {displayResult === 'lose' && '😔 Better luck next time'}
+                    {displayResult === 'push' && '🤝 Push - Bet returned'}
+                    {displayResult === 'blackjack' && '🃏 BLACKJACK!'}
                   </p>
                   <button
                     onClick={handleNewGame}
@@ -158,9 +200,9 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
               ) : hasActiveGame && isPlayerTurn ? (
                 // 🧱 PURE: Action Buttons (during game)
                 <ActionButtons
-                  onHit={actions.hit}
-                  onStand={actions.stand}
-                  onDouble={actions.double}
+                  onHit={handleHit}
+                  onStand={handleStand}
+                  onDouble={handleDouble}
                   onSurrender={() => {}}
                   canDouble={game?.playerCards.length === 2}
                   canSurrender={false}

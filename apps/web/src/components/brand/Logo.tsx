@@ -92,8 +92,8 @@ function FullLogo({ variant }: { variant: 'vyrejack' | 'vyrecasino' }) {
   const shadowId = `shadow3d-${uniqueId}`;
 
   const text = variant === 'vyrecasino' ? 'VYRECASINO' : 'VYREJACK';
-  // Adjust viewBox width based on text length
-  const viewBoxWidth = variant === 'vyrecasino' ? 360 : 300;
+  // Adjust viewBox width based on text length - tighter bounds
+  const viewBoxWidth = variant === 'vyrecasino' ? 310 : 260;
 
   return (
     <svg

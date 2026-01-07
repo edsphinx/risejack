@@ -137,11 +137,11 @@ export function Footer() {
         <p className="contract-info">
           VyreCasino:{' '}
           <a
-            href="https://explorer.testnet.riselabs.xyz/address/0xB841E36b03801B658aaB347F696232f99b844d83"
+            href="https://explorer.testnet.riselabs.xyz/address/0xd320e654D43B66c4Bd5275c43B968E066A363A5e"
             target="_blank"
             rel="noopener noreferrer"
           >
-            0xB841...verified
+            0xd320...verified
           </a>
         </p>
         <p className="powered-by">

@@ -4,9 +4,97 @@
 
 ---
 
-## VyreCasino Architecture v2.0 - 2026-01-06
+## VyreCasino Architecture v3.0 - 2026-01-07
 
-**Deployed via Safe SDK with multisig ownership**
+**Deployed via Safe SDK with multisig ownership**  
+**New Features:** Multi-asset CHIPWrapper, Permit2 gasless approvals, Oracle pricing
+
+### CHIPToken (v4 - With contractURI)
+
+**Contract:** CHIPToken (ERC20)  
+**Address:** [`0x8bA98863bCd8E58a2Cb695185116a44833bd72D4`](https://explorer.testnet.riselabs.xyz/address/0x8bA98863bCd8E58a2Cb695185116a44833bd72D4)  
+**Symbol:** CHIP  
+**Initial Supply:** 1,000,000,000 CHIP  
+**Owner:** CHIPWrapper (for mint/burn)  
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0x8bA98863bCd8E58a2Cb695185116a44833bd72D4#code)
+
+**Features:**
+
+- ERC-7572 contractURI for wallet icon
+- EIP-2612 Permit for gasless approvals
+- Burnable
+
+### CHIPWrapper (NEW)
+
+**Contract:** CHIPWrapper (Multi-Asset Minting)  
+**Address:** [`0xA53E226c71f983658323c877c6da017B5bfc5493`](https://explorer.testnet.riselabs.xyz/address/0xA53E226c71f983658323c877c6da017B5bfc5493)  
+**Owner:** SAFE Multisig  
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0xA53E226c71f983658323c877c6da017B5bfc5493#code)
+
+**Features:**
+
+- Multi-asset deposits (ETH, USDC via oracles)
+- Permit2 gasless deposits
+- 0.5% withdrawal fee to treasury
+
+**Oracles Configured:**
+
+| Asset | Oracle Address                               |
+| ----- | -------------------------------------------- |
+| ETH   | `0x7114E2537851e727678DE5a96C8eE5d0Ca14f03D` |
+| USDC  | `0x50524C5bDa18aE25C600a8b81449B9CeAeB50471` |
+
+### VyreTreasury
+
+**Contract:** VyreTreasury  
+**Address:** [`0x2be1229CEcF28702A50f68eD9592234a830845ae`](https://explorer.testnet.riselabs.xyz/address/0x2be1229CEcF28702A50f68eD9592234a830845ae)  
+**Owner:** SAFE Multisig  
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0x2be1229CEcF28702A50f68eD9592234a830845ae#code)
+
+### VyreCasino
+
+**Contract:** VyreCasino (Central Orchestrator)  
+**Address:** [`0xd320e654D43B66c4Bd5275c43B968E066A363A5e`](https://explorer.testnet.riselabs.xyz/address/0xd320e654D43B66c4Bd5275c43B968E066A363A5e)  
+**Owner:** SAFE Multisig  
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0xd320e654D43B66c4Bd5275c43B968E066A363A5e#code)
+
+**Features:**
+
+- Permit2 playWithPermit() for gasless betting
+- XP integration
+- Multi-tier referral system
+
+**Configuration:**
+
+| Setting     | Value                                        |
+| ----------- | -------------------------------------------- |
+| Treasury    | `0x2be1229CEcF28702A50f68eD9592234a830845ae` |
+| CHIP Token  | `0x8bA98863bCd8E58a2Cb695185116a44833bd72D4` |
+| House Edge  | 2% (200 bps)                                 |
+| Whitelisted | CHIP, USDC                                   |
+
+### VyreJackCore
+
+**Contract:** VyreJackCore (Blackjack Game)  
+**Address:** [`0xEBE2a686cFfF8Ed49EcCf1126BeBd0B2ec7F09d6`](https://explorer.testnet.riselabs.xyz/address/0xEBE2a686cFfF8Ed49EcCf1126BeBd0B2ec7F09d6)  
+**Owner:** SAFE Multisig  
+**VRF Coordinator:** `0x9d57aB4517ba97349551C876a01a7580B1338909`  
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0xEBE2a686cFfF8Ed49EcCf1126BeBd0B2ec7F09d6#code)
+
+### Ownership Structure
+
+```
+SAFE Multisig (2/3) ─────────────────────────────────────────
+│                       0x108ca5cf...31                      │
+├──────────┬──────────┬──────────────┬───────────────────────┤
+▼          ▼          ▼              ▼
+CHIPWrapper VyreTreasury VyreCasino  VyreJackCore
+(mints CHIP) (holds funds) (orchestrator) (game logic)
+```
+
+---
+
+## VyreCasino Architecture v2.0 - 2026-01-06 (DEPRECATED)
 
 ### VyreTreasury
 

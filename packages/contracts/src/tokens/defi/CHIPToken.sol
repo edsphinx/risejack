@@ -1,20 +1,36 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity >=0.8.25;
 
+/* --------------------------------------------------------------------------
+ * CHIPTOKEN — NATIVE GAMING CURRENCY OF VYRECASINO
+ * -------------------------------------------------------------------------
+ * The primary ERC20 token for all gaming operations on VyreCasino.
+ *
+ * - Standard ERC20 with 18 decimals
+ * - Burnable for deflationary mechanics
+ * - Permit for gasless approvals (EIP-2612)
+ * - ERC-7572 contractURI for wallet icon integration
+ * - Owner-only minting (controlled by CHIPWrapper)
+ * ------------------------------------------------------------------------*/
+
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20Burnable } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title CHIPToken
- * @dev The native gaming currency of VyreCasino.
- * Features:
- * - Standard ERC20
- * - Burnable (for deflationary mechanics)
- * - Permit (gasless approvals)
- * - Owner minting (controlled by MasterChef/Game contracts initially, then DAO)
- * - ERC-7572 contractURI for metadata/icon
+ * @title  CHIPToken
+ * @author edsphinx
+ * @custom:company Blocketh
+ * @notice The native gaming currency of VyreCasino ecosystem.
+ * @dev    CHIP is pegged 1:1 to USD via CHIPWrapper.
+ *         Users deposit USDC/ETH/other assets → receive CHIP for gaming.
+ *         CHIP can be withdrawn back to USDC at 1:1 (minus 0.5% fee).
+ *
+ *         Security Model:
+ *         - Only owner (CHIPWrapper) can mint/burn
+ *         - 1 billion initial supply for liquidity bootstrapping
+ *         - Supports EIP-2612 permit for gasless approvals
  */
 contract CHIPToken is ERC20, ERC20Burnable, ERC20Permit, Ownable {
     constructor(

@@ -1,9 +1,10 @@
 /**
- * AppLoader - Minimalist casino splash screen
- * Uses static SVG logo for simplicity
+ * AppLoader - Simple pulsing logo animation
+ * No progress bar alignment issues - just centered logo with glow pulse
  */
 
 import { useState, useEffect } from 'preact/hooks';
+import { Logo } from '@/components/brand/Logo';
 import './app-loader.css';
 
 interface AppLoaderProps {
@@ -12,8 +13,7 @@ interface AppLoaderProps {
 }
 
 export function AppLoader({ onLoadComplete, minimumDisplayTime = 2000 }: AppLoaderProps) {
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [statusText, setStatusText] = useState('Initializing...');
+  const [statusText, setStatusText] = useState('Loading...');
 
   useEffect(() => {
     const startTime = Date.now();
@@ -21,28 +21,23 @@ export function AppLoader({ onLoadComplete, minimumDisplayTime = 2000 }: AppLoad
 
     const loadStages = async () => {
       setStatusText('Loading casino...');
-      setLoadingProgress(20);
-      await delay(300);
+      await delay(400);
 
-      setStatusText('Connecting to Rise Chain...');
-      setLoadingProgress(40);
+      setStatusText('Connecting...');
       try {
         await import('rise-wallet');
       } catch {
         // Silent fail
       }
-      setLoadingProgress(60);
 
-      setStatusText('Loading Web3...');
+      setStatusText('Almost ready...');
       try {
         await import('viem');
       } catch {
         // Silent fail
       }
-      setLoadingProgress(80);
 
-      setStatusText('Ready to play!');
-      setLoadingProgress(100);
+      setStatusText('Ready!');
       loaded = true;
 
       const elapsed = Date.now() - startTime;
@@ -50,7 +45,7 @@ export function AppLoader({ onLoadComplete, minimumDisplayTime = 2000 }: AppLoad
         await delay(minimumDisplayTime - elapsed);
       }
 
-      await delay(300);
+      await delay(200);
       onLoadComplete();
     };
 
@@ -65,18 +60,25 @@ export function AppLoader({ onLoadComplete, minimumDisplayTime = 2000 }: AppLoad
 
   return (
     <div className="app-loader">
-      <div className="app-loader-glow" />
+      {/* Animated background rings */}
+      <div className="loader-ring ring-1" />
+      <div className="loader-ring ring-2" />
+      <div className="loader-ring ring-3" />
 
       <div className="app-loader-content">
-        {/* Static SVG logo - simple and clean */}
-        <img src="/vyrecasino-logo.svg" alt="VyreCasino" className="app-loader-logo-img" />
-
-        {/* Progress bar */}
-        <div className="app-loader-progress">
-          <div className="app-loader-progress-fill" style={{ width: `${loadingProgress}%` }} />
+        {/* Logo with pulse animation */}
+        <div className="loader-logo-wrapper">
+          <Logo variant="vyrecasino" size="full" animated={false} />
         </div>
 
-        <p className="app-loader-status">{statusText}</p>
+        {/* Simple dots animation */}
+        <div className="loader-dots">
+          <span className="dot" />
+          <span className="dot" />
+          <span className="dot" />
+        </div>
+
+        <p className="loader-status">{statusText}</p>
       </div>
     </div>
   );

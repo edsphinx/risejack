@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { useLocation } from 'wouter-preact';
 import { Logo } from '@/components/brand/Logo';
+import { ChipIcon } from '@/components/icons/ChipIcon';
 import { useWallet } from '@/context/WalletContext';
 import { FeaturedGameCard } from '@/components/home/FeaturedGameCard';
 import { LiveStats } from '@/components/home/LiveStats';
@@ -78,7 +79,9 @@ export function Home() {
             />
 
             <div className="hero-cta-secondary">
-              <button onClick={() => setFaucetOpen(true)}>🪙 Get CHIP</button>
+              <button onClick={() => setFaucetOpen(true)} className="hero-cta-chip">
+                <ChipIcon size={18} /> Get CHIP
+              </button>
               <button onClick={navigateToStake}>📈 Earn Yield</button>
             </div>
           </div>

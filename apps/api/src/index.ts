@@ -36,14 +36,16 @@ app.use(
   '*',
   cors({
     origin: (origin) => {
-      // Allow listed origins
-      const allowedOrigins = [
-        'http://localhost:5173',
-        'https://localhost:5173',
-        'https://risecasino.xyz',
-        'https://risecasino.vercel.app',
-        'https://risejack.vercel.app',
-      ];
+      // Load allowed origins from env var (comma-separated) or use defaults
+      const allowedOrigins = process.env.CORS_ORIGINS
+        ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
+        : [
+            'http://localhost:5173',
+            'https://localhost:5173',
+            'https://risecasino.xyz',
+            'https://vyre.top',
+            'https://www.vyre.top',
+          ];
 
       if (allowedOrigins.includes(origin)) {
         return origin;

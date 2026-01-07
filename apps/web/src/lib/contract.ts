@@ -1,8 +1,8 @@
 /**
  * Contract Configuration
  *
- * VyreCasino architecture contract addresses and ABIs.
- * Includes: VyreCasino (orchestrator), VyreJackCore (game), VyreTreasury, CHIP token
+ * Loads contract addresses from environment variables with validation.
+ * All addresses are validated at load time to catch configuration errors early.
  */
 
 import type { Address } from 'viem';
@@ -14,6 +14,40 @@ import { ERC20_ABI } from './abi/ERC20';
 
 // Re-export ABIs
 export { VYREJACK_ABI, VYRECASINO_ABI, VYREJACKCORE_ABI, ERC20_ABI };
+
+// =============================================================================
+// ADDRESS VALIDATION
+// =============================================================================
+
+const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
+
+/**
+ * Validate and return an Ethereum address from env variable
+ * @throws Error if address is missing or invalid
+ */
+function requireAddress(envKey: string): Address {
+    const value = import.meta.env[envKey];
+    if (!value) {
+        throw new Error(`Missing required env variable: ${envKey}`);
+    }
+    if (!ADDRESS_REGEX.test(value)) {
+        throw new Error(`Invalid address format for ${envKey}: ${value}`);
+    }
+    return value as Address;
+}
+
+/**
+ * Get optional address from env, returns undefined if not set
+ */
+function optionalAddress(envKey: string): Address | undefined {
+    const value = import.meta.env[envKey];
+    if (!value) return undefined;
+    if (!ADDRESS_REGEX.test(value)) {
+        console.warn(`Invalid address format for ${envKey}: ${value}`);
+        return undefined;
+    }
+    return value as Address;
+}
 
 // =============================================================================
 // NETWORK CONFIGURATION
@@ -32,60 +66,45 @@ export const riseTestnet = {
 } as const;
 
 // =============================================================================
-// CONTRACT ADDRESSES (Rise Testnet - VyreCasino Architecture v2)
+// CONTRACT ADDRESSES (from .env)
 // =============================================================================
 
 /** VyreCasino - Central orchestrator for all games */
-export const VYRECASINO_ADDRESS =
-    '0xB841E36b03801B658aaB347F696232f99b844d83' as Address;
+export const VYRECASINO_ADDRESS = requireAddress('VITE_VYRECASINO_ADDRESS');
 
 /** VyreJackCore - Blackjack game logic (called via VyreCasino) */
-export const VYREJACKCORE_ADDRESS =
-    '0x4a9b126eD3B0a686c803ace5dfA5d220b7b7496B' as Address;
+export const VYREJACKCORE_ADDRESS = requireAddress('VITE_VYREJACKCORE_ADDRESS');
 
 /** VyreTreasury - Secure vault for casino funds */
-export const VYRETREASURY_ADDRESS =
-    '0x53052Fc42f81bf211a81C5b99Ec1fAAc42522644' as Address;
+export const VYRETREASURY_ADDRESS = requireAddress('VITE_VYRETREASURY_ADDRESS');
 
 /** CHIP Token - Primary betting token */
-export const CHIP_TOKEN_ADDRESS =
-    '0x18cA3c414bD08C74622C3E3bFE7464903d95602A' as Address;
+export const CHIP_TOKEN_ADDRESS = requireAddress('VITE_CHIP_TOKEN_ADDRESS');
 
 /** USDC Token - Alternative betting token */
-export const USDC_TOKEN_ADDRESS =
-    '0x8A93d247134d91e0de6f96547cB0204e5BE8e5D8' as Address;
+export const USDC_TOKEN_ADDRESS = requireAddress('VITE_USDC_TOKEN_ADDRESS');
 
 /** CHIP Faucet - Get test CHIP tokens */
-export const CHIP_FAUCET_ADDRESS =
-    '0xB659D4113A533971d5bB702062E71814b7D6Bd21' as Address;
+export const CHIP_FAUCET_ADDRESS = requireAddress('VITE_CHIP_FAUCET_ADDRESS');
 
 // =============================================================================
 // LEGACY STANDALONE CONTRACT (VyreJackETH - uses native ETH)
 // =============================================================================
 
-/** Legacy VyreJack standalone contract (ETH betting, deprecated) */
+/** Legacy VyreJack standalone contract (ETH betting) */
 export const VYREJACK_LEGACY_ADDRESS =
-    '0xe17C645aE8dC321B41BA00bbc8B9E392342A0cA2' as Address;
+    optionalAddress('VITE_VYREJACK_ADDRESS') ||
+    ('0xe17C645aE8dC321B41BA00bbc8B9E392342A0cA2' as Address);
 
 /**
  * @deprecated Use VYREJACKCORE_ADDRESS for new architecture
- * Legacy function for backwards compatibility
  */
 export function getVyreJackAddress(): Address {
-    const envAddress =
-        typeof import.meta !== 'undefined'
-            ? (import.meta as { env?: Record<string, string> }).env?.VITE_VYREJACK_ADDRESS
-            : undefined;
-
-    if (envAddress && /^0x[a-fA-F0-9]{40}$/.test(envAddress)) {
-        return envAddress as Address;
-    }
-
     return VYREJACK_LEGACY_ADDRESS;
 }
 
 /** @deprecated Use VYREJACKCORE_ADDRESS */
-export const VYREJACK_ADDRESS = getVyreJackAddress();
+export const VYREJACK_ADDRESS = VYREJACK_LEGACY_ADDRESS;
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -99,4 +118,14 @@ export function getDefaultBettingToken(): Address {
 /** Get all whitelisted betting tokens */
 export function getWhitelistedTokens(): Address[] {
     return [CHIP_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS];
+}
+
+// Log loaded addresses in development
+if (import.meta.env.DEV) {
+    console.log('🎰 VyreCasino contracts loaded:', {
+        casino: VYRECASINO_ADDRESS,
+        game: VYREJACKCORE_ADDRESS,
+        treasury: VYRETREASURY_ADDRESS,
+        chip: CHIP_TOKEN_ADDRESS,
+    });
 }

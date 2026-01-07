@@ -154,12 +154,15 @@ function AssetBalanceRow({ asset, accountAddress, onApproved }: AssetBalanceRowP
     setIsApproving(true);
 
     try {
-      const { createWalletClient, custom } = await import('viem');
+      const { getProvider } = await import('@/lib/riseWallet');
       const { riseTestnet } = await import('@/lib/contract');
+      const { createWalletClient, custom } = await import('viem');
+
+      const provider = getProvider();
 
       const walletClient = createWalletClient({
         chain: riseTestnet,
-        transport: custom((window as any).ethereum),
+        transport: custom(provider),
       });
 
       const tokenAddress = asset.symbol === 'CHIP' ? CHIP_TOKEN_ADDRESS : USDC_TOKEN_ADDRESS;

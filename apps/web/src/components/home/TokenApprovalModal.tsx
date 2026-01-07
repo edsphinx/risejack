@@ -8,7 +8,13 @@ import { useState } from 'preact/hooks';
 import { useLocation } from 'wouter-preact';
 import { useWallet } from '@/context/WalletContext';
 import { TokenService } from '@/services/token.service';
-import { CHIP_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS, VYRECASINO_ADDRESS } from '@/lib/contract';
+import { getProvider } from '@/lib/riseWallet';
+import {
+  CHIP_TOKEN_ADDRESS,
+  USDC_TOKEN_ADDRESS,
+  VYRECASINO_ADDRESS,
+  riseTestnet,
+} from '@/lib/contract';
 import { ERC20_ABI } from '@vyrejack/shared';
 import { logger } from '@/lib/logger';
 import type { TokenType } from '@/hooks/useGameNavigation';
@@ -51,13 +57,14 @@ export function TokenApprovalModal({ tokenType, onClose, onApproved }: TokenAppr
     setError(null);
 
     try {
-      // Get wallet client for writing
+      // Get Rise Wallet provider (not window.ethereum)
+      const provider = getProvider();
+
       const { createWalletClient, custom } = await import('viem');
-      const { riseTestnet } = await import('@/lib/contract');
 
       const walletClient = createWalletClient({
         chain: riseTestnet,
-        transport: custom((window as any).ethereum),
+        transport: custom(provider),
       });
 
       // Request unlimited approval

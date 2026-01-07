@@ -337,8 +337,8 @@
 }
 
 .game-card-cta .cta-card-icon {
-  width: 24px;
-  height: auto;
+  width: 18px;
+  height: 18px;
   filter: brightness(0) invert(1);
 }
 

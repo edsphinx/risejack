@@ -17,6 +17,7 @@ import { useVyreCasinoActions } from '@/hooks/useVyreCasinoActions';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
 import { useGameStateCasino } from '@/hooks/useGameStateCasino';
 import { useTabFocus } from '@/hooks/useTabFocus';
+import { emitBalanceChange } from '@/lib/balanceEvents';
 import { GameTable } from './GameTable';
 import { BettingPanel } from './BettingPanel';
 import { ActionButtons } from './ActionButtons';
@@ -65,6 +66,8 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
       logger.log('[GameBoardCasino] Action success, refreshing state');
       refreshBalance();
       refreshGame();
+      // Emit global event for header balance update
+      emitBalanceChange();
     },
   });
 
@@ -119,17 +122,6 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
             </div>
           </div>
         )}
-
-        {/* Token Balance Header */}
-        <div className="mb-4 text-center">
-          <span className="text-gray-400">Your Balance: </span>
-          <span className="text-xl font-bold text-white">
-            {formattedBalance} {tokenSymbol}
-          </span>
-          {!isApproved && wallet.isConnected && (
-            <span className="ml-2 text-yellow-400 text-sm">(Needs approval)</span>
-          )}
-        </div>
 
         {/* 🧱 PURE: Game Table Component */}
         <GameTable

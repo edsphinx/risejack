@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'preact/hooks';
 import { createPublicClient, http, formatEther } from 'viem';
 import { useWallet } from '@/context/WalletContext';
 import { CHIP_TOKEN_ADDRESS, riseTestnet } from '@/lib/faucet';
+import { onBalanceChange } from '@/lib/balanceEvents';
 
 // Minimal ERC20 ABI for balanceOf
 const ERC20_ABI = [
@@ -73,10 +74,15 @@ export function useChipBalance(): UseChipBalanceReturn {
     refresh();
   }, [refresh]);
 
-  // Refresh every 30 seconds
+  // Refresh every 30 seconds as fallback
   useEffect(() => {
     const interval = setInterval(refresh, 30000);
     return () => clearInterval(interval);
+  }, [refresh]);
+
+  // ⚡ Listen for global balance change events (immediate refresh)
+  useEffect(() => {
+    return onBalanceChange(refresh);
   }, [refresh]);
 
   // Format balance for display

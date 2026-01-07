@@ -8,7 +8,9 @@ import { useLocation } from 'wouter-preact';
 import { Logo } from '@/components/brand/Logo';
 import { ChipIcon } from '@/components/icons/ChipIcon';
 import { useWallet } from '@/context/WalletContext';
+import { useGameNavigation } from '@/hooks/useGameNavigation';
 import { GameVersionSelector } from '@/components/home/GameVersionSelector';
+import { TokenApprovalModal } from '@/components/home/TokenApprovalModal';
 import { LiveStats } from '@/components/home/LiveStats';
 import { LiveWinsTicker } from '@/components/home/LiveWinsTicker';
 import { ComingSoonCard } from '@/components/home/ComingSoonCard';
@@ -35,8 +37,11 @@ export function Home() {
   const [, setLocation] = useLocation();
   const wallet = useWallet();
 
+  // Game navigation with token approval
+  const { navigate, needsApproval, pendingToken, clearPending } = useGameNavigation();
+
   // Hero CTA → CHIP version (featured)
-  const navigateToGame = () => setLocation('/games/vyrejack-chip');
+  const navigateToGame = () => navigate('chip');
   const navigateToStake = () => setLocation('/stake');
 
   // Faucet modal state
@@ -130,6 +135,15 @@ export function Home() {
 
       {/* Faucet Modal */}
       <FaucetModal isOpen={faucetOpen} onClose={() => setFaucetOpen(false)} />
+
+      {/* Token Approval Modal - for Hero CTA */}
+      {needsApproval && pendingToken && pendingToken !== 'eth' && (
+        <TokenApprovalModal
+          tokenType={pendingToken}
+          onClose={clearPending}
+          onApproved={clearPending}
+        />
+      )}
     </div>
   );
 }

@@ -65,11 +65,16 @@ export function Home() {
             <Logo className="hero-logo" />
 
             <h1 className="hero-title">
-              THE <span className="gradient-text">INSTANT</span> CRYPTO CASINO
+              <span className="gradient-text">REAL CASINO</span> EXPERIENCE
+              <span className="hero-title-sub">ON-CHAIN</span>
             </h1>
 
             <p className="hero-subtitle">
-              10ms finality on Rise Chain • Provably fair • 0.5% house edge
+              VyreJack with CHIP tokens • Web2 speed, blockchain security
+              <br />
+              <span className="hero-subtitle-tech">
+                Powered by Rise Chain's 10ms blocks • Provably fair smart contracts
+              </span>
             </p>
 
             <HeroCTA

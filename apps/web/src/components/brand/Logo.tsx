@@ -93,7 +93,7 @@ function FullLogo({ variant }: { variant: 'vyrejack' | 'vyrecasino' }) {
 
   const text = variant === 'vyrecasino' ? 'VYRECASINO' : 'VYREJACK';
   // Adjust viewBox width based on text length - tight bounds
-  const viewBoxWidth = variant === 'vyrecasino' ? 290 : 245;
+  const viewBoxWidth = variant === 'vyrecasino' ? 275 : 235;
 
   return (
     <svg

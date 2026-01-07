@@ -24,7 +24,7 @@ import { useState, useCallback, useRef, useMemo } from 'preact/hooks';
 import { useGameServiceCasino } from './useGameServiceCasino';
 import {
   useGameEventsCasino,
-  type GameResolvedEvent,
+  type GamePlayedEvent,
   type CardDealtEvent,
 } from './useGameEventsCasino';
 import { logger } from '@/lib/logger';
@@ -169,10 +169,11 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
     [service.refetch]
   );
 
-  // Handle GameResolved event from WebSocket
-  const handleGameResolved = useCallback(
-    (event: GameResolvedEvent) => {
-      logger.log('[GameStateCasino] GameResolved:', event);
+  // Handle GamePlayed event from WebSocket
+  // Note: VyreJackCore emits GamePlayed, not GameResolved (contract bug)
+  const handleGamePlayed = useCallback(
+    (event: GamePlayedEvent) => {
+      logger.log('[GameStateCasino] GamePlayed:', event);
 
       // Delay 50ms to allow CardDealt events to be processed first
       // Rise is very fast, events may arrive nearly simultaneously
@@ -218,14 +219,18 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
           logger.log('[GameStateCasino] Using contract dealer cards:', dealerCards);
         }
 
+        // Calculate hand values from cards
+        const playerValue = calculateHandValue(playerCards);
+        const dealerValue = calculateHandValue(dealerCards);
+
         setLastGameResult({
           result: event.result,
           payout: event.payout,
-          playerValue: event.playerFinalValue,
-          dealerValue: event.dealerFinalValue,
+          playerValue,
+          dealerValue,
           playerCards,
           dealerCards,
-          bet: currentService.game?.bet ?? 0n,
+          bet: event.bet,
         });
 
         // Clear accumulated cards for next game
@@ -248,7 +253,7 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
 
   // WebSocket listener for game events
   const { isConnected: isEventConnected } = useGameEventsCasino(player, {
-    onGameResolved: handleGameResolved,
+    onGamePlayed: handleGamePlayed,
     onCardDealt: handleCardDealt,
   });
 

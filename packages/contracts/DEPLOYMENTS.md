@@ -12,7 +12,7 @@
 ### CHIPToken (v4.1 - 500M/500M Distribution)
 
 **Contract:** CHIPToken (ERC20)  
-**Address:** [`0x4B882AF56262d2786754E38600589fc1347FdF1E`](https://explorer.testnet.riselabs.xyz/address/0x4B882AF56262d2786754E38600589fc1347FdF1E)  
+**Address:** [`too`](https://explorer.testnet.riselabs.xyz/address/0x4B882AF56262d2786754E38600589fc1347FdF1E)  
 **Symbol:** CHIP  
 **Initial Supply:** 1,000,000,000 CHIP (500M deployer, 500M treasury)  
 **Owner:** CHIPWrapper (for mint/burn)  
@@ -54,12 +54,15 @@
 ### VyreCasino
 
 **Contract:** VyreCasino (Central Orchestrator)  
-**Address:** [`0xd320e654D43B66c4Bd5275c43B968E066A363A5e`](https://explorer.testnet.riselabs.xyz/address/0xd320e654D43B66c4Bd5275c43B968E066A363A5e)  
+**Version:** v4.0 (Payout Fix)  
+**Address:** [`0xdb94B101A3Bba7aA7f6c75d9043fd3663820503C`](https://explorer.testnet.riselabs.xyz/address/0xdb94B101A3Bba7aA7f6c75d9043fd3663820503C)  
 **Owner:** SAFE Multisig  
-**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0xd320e654D43B66c4Bd5275c43B968E066A363A5e#code)
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0xdb94B101A3Bba7aA7f6c75d9043fd3663820503C#code)
 
-**Features:**
+**New Features (v4.0):**
 
+- `settlePayout()` callback for async games
+- `PayoutSettled` event for tracking
 - Permit2 playWithPermit() for gasless betting
 - XP integration
 - Multi-tier referral system
@@ -69,17 +72,25 @@
 | Setting     | Value                                        |
 | ----------- | -------------------------------------------- |
 | Treasury    | `0x2be1229CEcF28702A50f68eD9592234a830845ae` |
-| CHIP Token  | `0x8bA98863bCd8E58a2Cb695185116a44833bd72D4` |
+| CHIP Token  | `0x4B882AF56262d2786754E38600589fc1347FdF1E` |
 | House Edge  | 2% (200 bps)                                 |
 | Whitelisted | CHIP, USDC                                   |
 
 ### VyreJackCore
 
 **Contract:** VyreJackCore (Blackjack Game)  
-**Address:** [`0xEBE2a686cFfF8Ed49EcCf1126BeBd0B2ec7F09d6`](https://explorer.testnet.riselabs.xyz/address/0xEBE2a686cFfF8Ed49EcCf1126BeBd0B2ec7F09d6)  
+**Version:** v4.0 (Payout Fix)  
+**Address:** [`0xcDe1eA8E701b5eb34222edc2E155Fc241ad8154e`](https://explorer.testnet.riselabs.xyz/address/0xcDe1eA8E701b5eb34222edc2E155Fc241ad8154e)  
 **Owner:** SAFE Multisig  
 **VRF Coordinator:** `0x9d57aB4517ba97349551C876a01a7580B1338909`  
-**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0xEBE2a686cFfF8Ed49EcCf1126BeBd0B2ec7F09d6#code)
+**Verified:** ✅ [Blockscout](https://explorer.testnet.riselabs.xyz/address/0xcDe1eA8E701b5eb34222edc2E155Fc241ad8154e#code)
+
+**New Features (v4.0):**
+
+- Calls `VyreCasino.settlePayout()` for actual payouts
+- Emits `GameResolved` with final hand values
+- Emits `PlayerBusted` / `DealerBusted` for animations
+- Emits `DealerCardRevealed` for hole card reveal
 
 ### Ownership Structure
 

@@ -2,10 +2,11 @@
  * useGameEventsCasino - WebSocket-based event listener for VyreJackCore games
  *
  * Listens for:
- * - GameResolved: When game finishes with final result
+ * - GamePlayed: When game finishes (emitted via IVyreGame interface)
  * - CardDealt: When a card is dealt (real-time card tracking)
  *
- * This is the Casino version - listens to VyreJackCore contract.
+ * NOTE: VyreJackCore emits IVyreGame.GamePlayed, NOT GameResolved.
+ * The GameResolved event is defined but never emitted (contract bug).
  */
 
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -18,19 +19,26 @@ import type { GameResult } from '@vyrejack/shared';
 // Rise Chain Testnet WebSocket URL
 const WSS_URL = 'wss://testnet.riselabs.xyz/ws';
 
-// GameState enum values from VyreJackCore contract
-const GameStateToResult: Record<number, GameResult> = {
-  5: 'win', // PlayerWin
-  6: 'lose', // DealerWin
-  7: 'push', // Push
-  8: 'blackjack', // PlayerBlackjack
-};
+// GamePlayed event ABI (from IVyreGame interface)
+const GAME_PLAYED_ABI = [
+  {
+    type: 'event',
+    name: 'GamePlayed',
+    inputs: [
+      { indexed: true, name: 'player', type: 'address' },
+      { indexed: true, name: 'token', type: 'address' },
+      { indexed: false, name: 'bet', type: 'uint256' },
+      { indexed: false, name: 'won', type: 'bool' },
+      { indexed: false, name: 'payout', type: 'uint256' },
+    ],
+  },
+] as const;
 
-export interface GameResolvedEvent {
+export interface GamePlayedEvent {
   result: GameResult;
   payout: bigint;
-  playerFinalValue: number;
-  dealerFinalValue: number;
+  bet: bigint;
+  won: boolean;
 }
 
 export interface CardDealtEvent {
@@ -40,7 +48,7 @@ export interface CardDealtEvent {
 }
 
 interface GameEventsCasinoCallbacks {
-  onGameResolved: (event: GameResolvedEvent) => void;
+  onGamePlayed: (event: GamePlayedEvent) => void;
   onCardDealt?: (event: CardDealtEvent) => void;
 }
 
@@ -52,14 +60,14 @@ export function useGameEventsCasino(
   callbacks: GameEventsCasinoCallbacks
 ) {
   const [isConnected, setIsConnected] = useState(false);
-  const unwatchGameResolvedRef = useRef<(() => void) | null>(null);
+  const unwatchGamePlayedRef = useRef<(() => void) | null>(null);
   const unwatchCardDealtRef = useRef<(() => void) | null>(null);
   const clientRef = useRef<ReturnType<typeof createPublicClient> | null>(null);
 
   // Stable callback refs
-  const onGameResolvedRef = useRef(callbacks.onGameResolved);
+  const onGamePlayedRef = useRef(callbacks.onGamePlayed);
   const onCardDealtRef = useRef(callbacks.onCardDealt);
-  onGameResolvedRef.current = callbacks.onGameResolved;
+  onGamePlayedRef.current = callbacks.onGamePlayed;
   onCardDealtRef.current = callbacks.onCardDealt;
 
   useEffect(() => {
@@ -78,60 +86,58 @@ export function useGameEventsCasino(
       });
       clientRef.current = client;
 
-      // Watch for GameResolved events
-      const unwatchGameResolved = client.watchContractEvent({
+      // Watch for GamePlayed events (emitted by VyreJackCore via IVyreGame)
+      const unwatchGamePlayed = client.watchContractEvent({
         address: VYREJACKCORE_ADDRESS,
-        abi: VYREJACKCORE_ABI,
-        eventName: 'GameResolved',
+        abi: GAME_PLAYED_ABI,
+        eventName: 'GamePlayed',
         args: {
           player: playerAddress,
         },
         onLogs: (logs) => {
-          logger.log('[GameEventsCasino] GameResolved events:', logs.length);
+          logger.log('[GameEventsCasino] GamePlayed events:', logs.length);
 
           for (const log of logs) {
             const args = log.args as {
               player: `0x${string}`;
-              result: number | bigint;
+              token: `0x${string}`;
+              bet: bigint;
+              won: boolean;
               payout: bigint;
-              playerFinalValue: number | bigint;
-              dealerFinalValue: number | bigint;
             };
 
-            const resultNum = typeof args.result === 'bigint' ? Number(args.result) : args.result;
-            const result = GameStateToResult[resultNum];
+            // Determine result from won/payout
+            // Note: We don't have exact values, need to calculate from accumulated cards
+            let result: GameResult;
+            if (args.payout > args.bet) {
+              // Won more than bet - could be blackjack (1.5x) or win (2x)
+              result = args.payout > args.bet * 2n ? 'blackjack' : 'win';
+            } else if (args.payout === args.bet) {
+              result = 'push';
+            } else {
+              result = 'lose';
+            }
 
-            const playerFinalValue =
-              typeof args.playerFinalValue === 'bigint'
-                ? Number(args.playerFinalValue)
-                : args.playerFinalValue;
-            const dealerFinalValue =
-              typeof args.dealerFinalValue === 'bigint'
-                ? Number(args.dealerFinalValue)
-                : args.dealerFinalValue;
-
-            logger.log('[GameEventsCasino] GameResolved:', {
+            logger.log('[GameEventsCasino] GamePlayed:', {
+              won: args.won,
+              bet: args.bet.toString(),
+              payout: args.payout.toString(),
               result,
-              payout: args.payout,
-              playerFinalValue,
-              dealerFinalValue,
             });
 
-            if (result) {
-              onGameResolvedRef.current({
-                result,
-                payout: args.payout,
-                playerFinalValue,
-                dealerFinalValue,
-              });
-            }
+            onGamePlayedRef.current({
+              result,
+              payout: args.payout,
+              bet: args.bet,
+              won: args.won,
+            });
           }
         },
         onError: (error) => {
-          logger.error('[GameEventsCasino] GameResolved error:', error);
+          logger.error('[GameEventsCasino] GamePlayed error:', error);
         },
       });
-      unwatchGameResolvedRef.current = unwatchGameResolved;
+      unwatchGamePlayedRef.current = unwatchGamePlayed;
 
       // Watch for CardDealt events
       const unwatchCardDealt = client.watchContractEvent({
@@ -185,9 +191,9 @@ export function useGameEventsCasino(
     // Cleanup
     return () => {
       logger.log('[GameEventsCasino] Stopping WebSocket');
-      if (unwatchGameResolvedRef.current) {
-        unwatchGameResolvedRef.current();
-        unwatchGameResolvedRef.current = null;
+      if (unwatchGamePlayedRef.current) {
+        unwatchGamePlayedRef.current();
+        unwatchGamePlayedRef.current = null;
       }
       if (unwatchCardDealtRef.current) {
         unwatchCardDealtRef.current();

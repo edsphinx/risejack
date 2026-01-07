@@ -1,6 +1,6 @@
 /**
- * AppLoader - Simple pulsing logo animation
- * No progress bar alignment issues - just centered logo with glow pulse
+ * AppLoader - Casino-themed splash screen
+ * Features: Orbiting cards, neon glow effects
  */
 
 import { useState, useEffect } from 'preact/hooks';
@@ -20,24 +20,24 @@ export function AppLoader({ onLoadComplete, minimumDisplayTime = 2000 }: AppLoad
     let loaded = false;
 
     const loadStages = async () => {
-      setStatusText('Loading casino...');
+      setStatusText('Shuffling the deck...');
       await delay(400);
 
-      setStatusText('Connecting...');
+      setStatusText('Connecting to Rise Chain...');
       try {
         await import('rise-wallet');
       } catch {
         // Silent fail
       }
 
-      setStatusText('Almost ready...');
+      setStatusText('Dealing cards...');
       try {
         await import('viem');
       } catch {
         // Silent fail
       }
 
-      setStatusText('Ready!');
+      setStatusText('Ready to play!');
       loaded = true;
 
       const elapsed = Date.now() - startTime;
@@ -60,24 +60,24 @@ export function AppLoader({ onLoadComplete, minimumDisplayTime = 2000 }: AppLoad
 
   return (
     <div className="app-loader">
-      {/* Animated background rings */}
-      <div className="loader-ring ring-1" />
-      <div className="loader-ring ring-2" />
-      <div className="loader-ring ring-3" />
+      {/* Neon background */}
+      <div className="loader-neon-bg" />
+
+      {/* Orbiting cards */}
+      <div className="cards-orbit">
+        <span className="orbit-card card-spade">♠</span>
+        <span className="orbit-card card-heart">♥</span>
+        <span className="orbit-card card-diamond">♦</span>
+        <span className="orbit-card card-club">♣</span>
+      </div>
 
       <div className="app-loader-content">
-        {/* Logo with pulse animation */}
+        {/* Logo with glow */}
         <div className="loader-logo-wrapper">
           <Logo variant="vyrecasino" size="full" animated={false} />
         </div>
 
-        {/* Simple dots animation */}
-        <div className="loader-dots">
-          <span className="dot" />
-          <span className="dot" />
-          <span className="dot" />
-        </div>
-
+        {/* Status with neon effect */}
         <p className="loader-status">{statusText}</p>
       </div>
     </div>

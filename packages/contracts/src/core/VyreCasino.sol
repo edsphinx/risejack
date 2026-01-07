@@ -18,6 +18,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { IVyreGame } from "../interfaces/IVyreGame.sol";
+import { IPermit2 } from "../interfaces/IPermit2.sol";
 
 // ----------------------------------------------------------------------
 //  EXTERNAL INTERFACES
@@ -87,6 +88,13 @@ interface IReferralRegistry {
  */
 contract VyreCasino is ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    // ----------------------------------------------------------------------
+    //  CONSTANTS
+    // ----------------------------------------------------------------------
+
+    /// @notice Permit2 contract address (pre-deployed on Rise Testnet)
+    IPermit2 public constant PERMIT2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
 
     // ----------------------------------------------------------------------
     //  STORAGE
@@ -256,6 +264,71 @@ contract VyreCasino is ReentrancyGuard {
 
         // Transfer bet from player to treasury
         IERC20(token).safeTransferFrom(msg.sender, address(treasury), amount);
+
+        // Determine chip tier for display
+        uint8 chipTier = _getChipTier(amount);
+
+        // Call game
+        IVyreGame.BetInfo memory betInfo =
+            IVyreGame.BetInfo({ token: token, amount: amount, chipTier: chipTier });
+
+        result = IVyreGame(game).play(msg.sender, betInfo, gameData);
+
+        // Process result
+        if (result.won && result.payout > 0) {
+            _processWin(msg.sender, token, result.payout);
+        }
+
+        // Award XP (based on bet amount)
+        _awardXP(msg.sender, amount);
+
+        emit GamePlayed(
+            msg.sender,
+            game,
+            token,
+            amount,
+            result.won,
+            result.won ? _calculateNetPayout(result.payout) : 0,
+            result.won ? _calculateHouseEdge(result.payout) : 0
+        );
+    }
+
+    /**
+     * @notice Play a game using Permit2 (gasless approval)
+     * @dev User signs a permit off-chain, no separate approve tx needed
+     * @param game Game contract address
+     * @param token Token to bet (must be whitelisted)
+     * @param amount Bet amount
+     * @param gameData Game-specific parameters
+     * @param permit The permit data signed by the user
+     * @param signature The user's signature over the permit
+     */
+    function playWithPermit(
+        address game,
+        address token,
+        uint256 amount,
+        bytes calldata gameData,
+        IPermit2.PermitTransferFrom calldata permit,
+        bytes calldata signature
+    ) external whenNotPaused nonReentrant returns (IVyreGame.GameResult memory result) {
+        // Validations
+        require(registeredGames[game], "VyreCasino: game not registered");
+        require(whitelistedTokens[token], "VyreCasino: token not whitelisted");
+        require(amount > 0, "VyreCasino: zero bet");
+        require(permit.permitted.token == token, "VyreCasino: permit token mismatch");
+        require(permit.permitted.amount >= amount, "VyreCasino: insufficient permit");
+        require(
+            amount >= IVyreGame(game).minBet(token) && amount <= IVyreGame(game).maxBet(token),
+            "VyreCasino: bet out of range"
+        );
+
+        // Use Permit2 to transfer bet from player to treasury
+        PERMIT2.permitTransferFrom(
+            permit,
+            IPermit2.SignatureTransferDetails({ to: address(treasury), requestedAmount: amount }),
+            msg.sender,
+            signature
+        );
 
         // Determine chip tier for display
         uint8 chipTier = _getChipTier(amount);

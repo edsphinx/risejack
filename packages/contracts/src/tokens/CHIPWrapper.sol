@@ -16,6 +16,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
+import { IPermit2 } from "../interfaces/IPermit2.sol";
 
 interface IMintableBurnable {
     function mint(
@@ -51,6 +52,9 @@ contract CHIPWrapper is ReentrancyGuard {
 
     /// @notice CHIP token decimals
     uint256 public constant CHIP_DECIMALS = 18;
+
+    /// @notice Permit2 contract address (pre-deployed on Rise Testnet)
+    IPermit2 public constant PERMIT2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
 
     // ==================== STATE ====================
 
@@ -261,6 +265,52 @@ contract CHIPWrapper is ReentrancyGuard {
 
         // Transfer USDC from user
         usdc.safeTransferFrom(msg.sender, address(this), amount);
+
+        // If fee, send to treasury
+        if (fee > 0) {
+            usdc.safeTransfer(treasury, fee);
+            totalFeesCollected += fee;
+        }
+
+        // Convert 6 decimals (USDC) to 18 decimals (CHIP)
+        chipAmount = netAmount * 1e12;
+
+        // Mint CHIP to user
+        chip.mint(msg.sender, chipAmount);
+
+        totalDeposited += netAmount * 1e12;
+
+        emit Deposited(msg.sender, amount, chipAmount);
+    }
+
+    /**
+     * @notice Deposit USDC using Permit2 (gasless approval)
+     * @dev User signs a permit off-chain, no separate approve tx needed
+     * @param amount USDC amount (6 decimals)
+     * @param permit The permit data signed by the user
+     * @param signature The user's signature over the permit
+     * @return chipAmount CHIP minted (18 decimals)
+     */
+    function depositWithPermit(
+        uint256 amount,
+        IPermit2.PermitTransferFrom calldata permit,
+        bytes calldata signature
+    ) external nonReentrant whenNotPaused returns (uint256 chipAmount) {
+        require(amount > 0, "CHIPWrapper: zero amount");
+        require(permit.permitted.token == address(usdc), "CHIPWrapper: wrong token");
+        require(permit.permitted.amount >= amount, "CHIPWrapper: insufficient permit");
+
+        // Use Permit2 to transfer USDC from user
+        PERMIT2.permitTransferFrom(
+            permit,
+            IPermit2.SignatureTransferDetails({ to: address(this), requestedAmount: amount }),
+            msg.sender,
+            signature
+        );
+
+        // Calculate fee
+        uint256 fee = (amount * depositFeeBps) / 10_000;
+        uint256 netAmount = amount - fee;
 
         // If fee, send to treasury
         if (fee > 0) {

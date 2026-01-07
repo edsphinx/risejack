@@ -80,7 +80,7 @@ export function Home() {
 
             <div className="hero-cta-secondary">
               <button onClick={() => setFaucetOpen(true)} className="hero-cta-chip">
-                <ChipIcon size={28} />
+                <ChipIcon size={40} />
                 Get CHIP
               </button>
               <button onClick={navigateToStake} className="hero-cta-yield">

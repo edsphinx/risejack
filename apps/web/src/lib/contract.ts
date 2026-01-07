@@ -2,15 +2,20 @@
  * Contract Configuration
  *
  * Loads contract addresses from environment variables with validation.
- * All addresses are validated at load time to catch configuration errors early.
+ * ABIs are imported from centralized @vyrejack/shared package.
  */
 
 import type { Address } from 'viem';
-// Import ABIs
-import { VYREJACK_ABI } from './abi/VyreJack'; // Legacy standalone (ETH)
-import { VYRECASINO_ABI } from './abi/VyreCasino';
-import { VYREJACKCORE_ABI } from './abi/VyreJackCore';
-import { ERC20_ABI } from './abi/ERC20';
+
+// Import ABIs from centralized package
+import {
+    VYRECASINO_ABI,
+    VYREJACKCORE_ABI,
+    ERC20_ABI,
+} from '@vyrejack/shared';
+
+// Legacy VyreJack ABI for ETH version (local - will migrate later)
+import { VYREJACK_ABI } from './abi/VyreJack';
 
 // Re-export ABIs
 export { VYREJACK_ABI, VYRECASINO_ABI, VYREJACKCORE_ABI, ERC20_ABI };

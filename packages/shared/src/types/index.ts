@@ -12,3 +12,9 @@ export * from './wallet';
 
 // API types
 export * from './api';
+
+// VyreCasino architecture
+export * from './casino';
+
+// Token types
+export * from './token';

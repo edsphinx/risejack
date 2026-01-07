@@ -96,6 +96,17 @@ export const VYRECASINO_ABI = [
   {
     anonymous: false,
     inputs: [
+      { indexed: true, internalType: 'address', name: 'player', type: 'address' },
+      { indexed: true, internalType: 'address', name: 'game', type: 'address' },
+      { indexed: true, internalType: 'address', name: 'token', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'grossPayout', type: 'uint256' },
+    ],
+    name: 'PayoutSettled',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
       { indexed: false, internalType: 'uint256', name: 'oldBps', type: 'uint256' },
       { indexed: false, internalType: 'uint256', name: 'newBps', type: 'uint256' },
     ],

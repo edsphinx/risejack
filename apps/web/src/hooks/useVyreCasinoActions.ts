@@ -98,6 +98,14 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         : ('0x0' as `0x${string}`);
 
       const executeWithKey = async (key: typeof sessionKey) => {
+        // Log the exact call we're attempting
+        const selector = data.slice(0, 10);
+        logger.log('[VyreCasinoActions] Attempting call:', {
+          to: to.toLowerCase(),
+          selector,
+          publicKey: key!.publicKey.slice(0, 30) + '...',
+        });
+
         const prepareParams = [
           {
             calls: [{ to: to.toLowerCase() as `0x${string}`, value: hexValue, data }],

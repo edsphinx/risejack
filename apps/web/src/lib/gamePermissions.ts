@@ -56,18 +56,14 @@ export const GAME_CALLS = [
 
 /**
  * Spending limits for session key
- * Note: Limits per token per day
+ * METEORO PATTERN: Use native ETH with reasonable limit
+ * Note: limit must be a hex string for Rise Wallet 0.3.0
  */
 export const SPEND_LIMITS = [
     {
-        limit: '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', // Unlimited CHIP (max uint256)
+        limit: '0x8AC7230489E80000', // 10 ETH in wei as hex (Meteoro pattern)
         period: 'day' as const,
-        token: CHIP_ADDRESS,
-    },
-    {
-        limit: '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', // Unlimited USDC (max uint256)
-        period: 'day' as const,
-        token: USDC_ADDRESS,
+        token: '0x0000000000000000000000000000000000000000' as `0x${string}`, // Native ETH
     },
 ];
 

@@ -8,7 +8,6 @@ import {
     VYRECASINO_ADDRESS,
     VYREJACKCORE_ADDRESS,
     CHIP_TOKEN_ADDRESS,
-    USDC_TOKEN_ADDRESS,
     CHIP_FAUCET_ADDRESS,
 } from './contract';
 
@@ -23,15 +22,26 @@ export function getFunctionSelector(signature: string): `0x${string}` {
 const CASINO_ADDRESS = VYRECASINO_ADDRESS.toLowerCase() as `0x${string}`;
 const GAME_ADDRESS = VYREJACKCORE_ADDRESS.toLowerCase() as `0x${string}`;
 const CHIP_ADDRESS = CHIP_TOKEN_ADDRESS.toLowerCase() as `0x${string}`;
-const USDC_ADDRESS = USDC_TOKEN_ADDRESS.toLowerCase() as `0x${string}`;
 const FAUCET_ADDRESS = CHIP_FAUCET_ADDRESS.toLowerCase() as `0x${string}`;
 
 /**
  * Allowed contract calls for session key
  * These functions can be called without user popup confirmation
+ * 
+ * NOTE: We use playWithPermit instead of play to avoid ERC20 spend limits
+ * in the session key permissions. Permit2 handles token approvals off-chain.
  */
 export const GAME_CALLS = [
-    // VyreCasino - Start games
+    // VyreCasino - Start games with Permit2 (no separate approve needed)
+    {
+        to: CASINO_ADDRESS,
+        // playWithPermit(address game, address token, uint256 amount, bytes gameData, 
+        //                PermitTransferFrom permit, bytes signature)
+        // PermitTransferFrom = (TokenPermissions permitted, uint256 nonce, uint256 deadline)
+        // TokenPermissions = (address token, uint256 amount)
+        signature: getFunctionSelector('playWithPermit(address,address,uint256,bytes,((address,uint256),uint256,uint256),bytes)'),
+    },
+    // Also keep regular play for compatibility/fallback
     {
         to: CASINO_ADDRESS,
         signature: getFunctionSelector('play(address,address,uint256,bytes)'),
@@ -40,18 +50,13 @@ export const GAME_CALLS = [
     { to: GAME_ADDRESS, signature: getFunctionSelector('hit()') },
     { to: GAME_ADDRESS, signature: getFunctionSelector('stand()') },
     { to: GAME_ADDRESS, signature: getFunctionSelector('double()') },
-    // CHIP Token - Approve for betting
+    // Faucet claim (still needs approve for faucet to work)
+    { to: FAUCET_ADDRESS, signature: getFunctionSelector('claim()') },
+    // Keep approve for CHIP in case needed for faucet or fallback
     {
         to: CHIP_ADDRESS,
         signature: getFunctionSelector('approve(address,uint256)'),
     },
-    // USDC Token - Approve for betting
-    {
-        to: USDC_ADDRESS,
-        signature: getFunctionSelector('approve(address,uint256)'),
-    },
-    // Faucet claim
-    { to: FAUCET_ADDRESS, signature: getFunctionSelector('claim()') },
 ];
 
 /**

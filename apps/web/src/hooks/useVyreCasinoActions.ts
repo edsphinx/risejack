@@ -61,6 +61,7 @@ interface VyreCasinoActionsConfig {
   address: `0x${string}` | null;
   hasSessionKey: boolean;
   keyPair: { publicKey: string; privateKey: string } | null;
+  tokenContext?: 'ETH' | 'CHIP' | 'USDC';
   onSuccess?: () => void;
 }
 
@@ -69,7 +70,7 @@ interface VyreCasinoActionsConfig {
 // =============================================================================
 
 export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCasinoActionsReturn {
-  const { address, onSuccess } = config;
+  const { address, tokenContext, onSuccess } = config;
   // Note: hasSessionKey and keyPair from config are no longer used
   // We now check getActiveSessionKey() directly in sendTransaction for freshest state
 
@@ -190,7 +191,7 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
             const { createSessionKey, clearAllSessionKeys } =
               await import('@/services/sessionKeyManager');
             clearAllSessionKeys(); // Clean up stale keys
-            const newKey = await createSessionKey(address);
+            const newKey = await createSessionKey(address, tokenContext);
 
             const callId = await executeWithKey(newKey);
             logger.log('[VyreCasinoActions] New session key succeeded:', callId);

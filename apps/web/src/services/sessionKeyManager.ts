@@ -6,7 +6,7 @@
 
 import { P256, PublicKey, Signature } from 'ox';
 import { getProvider } from '@/lib/riseWallet';
-import { GAME_PERMISSIONS } from '@/lib/gamePermissions';
+import { getGamePermissions, type TokenContext } from '@/lib/gamePermissions';
 import { logger } from '@/lib/logger';
 
 // Storage prefix
@@ -32,7 +32,8 @@ export interface SessionKeyData {
   expiry: number;
   createdAt: number;
   address?: string;
-  permissions?: typeof GAME_PERMISSIONS; // Store permissions like Meteoro
+  tokenContext?: TokenContext;
+  permissions?: ReturnType<typeof getGamePermissions>;
 }
 
 /**
@@ -209,9 +210,14 @@ export async function validateSessionKeyWithWallet(): Promise<boolean> {
 
 /**
  * Create a new session key and request permissions from Rise Wallet
+ * @param walletAddress - The wallet address to associate with the session key
+ * @param tokenContext - The token context (ETH, CHIP, USDC) for spend limits
  */
-export async function createSessionKey(walletAddress: string): Promise<SessionKeyData> {
-  logger.log('🔑 Creating new session key...');
+export async function createSessionKey(
+  walletAddress: string,
+  tokenContext?: TokenContext
+): Promise<SessionKeyData> {
+  logger.log('🔑 Creating new session key for context:', tokenContext || 'default');
 
   const provider = getProvider();
 
@@ -227,6 +233,10 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
   // Calculate expiry
   const expiry = Math.floor(Date.now() / 1000) + SESSION_EXPIRY_SECONDS;
 
+  // Get permissions based on token context
+  const permissions = getGamePermissions(tokenContext);
+  logger.log('🔑 Using permissions for', tokenContext || 'default', ':', permissions);
+
   // Request permissions from Rise Wallet
   const permissionParams = [
     {
@@ -235,7 +245,7 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
         publicKey: publicKey,
       },
       expiry: expiry,
-      permissions: GAME_PERMISSIONS,
+      permissions: permissions,
       feeToken: {
         token: '0x0000000000000000000000000000000000000000',
         limit: '10000000000000000', // 0.01 ETH for gas
@@ -279,7 +289,8 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
     expiry,
     createdAt: Date.now(),
     address: walletAddress,
-    permissions: GAME_PERMISSIONS, // Store permissions like Meteoro
+    tokenContext,
+    permissions,
   };
 
   // Save to localStorage

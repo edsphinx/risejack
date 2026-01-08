@@ -81,9 +81,10 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
   /**
    * Send transaction using session key (no popup)
    * 3-step retry pattern (from 54a15cf):
-   * 1. Try with existing session key
-   * 2. If auth error → wallet_connect to reactivate → retry same key
-   * 3. If still fails → create new session key → retry
+   * 1. Validate session key exists in Porto's IndexedDB state
+   * 2. Try with existing session key
+   * 3. If auth error → wallet_connect to reactivate → retry same key
+   * 4. If still fails → create new session key → retry
    */
   const sendSessionTransaction = useCallback(
     async (
@@ -91,8 +92,22 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
       value: bigint,
       data: `0x${string}`
     ): Promise<`0x${string}` | null> => {
+      if (!address) return null;
+
+      // Step 0: Validate session key exists in Porto's IndexedDB state
+      // This syncs our localStorage with Porto's authoritative state
+      const { validateSessionKeyWithWallet, clearAllSessionKeys } =
+        await import('@/services/sessionKeyManager');
+      const isValidInPorto = await validateSessionKeyWithWallet();
+
+      if (!isValidInPorto) {
+        logger.log('[VyreCasinoActions] Session key not valid in Porto, clearing stale key');
+        clearAllSessionKeys();
+        return null; // Let caller fall back to passkey or create new key
+      }
+
       const sessionKey = getActiveSessionKey();
-      if (!sessionKey || !address) return null;
+      if (!sessionKey) return null;
 
       const provider = getProvider();
       const hexValue = value

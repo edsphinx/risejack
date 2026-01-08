@@ -43,10 +43,21 @@ export function useGameServiceCasino(player: `0x${string}` | null): UseGameServi
   const playerRef = useRef(player);
   playerRef.current = player;
 
+  // Throttle guard - prevent excessive refetch calls
+  const lastFetchRef = useRef<number>(0);
+  const FETCH_THROTTLE_MS = 500;
+
   // Fetch game state - stable callback (no deps that change)
   const refetch = useCallback(async () => {
     const addr = playerRef.current;
     if (!addr) return;
+
+    // Throttle: skip if called too recently
+    const now = Date.now();
+    if (now - lastFetchRef.current < FETCH_THROTTLE_MS) {
+      return;
+    }
+    lastFetchRef.current = now;
 
     setIsFetching(true);
     try {

@@ -70,7 +70,9 @@ interface VyreCasinoActionsConfig {
 // =============================================================================
 
 export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCasinoActionsReturn {
-  const { address, hasSessionKey, keyPair, onSuccess } = config;
+  const { address, onSuccess } = config;
+  // Note: hasSessionKey and keyPair from config are no longer used
+  // We now check getActiveSessionKey() directly in sendTransaction for freshest state
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -164,16 +166,23 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
       value: bigint,
       data: `0x${string}`
     ): Promise<`0x${string}` | null> => {
-      if (hasSessionKey && keyPair) {
+      // Check for valid session key directly (not from props which may be stale)
+      const currentSessionKey = getActiveSessionKey();
+
+      if (currentSessionKey) {
+        logger.log('[VyreCasinoActions] Using session key for transaction');
         try {
           return await sendSessionTransaction(to, value, data);
-        } catch {
+        } catch (err) {
+          logger.log('[VyreCasinoActions] Session key failed, falling back to passkey:', err);
           return await sendPasskeyTransaction(to, value, data);
         }
       }
+
+      logger.log('[VyreCasinoActions] No session key, using passkey');
       return await sendPasskeyTransaction(to, value, data);
     },
-    [hasSessionKey, keyPair, sendSessionTransaction, sendPasskeyTransaction]
+    [sendSessionTransaction, sendPasskeyTransaction] // Removed hasSessionKey, keyPair from deps
   );
 
   // ---------------------------------------------------------------------------

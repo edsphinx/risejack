@@ -10,7 +10,6 @@ import {
   revokeSessionKey,
   getSessionKeyTimeRemaining,
   isSessionKeyValid,
-  validateSessionKeyWithWallet,
   clearAllSessionKeys,
   type SessionKeyData,
 } from '@/services/sessionKeyManager';
@@ -30,16 +29,18 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
   const [sessionData, setSessionData] = useState<SessionKeyData | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Load and VALIDATE existing session key on mount or address change
+  // Load existing session key on mount or address change
+  // METEORO PATTERN: Trust localStorage + expiry check - don't validate with Porto
+  // Authorization errors are handled at transaction time, not at restore time
   useEffect(() => {
     if (!address) {
       setSessionData(null);
       return;
     }
 
-    const restoreAndValidate = async () => {
+    const restoreFromLocalStorage = () => {
       const existingKey = getActiveSessionKey();
-      logger.log('🔑 [DEBUG] restoreAndValidate:', {
+      logger.log('🔑 [DEBUG] restoreFromLocalStorage:', {
         hasKey: !!existingKey,
         publicKey: existingKey?.publicKey?.slice(0, 20),
         expiry: existingKey?.expiry,
@@ -47,19 +48,9 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
       });
 
       if (existingKey && isSessionKeyValid(existingKey)) {
-        // Validate with Rise Wallet (Porto) to ensure the key is actually registered
-        logger.log('🔑 Validating session key with Rise Wallet...');
-        const isWalletValid = await validateSessionKeyWithWallet();
-
-        if (isWalletValid) {
-          logger.log('🔑 Session key validated with Rise Wallet ✓');
-          setSessionData(existingKey);
-        } else {
-          // Key is in localStorage but wallet doesn't have it - clear stale key
-          logger.warn('🔑 Session key not recognized by Rise Wallet, clearing stale key');
-          clearAllSessionKeys();
-          setSessionData(null);
-        }
+        // METEORO PATTERN: Just use the key - if it fails, handle at transaction time
+        logger.log('🔑 Session key restored from localStorage ✓');
+        setSessionData(existingKey);
       } else if (existingKey) {
         // Key exists but is expired
         logger.log('🔑 Session key expired, clearing...');
@@ -68,7 +59,7 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
       }
     };
 
-    restoreAndValidate();
+    restoreFromLocalStorage();
   }, [address]);
 
   // Update timer periodically - less frequently for long-duration keys

@@ -93,7 +93,7 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
     onSuccess: () => {
       logger.log('[GameBoardCasino] Action success, refreshing state');
       refreshBalance();
-      refetchGame();
+      refetchGame(true); // force=true to bypass throttle
       emitBalanceChange();
     },
   });
@@ -144,7 +144,7 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
   const handleNewGame = useCallback(() => {
     clearLastResult();
     refreshBalance();
-    refetchGame();
+    refetchGame(true); // force=true to bypass throttle
   }, [clearLastResult, refreshBalance, refetchGame]);
 
   // Determine which cards/values to display

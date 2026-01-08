@@ -85,7 +85,7 @@ export interface UseGameStateCasinoReturn {
   showingResult: boolean;
 
   // Actions
-  refetch: () => Promise<void>;
+  refetch: (force?: boolean) => Promise<void>;
   snapshotCards: () => void;
 }
 

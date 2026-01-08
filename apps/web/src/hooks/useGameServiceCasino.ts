@@ -25,8 +25,8 @@ export interface UseGameServiceCasinoReturn {
   dealerValue: number;
   /** Is currently fetching */
   isFetching: boolean;
-  /** Refetch game state (force=true bypasses throttle) */
-  refetch: (force?: boolean) => Promise<void>;
+  /** Refetch game state */
+  refetch: () => Promise<void>;
 }
 
 /**
@@ -43,22 +43,10 @@ export function useGameServiceCasino(player: `0x${string}` | null): UseGameServi
   const playerRef = useRef(player);
   playerRef.current = player;
 
-  // Throttle guard - prevent excessive refetch calls
-  const lastFetchRef = useRef<number>(0);
-  const FETCH_THROTTLE_MS = 500;
-
   // Fetch game state - stable callback (no deps that change)
-  // force=true bypasses throttle (used after game actions)
-  const refetch = useCallback(async (force = false) => {
+  const refetch = useCallback(async () => {
     const addr = playerRef.current;
     if (!addr) return;
-
-    // Throttle: skip if called too recently (unless forced)
-    const now = Date.now();
-    if (!force && now - lastFetchRef.current < FETCH_THROTTLE_MS) {
-      return;
-    }
-    lastFetchRef.current = now;
 
     setIsFetching(true);
     try {

@@ -19,7 +19,11 @@
 import { useState, useCallback } from 'preact/hooks';
 import { encodeFunctionData, parseUnits, formatUnits, maxUint256 } from 'viem';
 import { getProvider } from '@/lib/riseWallet';
-import { signWithSessionKey, getActiveSessionKey } from '@/services/sessionKeyManager';
+import {
+  signWithSessionKey,
+  getActiveSessionKey,
+  type SessionKeyData,
+} from '@/services/sessionKeyManager';
 import { ErrorService, TokenService } from '@/services';
 import {
   VYRECASINO_ABI,
@@ -74,44 +78,26 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
 
   const clearError = useCallback(() => setError(null), []);
 
-  // ---------------------------------------------------------------------------
-  // TRANSACTION HELPERS
-  // ---------------------------------------------------------------------------
-
+  /**
+   * Send transaction using session key (no popup)
+   * 3-step retry pattern (from 54a15cf):
+   * 1. Try with existing session key
+   * 2. If auth error → wallet_connect to reactivate → retry same key
+   * 3. If still fails → create new session key → retry
+   */
   const sendSessionTransaction = useCallback(
     async (
       to: `0x${string}`,
       value: bigint,
       data: `0x${string}`
     ): Promise<`0x${string}` | null> => {
-      if (!address) return null;
+      const sessionKey = getActiveSessionKey();
+      if (!sessionKey || !address) return null;
 
       const provider = getProvider();
       const hexValue = value
         ? (`0x${value.toString(16)}` as `0x${string}`)
         : ('0x0' as `0x${string}`);
-
-      // METEORO PATTERN: Check session key BEFORE attempting
-      // If no valid key exists or it's not for this wallet, create one
-      let sessionKey = getActiveSessionKey();
-
-      // Validate session key belongs to current wallet
-      if (sessionKey?.address && sessionKey.address.toLowerCase() !== address.toLowerCase()) {
-        logger.log('[VyreCasinoActions] Session key is for different wallet, need new one');
-        sessionKey = null;
-      }
-
-      // If no valid session key, create one now (this shows popup once)
-      if (!sessionKey) {
-        logger.log('[VyreCasinoActions] No valid session key, creating one...');
-        const { createSessionKey } = await import('@/services/sessionKeyManager');
-        try {
-          sessionKey = await createSessionKey(address);
-        } catch (err) {
-          logger.warn('[VyreCasinoActions] Failed to create session key:', err);
-          return null; // Let caller fall back to passkey
-        }
-      }
 
       // Log the exact call we're attempting
       const selector = data.slice(0, 10);
@@ -121,27 +107,85 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         publicKey: sessionKey.publicKey.slice(0, 30) + '...',
       });
 
-      const prepareParams = [
-        {
-          calls: [{ to: to.toLowerCase() as `0x${string}`, value: hexValue, data }],
-          key: { type: 'p256', publicKey: sessionKey.publicKey },
-        },
-      ];
+      // Helper: Execute transaction with given session key
+      const executeWithKey = async (key: SessionKeyData): Promise<`0x${string}` | null> => {
+        const prepareParams = [
+          {
+            calls: [{ to: to.toLowerCase() as `0x${string}`, value: hexValue, data }],
+            key: { type: 'p256', publicKey: key.publicKey },
+          },
+        ];
 
-      const prepared = (await (provider as any).request({
-        method: 'wallet_prepareCalls',
-        params: prepareParams,
-      })) as { digest: `0x${string}` };
+        const prepared = (await (provider as any).request({
+          method: 'wallet_prepareCalls',
+          params: prepareParams,
+        })) as { digest: `0x${string}` };
 
-      const { digest, ...requestParams } = prepared;
-      const signature = signWithSessionKey(digest, sessionKey);
+        const { digest, ...requestParams } = prepared;
+        const signature = signWithSessionKey(digest, key);
 
-      const response = (await (provider as any).request({
-        method: 'wallet_sendPreparedCalls',
-        params: [{ ...requestParams, signature }],
-      })) as Array<{ id: `0x${string}` }>;
+        const response = (await (provider as any).request({
+          method: 'wallet_sendPreparedCalls',
+          params: [{ ...requestParams, signature }],
+        })) as Array<{ id: `0x${string}` }>;
 
-      return response[0]?.id || null;
+        return response[0]?.id || null;
+      };
+
+      // Helper: Check if error is authorization-related
+      const isAuthError = (err: unknown): boolean => {
+        const msg = String(err);
+        return (
+          msg.includes('not been authorized') ||
+          msg.includes('unauthorized') ||
+          msg.includes('REVOKED') ||
+          msg.includes('Invalid parameters')
+        );
+      };
+
+      // Step 1: Try with existing session key
+      try {
+        const callId = await executeWithKey(sessionKey);
+        logger.log('[VyreCasinoActions] Session key transaction sent:', callId);
+        return callId;
+      } catch (firstError) {
+        if (!isAuthError(firstError)) {
+          throw firstError; // Non-auth error, don't retry
+        }
+
+        logger.log('[VyreCasinoActions] Auth error, trying wallet_connect reactivation...');
+
+        // Step 2: Reactivate via wallet_connect (prompts PIN once)
+        try {
+          await (provider as any).request({
+            method: 'wallet_connect',
+            params: [{}],
+          });
+          logger.log('[VyreCasinoActions] Provider reactivated, retrying with same key...');
+
+          // Retry with the SAME session key
+          const callId = await executeWithKey(sessionKey);
+          logger.log('[VyreCasinoActions] Retry succeeded:', callId);
+          return callId;
+        } catch {
+          logger.log('[VyreCasinoActions] Reactivation failed, creating new session key...');
+
+          // Step 3: Create new session key as last resort
+          try {
+            const { createSessionKey, clearAllSessionKeys } =
+              await import('@/services/sessionKeyManager');
+            clearAllSessionKeys(); // Clean up stale keys
+            const newKey = await createSessionKey(address);
+
+            const callId = await executeWithKey(newKey);
+            logger.log('[VyreCasinoActions] New session key succeeded:', callId);
+            return callId;
+          } catch (thirdError) {
+            logger.warn('[VyreCasinoActions] All retries failed:', thirdError);
+            return null; // Let caller fall back to passkey
+          }
+        }
+      }
     },
     [address]
   );

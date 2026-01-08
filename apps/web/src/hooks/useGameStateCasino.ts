@@ -245,7 +245,7 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
 
         // Refetch to update contract state
         currentService.refetch();
-      }, 50); // 50ms delay to allow CardDealt events to arrive
+      }, 300); // 300ms delay - Rise Chain is fast, need time for CardDealt events
     },
     [] // No dependencies - we use refs for current values
   );

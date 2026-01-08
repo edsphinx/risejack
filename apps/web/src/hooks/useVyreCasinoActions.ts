@@ -20,7 +20,6 @@ import { useState, useCallback } from 'preact/hooks';
 import { encodeFunctionData, parseUnits, formatUnits, maxUint256 } from 'viem';
 import { getProvider } from '@/lib/riseWallet';
 import { signWithSessionKey, getActiveSessionKey } from '@/services/sessionKeyManager';
-import { signPermitTransfer, PERMIT2_ADDRESS } from '@/services/permit2Service';
 import { ErrorService, TokenService } from '@/services';
 import {
   VYRECASINO_ABI,
@@ -278,75 +277,31 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
       setError(null);
 
       try {
-        // Get session key for Permit2 signing
-        const sessionKey = getActiveSessionKey();
-        if (!sessionKey) {
-          setError('Session key required for betting');
-          return false;
-        }
-
-        // Step 1: First ensure user has approved Permit2 to spend their tokens
-        // This is a one-time approval per token
-        const allowanceState = await TokenService.getAllowance(token, address, PERMIT2_ADDRESS);
+        // Step 1: Check allowance via TokenService (cached)
+        const allowanceState = await TokenService.getAllowance(token, address);
         logger.log(
-          '[VyreCasino] Permit2 allowance:',
+          '[VyreCasino] Current allowance:',
           allowanceState.isApproved ? 'approved' : 'need approval'
         );
 
-        if (!allowanceState.isApproved) {
-          // Approve Permit2 contract (one-time)
-          logger.log('[VyreCasino] Approving Permit2 for token...');
-          const approveData = encodeFunctionData({
-            abi: ERC20_ABI,
-            functionName: 'approve',
-            args: [
-              PERMIT2_ADDRESS,
-              BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'),
-            ],
-          });
-          const approveTx = await sendTransaction(token, 0n, approveData);
-          if (!approveTx) {
-            setError('Permit2 approval failed');
-            return false;
-          }
-          logger.log('[VyreCasino] Permit2 approved:', approveTx);
-          // Wait for approval to be indexed
-          await new Promise((r) => setTimeout(r, 1000));
+        // Step 2: Approve if needed (check against bet amount)
+        if (allowanceState.amount < betWei) {
+          logger.log('[VyreCasino] Approving token...');
+          const approved = await approveToken(token, maxUint256);
+          if (!approved) return false;
         }
 
-        // Step 2: Sign Permit2 transfer
-        logger.log('[VyreCasino] Signing Permit2 transfer...');
-        const { permit, signature: permitSignature } = await signPermitTransfer(
-          token,
-          betWei,
-          VYRECASINO_ADDRESS,
-          sessionKey,
-          300 // 5 minute deadline
-        );
-
-        // Step 3: Call VyreCasino.playWithPermit()
-        // The permit struct: ((address token, uint256 amount), uint256 nonce, uint256 deadline)
-        const permitTuple = {
-          permitted: {
-            token: permit.permitted.token,
-            amount: permit.permitted.amount,
-          },
-          nonce: permit.nonce,
-          deadline: permit.deadline,
-        };
-
+        // Step 3: Call VyreCasino.play()
         const data = encodeFunctionData({
           abi: VYRECASINO_ABI,
-          functionName: 'playWithPermit' as const,
+          functionName: 'play',
           args: [
             VYREJACKCORE_ADDRESS, // game address
             token, // token address
             betWei, // amount
             '0x' as `0x${string}`, // empty gameData for blackjack
-            permitTuple, // IPermit2.PermitTransferFrom
-            permitSignature, // signature
-          ] as const,
-        } as any);
+          ],
+        });
 
         const txHash = await sendTransaction(VYRECASINO_ADDRESS, 0n, data);
         if (!txHash) {
@@ -354,13 +309,8 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
           return false;
         }
 
-        logger.log('[VyreCasino] PlayWithPermit TX:', txHash);
-        logEvent('game_start', address, {
-          betAmount,
-          token,
-          game: 'VyreJack',
-          permit2: true,
-        }).catch(() => {});
+        logger.log('[VyreCasino] Play TX:', txHash);
+        logEvent('game_start', address, { betAmount, token, game: 'VyreJack' }).catch(() => {});
 
         await new Promise((r) => setTimeout(r, 100));
         onSuccess?.();
@@ -373,7 +323,7 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         setIsLoading(false);
       }
     },
-    [address, sendTransaction, onSuccess]
+    [address, approveToken, sendTransaction, onSuccess]
   );
 
   // Player actions go directly to VyreJackCore

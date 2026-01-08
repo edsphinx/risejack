@@ -7,8 +7,6 @@ import { keccak256, toHex } from 'viem';
 import {
     VYRECASINO_ADDRESS,
     VYREJACKCORE_ADDRESS,
-    CHIP_TOKEN_ADDRESS,
-    CHIP_FAUCET_ADDRESS,
 } from './contract';
 
 /**
@@ -21,27 +19,14 @@ export function getFunctionSelector(signature: string): `0x${string}` {
 // Contract addresses - lowercase for Porto compatibility
 const CASINO_ADDRESS = VYRECASINO_ADDRESS.toLowerCase() as `0x${string}`;
 const GAME_ADDRESS = VYREJACKCORE_ADDRESS.toLowerCase() as `0x${string}`;
-const CHIP_ADDRESS = CHIP_TOKEN_ADDRESS.toLowerCase() as `0x${string}`;
-const FAUCET_ADDRESS = CHIP_FAUCET_ADDRESS.toLowerCase() as `0x${string}`;
 
 /**
  * Allowed contract calls for session key
- * These functions can be called without user popup confirmation
- * 
- * NOTE: We use playWithPermit instead of play to avoid ERC20 spend limits
- * in the session key permissions. Permit2 handles token approvals off-chain.
+ * MINIMAL SET - Following Meteoro pattern for Porto compatibility
+ * Only the essential game functions are included
  */
 export const GAME_CALLS = [
-    // VyreCasino - Start games with Permit2 (no separate approve needed)
-    {
-        to: CASINO_ADDRESS,
-        // playWithPermit(address game, address token, uint256 amount, bytes gameData, 
-        //                PermitTransferFrom permit, bytes signature)
-        // PermitTransferFrom = (TokenPermissions permitted, uint256 nonce, uint256 deadline)
-        // TokenPermissions = (address token, uint256 amount)
-        signature: getFunctionSelector('playWithPermit(address,address,uint256,bytes,((address,uint256),uint256,uint256),bytes)'),
-    },
-    // Also keep regular play for compatibility/fallback
+    // VyreCasino - Start games (regular play, not playWithPermit for now)
     {
         to: CASINO_ADDRESS,
         signature: getFunctionSelector('play(address,address,uint256,bytes)'),
@@ -50,13 +35,6 @@ export const GAME_CALLS = [
     { to: GAME_ADDRESS, signature: getFunctionSelector('hit()') },
     { to: GAME_ADDRESS, signature: getFunctionSelector('stand()') },
     { to: GAME_ADDRESS, signature: getFunctionSelector('double()') },
-    // Faucet claim (still needs approve for faucet to work)
-    { to: FAUCET_ADDRESS, signature: getFunctionSelector('claim()') },
-    // Keep approve for CHIP in case needed for faucet or fallback
-    {
-        to: CHIP_ADDRESS,
-        signature: getFunctionSelector('approve(address,uint256)'),
-    },
 ];
 
 /**

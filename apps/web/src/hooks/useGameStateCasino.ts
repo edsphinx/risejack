@@ -174,7 +174,14 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
     (event: GameResolvedEvent) => {
       logger.log('[GameStateCasino] GameResolved:', event);
 
-      // Delay 50ms to allow CardDealt events to be processed first
+      // Log current accumulated state BEFORE timeout
+      logger.log('[GameStateCasino] Cards BEFORE delay:', {
+        accumulatedPlayer: accumulatedCardsRef.current.playerCards,
+        accumulatedDealer: accumulatedCardsRef.current.dealerCards,
+        hiddenCard: accumulatedCardsRef.current.dealerHiddenCard,
+      });
+
+      // Delay 500ms to allow CardDealt events to be processed first
       // Rise is very fast, events may arrive nearly simultaneously
       setTimeout(() => {
         const currentAccumulated = accumulatedCardsRef.current;
@@ -245,7 +252,7 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
 
         // Refetch to update contract state
         currentService.refetch();
-      }, 300); // 300ms delay - Rise Chain is fast, need time for CardDealt events
+      }, 500); // 500ms delay - Rise Chain is fast, need time for CardDealt events
     },
     [] // No dependencies - we use refs for current values
   );

@@ -32,6 +32,7 @@ export interface SessionKeyData {
   expiry: number;
   createdAt: number;
   address?: string;
+  permissions?: typeof GAME_PERMISSIONS; // Store permissions like Meteoro
 }
 
 /**
@@ -255,13 +256,14 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
 
   logger.log('🔑 Permissions granted');
 
-  // Store session key data
+  // Store session key data (like Meteoro - includes permissions)
   const sessionKeyData: SessionKeyData = {
     privateKey,
     publicKey,
     expiry,
     createdAt: Date.now(),
     address: walletAddress,
+    permissions: GAME_PERMISSIONS, // Store permissions like Meteoro
   };
 
   // Save to localStorage

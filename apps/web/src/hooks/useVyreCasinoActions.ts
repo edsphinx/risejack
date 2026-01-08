@@ -84,78 +84,64 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
       value: bigint,
       data: `0x${string}`
     ): Promise<`0x${string}` | null> => {
-      const sessionKey = getActiveSessionKey();
-      if (!sessionKey || !address) return null;
+      if (!address) return null;
 
       const provider = getProvider();
       const hexValue = value
         ? (`0x${value.toString(16)}` as `0x${string}`)
         : ('0x0' as `0x${string}`);
 
-      const executeWithKey = async (key: typeof sessionKey) => {
-        // Log the exact call we're attempting
-        const selector = data.slice(0, 10);
-        logger.log('[VyreCasinoActions] Attempting call:', {
-          to: to.toLowerCase(),
-          selector,
-          publicKey: key!.publicKey.slice(0, 30) + '...',
-        });
+      // METEORO PATTERN: Check session key BEFORE attempting
+      // If no valid key exists or it's not for this wallet, create one
+      let sessionKey = getActiveSessionKey();
 
-        const prepareParams = [
-          {
-            calls: [{ to: to.toLowerCase() as `0x${string}`, value: hexValue, data }],
-            key: { type: 'p256', publicKey: key!.publicKey },
-          },
-        ];
-
-        const prepared = (await (provider as any).request({
-          method: 'wallet_prepareCalls',
-          params: prepareParams,
-        })) as { digest: `0x${string}` };
-
-        const { digest, ...requestParams } = prepared;
-        const signature = signWithSessionKey(digest, key!);
-
-        const response = (await (provider as any).request({
-          method: 'wallet_sendPreparedCalls',
-          params: [{ ...requestParams, signature }],
-        })) as Array<{ id: `0x${string}` }>;
-
-        return response[0]?.id || null;
-      };
-
-      try {
-        return await executeWithKey(sessionKey);
-      } catch (firstError) {
-        const msg = String(firstError);
-        logger.log('[VyreCasinoActions] Session key TX failed:', msg);
-
-        // METEORO PATTERN: On auth error, create a new session key and retry
-        // This handles the case where Porto doesn't persist session keys across refresh
-        if (
-          msg.includes('not been authorized') ||
-          msg.includes('unauthorized') ||
-          msg.includes('permission')
-        ) {
-          logger.log('[VyreCasinoActions] Session key not recognized, creating new one...');
-
-          try {
-            // Import and create new session key
-            const { createSessionKey } = await import('@/services/sessionKeyManager');
-            const newKey = await createSessionKey(address);
-            logger.log('[VyreCasinoActions] New session key created, retrying...');
-            return await executeWithKey(newKey);
-          } catch (createError) {
-            logger.warn(
-              '[VyreCasinoActions] Failed to create session key, falling back to passkey:',
-              createError
-            );
-            // Return null to indicate session key failed - caller should use passkey
-            return null;
-          }
-        }
-        throw firstError;
+      // Validate session key belongs to current wallet
+      if (sessionKey?.address && sessionKey.address.toLowerCase() !== address.toLowerCase()) {
+        logger.log('[VyreCasinoActions] Session key is for different wallet, need new one');
+        sessionKey = null;
       }
+
+      // If no valid session key, create one now (this shows popup once)
+      if (!sessionKey) {
+        logger.log('[VyreCasinoActions] No valid session key, creating one...');
+        const { createSessionKey } = await import('@/services/sessionKeyManager');
+        try {
+          sessionKey = await createSessionKey(address);
+        } catch (err) {
+          logger.warn('[VyreCasinoActions] Failed to create session key:', err);
+          return null; // Let caller fall back to passkey
+        }
+      }
+
+      // Log the exact call we're attempting
+      const selector = data.slice(0, 10);
+      logger.log('[VyreCasinoActions] Attempting call:', {
+        to: to.toLowerCase(),
+        selector,
+        publicKey: sessionKey.publicKey.slice(0, 30) + '...',
+      });
+
+      const prepareParams = [
+        {
+          calls: [{ to: to.toLowerCase() as `0x${string}`, value: hexValue, data }],
+          key: { type: 'p256', publicKey: sessionKey.publicKey },
+        },
+      ];
+
+      const prepared = (await (provider as any).request({
+        method: 'wallet_prepareCalls',
+        params: prepareParams,
+      })) as { digest: `0x${string}` };
+
+      const { digest, ...requestParams } = prepared;
+      const signature = signWithSessionKey(digest, sessionKey);
+
+      const response = (await (provider as any).request({
+        method: 'wallet_sendPreparedCalls',
+        params: [{ ...requestParams, signature }],
+      })) as Array<{ id: `0x${string}` }>;
+
+      return response[0]?.id || null;
     },
     [address]
   );

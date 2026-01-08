@@ -244,20 +244,8 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
 
   logger.log('🔑 Requesting permissions:', permissionParams);
 
-  // Ensure provider is connected (needed after page refresh)
-  // This may prompt for PIN but is required for grantPermissions to work
-  try {
-    await (
-      provider as { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> }
-    ).request({
-      method: 'wallet_connect',
-      params: [{}],
-    });
-  } catch {
-    // Ignore errors - wallet_connect might fail if already connected
-  }
-
-  // Use type assertion since SDK types are too strict for our params
+  // METEORO PATTERN: Call wallet_grantPermissions directly
+  // Do NOT call wallet_connect first - it may interfere with Porto's IndexedDB persistence
   await (
     provider as { request: (args: { method: string; params: unknown }) => Promise<unknown> }
   ).request({

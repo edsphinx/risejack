@@ -35,13 +35,20 @@ import type { VyreJackGame, GameResult } from '@vyrejack/shared';
 // =============================================================================
 
 // VyreJackGameState enum values (from VyreJackCore.sol)
+// Must match contract exactly!
 const IDLE = 0;
+const _WAITING_VRF = 1; // Not used in UI, but exists in contract
 const PLAYER_TURN = 2;
+const _DEALER_TURN = 3; // Not used in UI, but exists in contract
 // Final states
-const PLAYER_WIN = 5;
-const DEALER_WIN = 6;
-const PUSH = 7;
-const PLAYER_BLACKJACK = 8;
+const PLAYER_WIN = 4; // Fixed: was 5
+const DEALER_WIN = 5; // Fixed: was 6
+const PUSH = 6; // Fixed: was 7
+const PLAYER_BLACKJACK = 7; // Fixed: was 8
+
+// Suppress unused variable warnings
+void _WAITING_VRF;
+void _DEALER_TURN;
 
 // Card accumulator for smooth display
 interface CardAccumulator {

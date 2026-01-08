@@ -130,16 +130,29 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         const msg = String(firstError);
         logger.log('[VyreCasinoActions] Session key TX failed:', msg);
 
-        // METEORO PATTERN: On auth error, just fall back to passkey
-        // Don't try to reactivate or create new session keys - let user do it explicitly
+        // METEORO PATTERN: On auth error, create a new session key and retry
+        // This handles the case where Porto doesn't persist session keys across refresh
         if (
           msg.includes('not been authorized') ||
           msg.includes('unauthorized') ||
           msg.includes('permission')
         ) {
-          logger.log('[VyreCasinoActions] Session key permission denied, falling back to passkey');
-          // Return null to indicate session key failed - caller should use passkey
-          return null;
+          logger.log('[VyreCasinoActions] Session key not recognized, creating new one...');
+
+          try {
+            // Import and create new session key
+            const { createSessionKey } = await import('@/services/sessionKeyManager');
+            const newKey = await createSessionKey(address);
+            logger.log('[VyreCasinoActions] New session key created, retrying...');
+            return await executeWithKey(newKey);
+          } catch (createError) {
+            logger.warn(
+              '[VyreCasinoActions] Failed to create session key, falling back to passkey:',
+              createError
+            );
+            // Return null to indicate session key failed - caller should use passkey
+            return null;
+          }
         }
         throw firstError;
       }

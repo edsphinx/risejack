@@ -103,15 +103,15 @@
 .result-banner {
   position: absolute;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  bottom: 1.5rem;
+  transform: translateX(-50%);
   z-index: 50;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 1.25rem 2.5rem;
+  padding: 1rem 2rem;
   border-radius: 20px;
   min-width: 280px;
   backdrop-filter: blur(12px);
@@ -120,7 +120,7 @@
     0 12px 40px rgba(0, 0, 0, 0.4),
     0 0 30px currentColor,
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  animation: result-bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation: result-slide-up 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 /* Top row: emoji + message */
@@ -185,28 +185,20 @@
   }
 }
 
-/* Elastic bounce animation - preserves centering transform */
-@keyframes result-bounce {
+/* Slide-up animation from bottom */
+@keyframes result-slide-up {
   0% {
-    transform: translate(-50%, -50%) scale(0);
+    transform: translateX(-50%) translateY(30px);
     opacity: 0;
   }
 
-  50% {
-    transform: translate(-50%, -50%) scale(1.15);
+  60% {
+    transform: translateX(-50%) translateY(-5px);
     opacity: 1;
   }
 
-  70% {
-    transform: translate(-50%, -50%) scale(0.95);
-  }
-
-  85% {
-    transform: translate(-50%, -50%) scale(1.05);
-  }
-
   100% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateX(-50%) translateY(0);
   }
 }
 

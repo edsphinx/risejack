@@ -72,6 +72,9 @@ export function useGameEventsCasino(
   const unwatchRefs = useRef<(() => void)[]>([]);
   const clientRef = useRef<ReturnType<typeof createPublicClient> | null>(null);
 
+  // Deduplication: track processed events by txHash+logIndex
+  const processedEvents = useRef<Set<string>>(new Set());
+
   // Stable callback refs
   const callbacksRef = useRef(callbacks);
   callbacksRef.current = callbacks;
@@ -81,6 +84,9 @@ export function useGameEventsCasino(
       setIsConnected(false);
       return;
     }
+
+    // Clear processed events on new connection
+    processedEvents.current.clear();
 
     logger.log('[GameEventsCasino] Starting WebSocket for:', playerAddress);
 
@@ -104,6 +110,14 @@ export function useGameEventsCasino(
           logger.log('[GameEventsCasino] GameResolved events:', logs.length);
 
           for (const log of logs) {
+            // Deduplicate: skip if already processed
+            const eventKey = `${log.transactionHash}-${log.logIndex}`;
+            if (processedEvents.current.has(eventKey)) {
+              logger.log('[GameEventsCasino] Skipping duplicate GameResolved:', eventKey);
+              continue;
+            }
+            processedEvents.current.add(eventKey);
+
             const args = log.args as {
               player: `0x${string}`;
               result: number;
@@ -147,6 +161,14 @@ export function useGameEventsCasino(
           logger.log('[GameEventsCasino] CardDealt events:', logs.length);
 
           for (const log of logs) {
+            // Deduplicate: skip if already processed
+            const eventKey = `${log.transactionHash}-${log.logIndex}`;
+            if (processedEvents.current.has(eventKey)) {
+              logger.log('[GameEventsCasino] Skipping duplicate CardDealt:', eventKey);
+              continue;
+            }
+            processedEvents.current.add(eventKey);
+
             const args = log.args as {
               player: `0x${string}`;
               card: number | bigint;

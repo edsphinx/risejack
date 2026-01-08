@@ -34,6 +34,11 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
+/* CRITICAL: Hide card front when flipped to prevent flash on mount */
+.playing-card .card-inner.flipped .card-front {
+  visibility: hidden;
+}
+
 /* Card Back */
 .playing-card .card-back {
   position: absolute;

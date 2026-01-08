@@ -81,10 +81,12 @@ const USDC_SPEND_LIMIT = {
 
 /**
  * Get game permissions for a specific token context
+ * NOTE: No ETH spend limit needed - VyreJack uses ERC20 tokens only.
+ * Gas is handled separately via feeToken in wallet_grantPermissions.
  * @param tokenContext - 'chip', 'usdc', or 'both' (default)
  */
 export function getGamePermissions(tokenContext: TokenContext = 'both') {
-    const spend = [ETH_SPEND_LIMIT];
+    const spend: typeof CHIP_SPEND_LIMIT[] = [];
 
     if (tokenContext === 'chip') {
         spend.push(CHIP_SPEND_LIMIT);

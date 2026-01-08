@@ -1,4 +1,5 @@
 import type { PlayingCardProps } from '@vyrejack/shared';
+import { useRef, useEffect } from 'preact/hooks';
 import { getCardDisplay, getCardImageUrl, getCardBackUrl } from '@/lib/cards';
 import './styles/playing-card.css';
 
@@ -24,6 +25,16 @@ export function PlayingCard({
   const cardImageUrl = getCardImageUrl(cardIndex);
   const cardBackUrl = getCardBackUrl();
 
+  // Track if this card was ever flipped (face-down) to enable reveal animation
+  const wasFlippedRef = useRef(!faceUp);
+
+  // Update ref when faceUp changes - if it was face-down before, mark as was-flipped
+  useEffect(() => {
+    if (!faceUp) {
+      wasFlippedRef.current = true;
+    }
+  }, [faceUp]);
+
   // Calculate deal delay based on position in sequence
   const dealDelay = dealIndex * 200;
 
@@ -32,6 +43,9 @@ export function PlayingCard({
       onDealComplete();
     }
   };
+
+  // Build class string - only add was-flipped if we need the reveal animation
+  const innerClasses = `card-inner ${!faceUp ? 'flipped' : ''} ${wasFlippedRef.current && faceUp ? 'was-flipped' : ''}`;
 
   return (
     <div
@@ -42,7 +56,7 @@ export function PlayingCard({
       }}
       onAnimationEnd={handleAnimationEnd}
     >
-      <div className={`card-inner ${faceUp ? '' : 'flipped'}`}>
+      <div className={innerClasses}>
         {/* Card Front - PNG Image */}
         <div className="card-front">
           <img

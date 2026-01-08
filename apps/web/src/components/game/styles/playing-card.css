@@ -10,11 +10,16 @@
 .playing-card .card-inner {
   width: 100%;
   height: 100%;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
   position: relative;
 }
 
+/* Only animate when going from flipped to unflipped (revealing) */
+.playing-card .card-inner.was-flipped {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Start immediately flipped - no transition = no flash */
 .playing-card .card-inner.flipped {
   transform: rotateY(180deg);
 }

@@ -126,30 +126,24 @@ export function useWalletConnection(): UseWalletConnectionReturn {
     try {
       const provider = getProvider();
 
-      logger.log('🔗 Connecting to Rise Wallet via wallet_connect...');
+      // METEORO PATTERN: Use eth_requestAccounts instead of wallet_connect
+      // eth_requestAccounts triggers OAuth popup and persists to Porto IndexedDB correctly
+      logger.log('🔗 Connecting to Rise Wallet via eth_requestAccounts...');
 
-      // Use wallet_connect instead of eth_requestAccounts for proper persistence
-      // wallet_connect persists the account to Rise Wallet's IndexedDB, enabling
-      // session keys to survive page refresh
-      const response = await (
+      const accounts = await (
         provider as {
-          request: (args: {
-            method: string;
-            params?: unknown[];
-          }) => Promise<{ accounts: Array<{ address: `0x${string}` }> }>;
+          request: (args: { method: string }) => Promise<`0x${string}`[]>;
         }
       ).request({
-        method: 'wallet_connect',
-        params: [{}], // Empty capabilities for basic connection
+        method: 'eth_requestAccounts',
       });
 
-      const accounts = response.accounts;
       if (!accounts?.length) {
         throw new Error('No accounts returned');
       }
 
-      const walletAddress = accounts[0].address;
-      logger.log('🔗 Connected via wallet_connect:', walletAddress);
+      const walletAddress = accounts[0];
+      logger.log('🔗 Connected via eth_requestAccounts:', walletAddress);
 
       setAddress(walletAddress);
       setIsConnected(true);

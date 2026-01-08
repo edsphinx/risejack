@@ -30,7 +30,7 @@ import { ActionButtons } from './ActionButtons';
 import { XPGainPopup } from './XPGainPopup';
 import { ShareVictory } from './ShareVictory';
 import { CardDeck } from './CardDeck';
-import { Hand } from './Hand';
+import { Hand, HandValue } from './Hand';
 import { logger } from '@/lib/logger';
 import type { GameResult } from '@vyrejack/shared';
 import './styles/casino-table.css';
@@ -275,12 +275,11 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
                       <span className="play-zone-empty">Deal to start</span>
                     )}
                   </div>
-                  {/* Value display inline */}
-                  {displayDealerCards.length > 0 && displayDealerValue !== undefined && (
-                    <div className="text-white font-bold text-lg bg-black/50 rounded px-2 py-1">
-                      {displayDealerValue}
-                    </div>
-                  )}
+                  {/* Animated value display with colors */}
+                  <HandValue
+                    value={displayDealerCards.length > 0 ? displayDealerValue : undefined}
+                    cardCount={displayDealerCards.length}
+                  />
                 </div>
               </div>
 
@@ -300,12 +299,11 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
                       <span className="play-zone-empty">Your cards</span>
                     )}
                   </div>
-                  {/* Value display inline */}
-                  {displayPlayerCards.length > 0 && displayPlayerValue !== undefined && (
-                    <div className="text-white font-bold text-lg bg-black/50 rounded px-2 py-1">
-                      {displayPlayerValue}
-                    </div>
-                  )}
+                  {/* Animated value display with colors */}
+                  <HandValue
+                    value={displayPlayerCards.length > 0 ? displayPlayerValue : undefined}
+                    cardCount={displayPlayerCards.length}
+                  />
                 </div>
                 <div className="zone-label">Your Hand</div>
               </div>

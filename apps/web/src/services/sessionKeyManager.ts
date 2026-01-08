@@ -245,8 +245,18 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
 
   logger.log('🔑 Requesting permissions:', permissionParams);
 
-  // METEORO PATTERN: Call wallet_grantPermissions directly
-  // Do NOT call wallet_connect first - it may interfere with Porto's IndexedDB persistence
+  // Ensure provider is connected before grantPermissions
+  // This fixes "provider is disconnected from all chains" error
+  try {
+    await (provider as { request: (args: { method: string }) => Promise<unknown> }).request({
+      method: 'eth_requestAccounts',
+    });
+    logger.log('🔑 Provider reconnected via eth_requestAccounts');
+  } catch (e) {
+    logger.log('🔑 Provider connection check (may already be connected):', e);
+  }
+
+  // Call wallet_grantPermissions
   await (
     provider as { request: (args: { method: string; params: unknown }) => Promise<unknown> }
   ).request({

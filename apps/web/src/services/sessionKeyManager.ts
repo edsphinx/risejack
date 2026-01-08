@@ -6,7 +6,7 @@
 
 import { P256, PublicKey, Signature } from 'ox';
 import { getProvider } from '@/lib/riseWallet';
-import { GAME_PERMISSIONS } from '@/lib/gamePermissions';
+import { getGamePermissions, GAME_PERMISSIONS, type TokenContext } from '@/lib/gamePermissions';
 import { logger } from '@/lib/logger';
 
 // Storage prefix
@@ -209,9 +209,14 @@ export async function validateSessionKeyWithWallet(): Promise<boolean> {
 
 /**
  * Create a new session key and request permissions from Rise Wallet
+ * @param walletAddress - The user's wallet address
+ * @param tokenContext - Optional token context ('chip', 'usdc', or 'both')
  */
-export async function createSessionKey(walletAddress: string): Promise<SessionKeyData> {
-  logger.log('🔑 Creating new session key...');
+export async function createSessionKey(
+  walletAddress: string,
+  tokenContext: TokenContext = 'both'
+): Promise<SessionKeyData> {
+  logger.log('🔑 Creating new session key for token context:', tokenContext);
 
   const provider = getProvider();
 
@@ -227,6 +232,9 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
   // Calculate expiry
   const expiry = Math.floor(Date.now() / 1000) + SESSION_EXPIRY_SECONDS;
 
+  // Get permissions for the specific token context
+  const permissions = getGamePermissions(tokenContext);
+
   // Request permissions from Rise Wallet
   const permissionParams = [
     {
@@ -235,7 +243,7 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
         publicKey: publicKey,
       },
       expiry: expiry,
-      permissions: GAME_PERMISSIONS,
+      permissions: permissions,
       feeToken: {
         token: '0x0000000000000000000000000000000000000000',
         limit: '10000000000000000', // 0.01 ETH for gas

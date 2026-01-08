@@ -29,6 +29,7 @@ import {
   VYREJACKCORE_ADDRESS,
   CHIP_TOKEN_ADDRESS,
 } from '@/lib/contract';
+import { type TokenContext } from '@/lib/gamePermissions';
 import { logger } from '@/lib/logger';
 import { logEvent } from '@/lib/api';
 
@@ -57,6 +58,7 @@ interface VyreCasinoActionsConfig {
   address: `0x${string}` | null;
   hasSessionKey: boolean;
   keyPair: { publicKey: string; privateKey: string } | null;
+  tokenContext?: TokenContext; // 'chip', 'usdc', or 'both'
   onSuccess?: () => void;
 }
 
@@ -65,7 +67,7 @@ interface VyreCasinoActionsConfig {
 // =============================================================================
 
 export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCasinoActionsReturn {
-  const { address, onSuccess } = config;
+  const { address, tokenContext = 'both', onSuccess } = config;
   // Note: hasSessionKey and keyPair from config are no longer used
   // We now check getActiveSessionKey() directly in sendTransaction for freshest state
 
@@ -106,7 +108,7 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         logger.log('[VyreCasinoActions] No valid session key, creating one...');
         const { createSessionKey } = await import('@/services/sessionKeyManager');
         try {
-          sessionKey = await createSessionKey(address);
+          sessionKey = await createSessionKey(address, tokenContext);
         } catch (err) {
           logger.warn('[VyreCasinoActions] Failed to create session key:', err);
           return null; // Let caller fall back to passkey

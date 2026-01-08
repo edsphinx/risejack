@@ -85,11 +85,15 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
     setXpPopup(null);
   }, []);
 
+  // Derive token context from token symbol for session key permissions
+  const tokenContext = tokenSymbol.toUpperCase() === 'USDC' ? 'usdc' : 'chip';
+
   // Game WRITE actions hook
   const actions = useVyreCasinoActions({
     address: wallet.address as `0x${string}` | null,
     hasSessionKey: wallet.hasSessionKey ?? false,
     keyPair: wallet.keyPair ?? null,
+    tokenContext,
     onSuccess: () => {
       logger.log('[GameBoardCasino] Action success, refreshing state');
       refreshBalance();

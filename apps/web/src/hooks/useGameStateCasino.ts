@@ -153,13 +153,9 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
         if (event.isDealer) {
           // Dealer card
           if (!event.faceUp && prev.dealerCards.length === 1) {
-            // This is the hidden second card - add to array AND store reference
-            // The card should be in the array so Hand component shows it face-down
-            return {
-              ...prev,
-              dealerCards: [...prev.dealerCards, event.card],
-              dealerHiddenCard: event.card,
-            };
+            // This is the hidden second card - ONLY store reference, NOT in array
+            // The card will be added to array when game ends (like ETH version)
+            return { ...prev, dealerHiddenCard: event.card };
           }
           return { ...prev, dealerCards: [...prev.dealerCards, event.card] };
         } else {

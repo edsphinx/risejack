@@ -161,8 +161,32 @@ export async function validateSessionKeyWithWallet(): Promise<boolean> {
     );
 
     if (matchingKey) {
-      logger.log('🔑 Session key validated with Porto state ✓');
-      return true;
+      // Also verify the key has permissions for our current contracts
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const keyPermissions = (matchingKey as any).permissions;
+      const permittedCalls = keyPermissions?.calls as Array<{ to?: string }> | undefined;
+
+      if (permittedCalls && Array.isArray(permittedCalls)) {
+        // Check if VyreCasino address is in the permitted calls
+        const { VYRECASINO_ADDRESS } = await import('@/lib/contract');
+        const casinoLower = VYRECASINO_ADDRESS.toLowerCase();
+        const hasVyreCasino = permittedCalls.some((call) => call.to?.toLowerCase() === casinoLower);
+
+        if (hasVyreCasino) {
+          logger.log('🔑 Session key validated with Porto state ✓ (has VyreCasino permissions)');
+          return true;
+        } else {
+          logger.warn('🔑 Session key exists but has WRONG PERMISSIONS (not for VyreCasino v4)');
+          // Log what contracts this key HAS permissions for
+          const addresses = permittedCalls.map((c) => c.to).filter(Boolean);
+          logger.log('🔑 [DEBUG] Key has permissions for:', addresses);
+          return false;
+        }
+      } else {
+        // No permissions means it's an old key format or admin key
+        logger.warn('🔑 Session key has no permissions array, may be incompatible');
+        return false;
+      }
     } else {
       // More detailed error logging
       const anyMatching = accountKeys.find(

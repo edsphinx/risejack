@@ -11,8 +11,8 @@
 
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { createPublicClient, webSocket } from 'viem';
-import { riseTestnet, VYREJACKCORE_ADDRESS } from '@/lib/contract';
-import { VYREJACKCORE_ABI } from '@vyrejack/shared';
+import { riseTestnet, VYREJACKCORE_ADDRESS, VYRECASINO_ADDRESS } from '@/lib/contract';
+import { VYREJACKCORE_ABI, VYRECASINO_ABI } from '@vyrejack/shared';
 import { logger } from '@/lib/logger';
 import type { GameResult } from '@vyrejack/shared';
 
@@ -48,12 +48,17 @@ export interface CardRevealedEvent {
   card: number;
 }
 
+export interface XPAwardedEvent {
+  amount: bigint;
+}
+
 interface GameEventsCasinoCallbacks {
   onGameResolved: (event: GameResolvedEvent) => void;
   onCardDealt?: (event: CardDealtEvent) => void;
   onPlayerBusted?: (event: BustedEvent) => void;
   onDealerBusted?: (event: BustedEvent) => void;
   onDealerCardRevealed?: (event: CardRevealedEvent) => void;
+  onXPAwarded?: (event: XPAwardedEvent) => void;
 }
 
 /**
@@ -241,8 +246,31 @@ export function useGameEventsCasino(
       });
       unwatchRefs.current.push(unwatchDealerRevealed);
 
+      // Watch for XPAwarded events from VyreCasino (v4 - for XP popup)
+      const unwatchXPAwarded = client.watchContractEvent({
+        address: VYRECASINO_ADDRESS,
+        abi: VYRECASINO_ABI,
+        eventName: 'XPAwarded',
+        args: {
+          player: playerAddress,
+        },
+        onLogs: (logs) => {
+          for (const log of logs) {
+            const args = log.args as { player: `0x${string}`; amount: bigint };
+            logger.log('[GameEventsCasino] XPAwarded:', args.amount.toString());
+            if (callbacksRef.current.onXPAwarded) {
+              callbacksRef.current.onXPAwarded({ amount: args.amount });
+            }
+          }
+        },
+        onError: (error) => {
+          logger.error('[GameEventsCasino] XPAwarded error:', error);
+        },
+      });
+      unwatchRefs.current.push(unwatchXPAwarded);
+
       setIsConnected(true);
-      logger.log('[GameEventsCasino] WebSocket connected - listening to 5 event types');
+      logger.log('[GameEventsCasino] WebSocket connected - listening to 6 event types');
     } catch (error) {
       logger.error('[GameEventsCasino] Failed to start WebSocket:', error);
       setIsConnected(false);

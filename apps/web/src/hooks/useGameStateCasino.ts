@@ -24,7 +24,7 @@ import { useState, useCallback, useRef, useMemo } from 'preact/hooks';
 import { useGameServiceCasino } from './useGameServiceCasino';
 import {
   useGameEventsCasino,
-  type GamePlayedEvent,
+  type GameResolvedEvent,
   type CardDealtEvent,
 } from './useGameEventsCasino';
 import { logger } from '@/lib/logger';
@@ -169,11 +169,10 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
     [service.refetch]
   );
 
-  // Handle GamePlayed event from WebSocket
-  // Note: VyreJackCore emits GamePlayed, not GameResolved (contract bug)
-  const handleGamePlayed = useCallback(
-    (event: GamePlayedEvent) => {
-      logger.log('[GameStateCasino] GamePlayed:', event);
+  // Handle GameResolved event from WebSocket (v4 contracts - real values!)
+  const handleGameResolved = useCallback(
+    (event: GameResolvedEvent) => {
+      logger.log('[GameStateCasino] GameResolved:', event);
 
       // Delay 50ms to allow CardDealt events to be processed first
       // Rise is very fast, events may arrive nearly simultaneously
@@ -219,9 +218,16 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
           logger.log('[GameStateCasino] Using contract dealer cards:', dealerCards);
         }
 
-        // Calculate hand values from cards
-        const playerValue = calculateHandValue(playerCards);
-        const dealerValue = calculateHandValue(dealerCards);
+        // v4 contracts provide real values directly - no need to calculate!
+        const playerValue = event.playerFinalValue;
+        const dealerValue = event.dealerFinalValue;
+
+        logger.log('[GameStateCasino] Using real values from contract:', {
+          playerValue,
+          dealerValue,
+          result: event.result,
+          payout: event.payout.toString(),
+        });
 
         setLastGameResult({
           result: event.result,
@@ -230,7 +236,7 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
           dealerValue,
           playerCards,
           dealerCards,
-          bet: event.bet,
+          bet: 0n, // Not in GameResolved event, use accumulated or estimate
         });
 
         // Clear accumulated cards for next game
@@ -253,7 +259,7 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
 
   // WebSocket listener for game events
   const { isConnected: isEventConnected } = useGameEventsCasino(player, {
-    onGamePlayed: handleGamePlayed,
+    onGameResolved: handleGameResolved,
     onCardDealt: handleCardDealt,
   });
 

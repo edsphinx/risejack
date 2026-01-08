@@ -141,14 +141,17 @@ export async function validateSessionKeyWithWallet(): Promise<boolean> {
       return false;
     }
 
-    // Debug: Log all session keys in Porto state
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sessionKeysInPorto = (accountKeys as any[]).filter((k) => k.role === 'session');
-    logger.log(`🔑 [DEBUG] Porto has ${sessionKeysInPorto.length} session keys:`);
-    sessionKeysInPorto.forEach((k: { publicKey?: string; expiry?: number }, i: number) => {
-      logger.log(`   [${i}] ${k.publicKey?.slice(0, 30)}... (expires: ${k.expiry})`);
-    });
-    logger.log(`🔑 [DEBUG] Our localStorage key: ${sessionKey.publicKey?.slice(0, 30)}...`);
+    // Debug: Log ALL keys in Porto state (not just session role)
+    logger.log(`🔑 [DEBUG] Porto account has ${accountKeys.length} total keys:`);
+    accountKeys.forEach(
+      (k: { publicKey?: string; expiry?: number; role?: string; type?: string }, i: number) => {
+        logger.log(
+          `   [${i}] type=${k.type} role=${k.role} pk=${k.publicKey?.slice(0, 30)}... expires=${k.expiry}`
+        );
+      }
+    );
+    logger.log(`🔑 [DEBUG] Our localStorage publicKey: ${sessionKey.publicKey?.slice(0, 30)}...`);
+    logger.log(`🔑 [DEBUG] Full localStorage publicKey length: ${sessionKey.publicKey?.length}`);
 
     // Check if our session key's publicKey exists in the account's keys
     const now = Math.floor(Date.now() / 1000);
@@ -161,9 +164,16 @@ export async function validateSessionKeyWithWallet(): Promise<boolean> {
       logger.log('🔑 Session key validated with Porto state ✓');
       return true;
     } else {
-      logger.warn('🔑 Session key NOT found in Porto account keys - clearing stale key');
-      // Clear the stale session key from localStorage
-      clearAllSessionKeys();
+      // More detailed error logging
+      const anyMatching = accountKeys.find(
+        (k: { publicKey?: string }) => k.publicKey === sessionKey.publicKey
+      );
+      if (anyMatching) {
+        logger.warn('🔑 Session key found but EXPIRED in Porto');
+      } else {
+        logger.warn('🔑 Session key publicKey NOT found in any Porto account keys');
+      }
+      // Don't clear here anymore - let the caller decide
       return false;
     }
   } catch (error) {

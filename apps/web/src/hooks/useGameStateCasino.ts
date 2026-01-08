@@ -168,10 +168,10 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
         }
       });
 
-      // Also refetch contract state
-      service.refetch();
+      // DO NOT refetch here - it causes re-render loops!
+      // Events are the source of truth for card accumulation
     },
-    [service.refetch]
+    [] // No dependencies - pure state update
   );
 
   // Track last processed game result to prevent duplicates

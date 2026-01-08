@@ -174,9 +174,20 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
     [service.refetch]
   );
 
+  // Track last processed game result to prevent duplicates
+  const lastProcessedResultRef = useRef<string | null>(null);
+
   // Handle GameResolved event from WebSocket (v4 contracts - real values!)
   const handleGameResolved = useCallback(
     (event: GameResolvedEvent) => {
+      // Deduplicate: create unique key from result + payout
+      const eventKey = `${event.result}-${event.payout.toString()}-${event.playerFinalValue}-${event.dealerFinalValue}`;
+      if (lastProcessedResultRef.current === eventKey) {
+        logger.log('[GameStateCasino] Skipping duplicate GameResolved callback');
+        return;
+      }
+      lastProcessedResultRef.current = eventKey;
+
       logger.log('[GameStateCasino] GameResolved:', event);
 
       // Log current accumulated state BEFORE timeout

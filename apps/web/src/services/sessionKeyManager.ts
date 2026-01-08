@@ -245,15 +245,21 @@ export async function createSessionKey(walletAddress: string): Promise<SessionKe
 
   logger.log('🔑 Requesting permissions:', permissionParams);
 
-  // Ensure provider is connected before grantPermissions
-  // This fixes "provider is disconnected from all chains" error
+  // Check if provider is connected using eth_accounts (silent, no popup)
+  // If this returns accounts, we're connected and can proceed
   try {
-    await (provider as { request: (args: { method: string }) => Promise<unknown> }).request({
-      method: 'eth_requestAccounts',
+    const accounts = await (
+      provider as { request: (args: { method: string }) => Promise<string[]> }
+    ).request({
+      method: 'eth_accounts', // Silent - no popup
     });
-    logger.log('🔑 Provider reconnected via eth_requestAccounts');
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts connected');
+    }
+    logger.log('🔑 Provider connected, accounts:', accounts[0]);
   } catch (e) {
-    logger.log('🔑 Provider connection check (may already be connected):', e);
+    logger.warn('🔑 Provider not connected, cannot create session key:', e);
+    throw new Error('Wallet not connected');
   }
 
   // Call wallet_grantPermissions

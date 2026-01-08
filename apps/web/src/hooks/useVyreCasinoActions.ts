@@ -136,11 +136,27 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         logger.log('[VyreCasinoActions] Session key TX failed:', msg);
 
         if (msg.includes('not been authorized') || msg.includes('unauthorized')) {
-          logger.log('[VyreCasinoActions] Detected auth error, recreating session key...');
-          // Try to recreate session key
-          clearAllSessionKeys();
-          const newKey = await createSessionKey(address);
-          return await executeWithKey(newKey);
+          // Step 1: Try to reactivate with wallet_connect first (like ETH version)
+          logger.log('[VyreCasinoActions] Auth error, trying wallet_connect reactivation...');
+
+          try {
+            await (provider as any).request({
+              method: 'wallet_connect',
+              params: [{}],
+            });
+            logger.log('[VyreCasinoActions] Provider reactivated, retrying with same key...');
+
+            // Retry with the SAME session key (no need to create new one)
+            const result = await executeWithKey(sessionKey);
+            logger.log('[VyreCasinoActions] Retry with same key succeeded!');
+            return result;
+          } catch {
+            // Step 2: Reactivation failed - create new session key as last resort
+            logger.log('[VyreCasinoActions] Reactivation failed, recreating session key...');
+            clearAllSessionKeys();
+            const newKey = await createSessionKey(address);
+            return await executeWithKey(newKey);
+          }
         }
         throw firstError;
       }

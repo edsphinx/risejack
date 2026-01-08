@@ -19,12 +19,7 @@
 import { useState, useCallback } from 'preact/hooks';
 import { encodeFunctionData, parseUnits, formatUnits, maxUint256 } from 'viem';
 import { getProvider } from '@/lib/riseWallet';
-import {
-  signWithSessionKey,
-  getActiveSessionKey,
-  clearAllSessionKeys,
-  createSessionKey,
-} from '@/services/sessionKeyManager';
+import { signWithSessionKey, getActiveSessionKey } from '@/services/sessionKeyManager';
 import { ErrorService, TokenService } from '@/services';
 import {
   VYRECASINO_ABI,
@@ -135,28 +130,16 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         const msg = String(firstError);
         logger.log('[VyreCasinoActions] Session key TX failed:', msg);
 
-        if (msg.includes('not been authorized') || msg.includes('unauthorized')) {
-          // Step 1: Try to reactivate with wallet_connect first (like ETH version)
-          logger.log('[VyreCasinoActions] Auth error, trying wallet_connect reactivation...');
-
-          try {
-            await (provider as any).request({
-              method: 'wallet_connect',
-              params: [{}],
-            });
-            logger.log('[VyreCasinoActions] Provider reactivated, retrying with same key...');
-
-            // Retry with the SAME session key (no need to create new one)
-            const result = await executeWithKey(sessionKey);
-            logger.log('[VyreCasinoActions] Retry with same key succeeded!');
-            return result;
-          } catch {
-            // Step 2: Reactivation failed - create new session key as last resort
-            logger.log('[VyreCasinoActions] Reactivation failed, recreating session key...');
-            clearAllSessionKeys();
-            const newKey = await createSessionKey(address);
-            return await executeWithKey(newKey);
-          }
+        // METEORO PATTERN: On auth error, just fall back to passkey
+        // Don't try to reactivate or create new session keys - let user do it explicitly
+        if (
+          msg.includes('not been authorized') ||
+          msg.includes('unauthorized') ||
+          msg.includes('permission')
+        ) {
+          logger.log('[VyreCasinoActions] Session key permission denied, falling back to passkey');
+          // Return null to indicate session key failed - caller should use passkey
+          return null;
         }
         throw firstError;
       }

@@ -193,7 +193,7 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
         hiddenCard: accumulatedCardsRef.current.dealerHiddenCard,
       });
 
-      // Delay 500ms to allow CardDealt events to be processed first
+      // Delay 50ms to allow CardDealt events to be processed first
       // Rise is very fast, events may arrive nearly simultaneously
       setTimeout(() => {
         const currentAccumulated = accumulatedCardsRef.current;
@@ -264,7 +264,7 @@ export function useGameStateCasino(player: `0x${string}` | null): UseGameStateCa
 
         // Refetch to update contract state
         currentService.refetch();
-      }, 500); // 500ms delay - Rise Chain is fast, need time for CardDealt events
+      }, 50); // 50ms delay - matches ETH version, Rise Chain is fast
     },
     [] // No dependencies - we use refs for current values
   );

@@ -10,6 +10,8 @@ import {
   revokeSessionKey,
   getSessionKeyTimeRemaining,
   isSessionKeyValid,
+  validateSessionKeyWithWallet,
+  clearAllSessionKeys,
   type SessionKeyData,
 } from '@/services/sessionKeyManager';
 import { logger } from '@/lib/logger';
@@ -45,11 +47,24 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
       });
 
       if (existingKey && isSessionKeyValid(existingKey)) {
-        // Simple validation - just check if key exists and is not expired
-        // No need for RPC validation or warmup - sendSessionTransaction handles failures
-        // with auto-recreate pattern
-        logger.log('🔑 Found valid session key in localStorage');
-        setSessionData(existingKey);
+        // Validate with Rise Wallet (Porto) to ensure the key is actually registered
+        logger.log('🔑 Validating session key with Rise Wallet...');
+        const isWalletValid = await validateSessionKeyWithWallet();
+
+        if (isWalletValid) {
+          logger.log('🔑 Session key validated with Rise Wallet ✓');
+          setSessionData(existingKey);
+        } else {
+          // Key is in localStorage but wallet doesn't have it - clear stale key
+          logger.warn('🔑 Session key not recognized by Rise Wallet, clearing stale key');
+          clearAllSessionKeys();
+          setSessionData(null);
+        }
+      } else if (existingKey) {
+        // Key exists but is expired
+        logger.log('🔑 Session key expired, clearing...');
+        clearAllSessionKeys();
+        setSessionData(null);
       }
     };
 

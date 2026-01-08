@@ -123,7 +123,10 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         return await executeWithKey(sessionKey);
       } catch (firstError) {
         const msg = String(firstError);
+        logger.log('[VyreCasinoActions] Session key TX failed:', msg);
+
         if (msg.includes('not been authorized') || msg.includes('unauthorized')) {
+          logger.log('[VyreCasinoActions] Detected auth error, recreating session key...');
           // Try to recreate session key
           clearAllSessionKeys();
           const newKey = await createSessionKey(address);

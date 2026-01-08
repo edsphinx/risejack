@@ -39,16 +39,16 @@ export const GAME_CALLS = [
 
 /**
  * Spending limits for session key
- * METEORO PATTERN: Use native ETH with reasonable limit
- * Note: limit must be a hex string for Rise Wallet 0.3.0
+ * VyreJack with CHIP/USDC does NOT need ETH spend limits:
+ * - Gas is paid by Rise Wallet (gasless)
+ * - Only ERC20 tokens (CHIP/USDC) are spent, not native ETH
+ * Empty array = no native token spending allowed (correct!)
  */
-export const SPEND_LIMITS = [
-    {
-        limit: '0x8AC7230489E80000', // 10 ETH in wei as hex (Meteoro pattern)
-        period: 'day' as const,
-        token: '0x0000000000000000000000000000000000000000' as `0x${string}`, // Native ETH
-    },
-];
+export const SPEND_LIMITS: Array<{
+    limit: string;
+    period: 'day' | 'hour' | 'minute';
+    token: `0x${string}`;
+}> = [];
 
 /**
  * Combined permissions object for grantPermissions call

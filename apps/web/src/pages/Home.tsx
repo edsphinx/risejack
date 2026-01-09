@@ -3,7 +3,6 @@
  * Composes subcomponents, minimal logic in this file
  */
 
-import { useLocation } from 'wouter-preact';
 import { Logo } from '@/components/brand/Logo';
 import { useWallet } from '@/context/WalletContext';
 import { useGameNavigation } from '@/hooks/useGameNavigation';
@@ -31,7 +30,6 @@ const COMING_SOON_GAMES = [
 ];
 
 export function Home() {
-  const [, setLocation] = useLocation();
   const wallet = useWallet();
 
   // Game navigation with token approval
@@ -39,11 +37,6 @@ export function Home() {
 
   // Hero CTA → ETH version (default, no friction)
   const navigateToGame = () => navigate('eth');
-
-  // Scroll to live stats section
-  const scrollToStats = () => {
-    document.querySelector('.live-stats')?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   return (
     <div className="home-page">
@@ -76,15 +69,6 @@ export function Home() {
               onConnect={wallet.connect}
               onPlay={navigateToGame}
             />
-
-            <div className="hero-cta-secondary">
-              <button onClick={scrollToStats} className="hero-cta-stats">
-                📊 Live Stats
-              </button>
-              <button onClick={() => setLocation('/provably-fair')} className="hero-cta-fair">
-                🔒 Provably Fair
-              </button>
-            </div>
           </div>
 
           {/* Right - Leaderboard (expanded) */}

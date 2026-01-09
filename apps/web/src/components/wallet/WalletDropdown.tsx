@@ -20,8 +20,7 @@ import type { AssetInfo } from '@/hooks/useAssetBalances';
 interface WalletDropdownProps {
   address: string;
   balance: string; // ETH balance
-  chipBalance: string; // CHIP balance (display formatted) - legacy, still used
-  assets: AssetInfo[]; // New: array of assets with approval status
+  assets: AssetInfo[]; // Array of assets with approval status
   hasSessionKey: boolean;
   sessionExpiry: TimeRemaining | null;
   copied: boolean;

@@ -184,17 +184,21 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
       logger.log('[VyreCasino] Prepared object:', prepared);
 
       // 3. Sign Call
-      // IMPORTANT: wallet-demo EXPLICITLY destructures capabilities separately
-      const { digest, capabilities, ...requestParams } = prepared;
+      // Extract only what we need from prepared response
+      const { digest, capabilities, context, key } = prepared;
       const signature = signWithSessionKey(digest, sessionKey);
 
       logger.log('[VyreCasino] Generated signature:', signature);
 
       // 4. Send Call
-      // Only include capabilities if defined (wallet-demo pattern)
+      // NEW SCHEMA: Only send context, key, capabilities (optional), signature
+      // Do NOT send chainId, nonce, or other fields from prepared object
       const sendParams = {
-        ...requestParams,
-        ...(capabilities ? { capabilities } : {}),
+        context,
+        key,
+        ...(capabilities?.feeSignature
+          ? { capabilities: { feeSignature: capabilities.feeSignature } }
+          : {}),
         signature,
       };
 

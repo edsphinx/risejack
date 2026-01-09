@@ -191,10 +191,15 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
       logger.log('[VyreCasino] Generated signature:', signature);
 
       // 4. Send Call
-      // NEW SCHEMA: Only send context, key, capabilities (optional), signature
-      // Do NOT send chainId, nonce, or other fields from prepared object
+      // NEW SCHEMA: context must only contain { preCall?, quote? }
+      // Do NOT include account, calls, nonce, or other fields
+      const cleanContext = {
+        ...(context.preCall ? { preCall: context.preCall } : {}),
+        ...(context.quote ? { quote: context.quote } : {}),
+      };
+
       const sendParams = {
-        context,
+        context: cleanContext,
         key,
         ...(capabilities?.feeSignature
           ? { capabilities: { feeSignature: capabilities.feeSignature } }

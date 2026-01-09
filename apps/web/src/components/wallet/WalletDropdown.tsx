@@ -1,17 +1,16 @@
 /**
  * WalletDropdown - The dropdown panel showing wallet details
  *
- * 🆕 Features:
- * - CHIP and USDC balances with approval status
+ * Features:
+ * - USDC balance with approval status
+ * - ETH balance (native)
  * - Manual approval button for unapproved tokens
- * - Visual indicators for approved/unapproved assets
  */
 
 import { useState } from 'preact/hooks';
 import { formatEthBalance, formatSessionTime } from '@/lib/formatters';
-import { ChipIcon } from '@/components/icons/ChipIcon';
 import { TokenService } from '@/services/token.service';
-import { CHIP_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS, VYRECASINO_ADDRESS } from '@/lib/contract';
+import { USDC_TOKEN_ADDRESS, VYRECASINO_ADDRESS } from '@/lib/contract';
 import { ERC20_ABI } from '@vyrejack/shared';
 import { logger } from '@/lib/logger';
 import type { TimeRemaining } from '@vyrejack/shared';
@@ -200,7 +199,13 @@ function AssetBalanceRow({ asset, accountAddress, onApproved }: AssetBalanceRowP
   return (
     <div className="dropdown-balance-row dropdown-balance-asset">
       <div className="asset-info">
-        <span className="asset-icon">{asset.icon}</span>
+        <img
+          src={asset.icon}
+          alt={asset.symbol}
+          className="asset-icon-img"
+          width={20}
+          height={20}
+        />
         <span className="dropdown-balance-label">{asset.symbol}</span>
         {asset.isApproved ? (
           <span className="asset-approved" title="Approved for VyreCasino">
@@ -217,9 +222,7 @@ function AssetBalanceRow({ asset, accountAddress, onApproved }: AssetBalanceRowP
           </button>
         )}
       </div>
-      <span className="dropdown-balance-value">
-        {asset.balance} {asset.symbol === 'CHIP' && <ChipIcon size={16} />}
-      </span>
+      <span className="dropdown-balance-value">{asset.balance}</span>
     </div>
   );
 }

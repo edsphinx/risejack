@@ -18,10 +18,7 @@ import './components/wallet/styles/mobile-header.css';
 const Home = lazy(() => import('./pages/Home'));
 const VyreJack = lazy(() => import('./pages/VyreJack'));
 const VyreJackEth = lazy(() => import('./pages/games/VyreJackEth'));
-const VyreJackChip = lazy(() => import('./pages/games/VyreJackChip'));
 const VyreJackUsdc = lazy(() => import('./pages/games/VyreJackUsdc'));
-const Swap = lazy(() => import('./pages/Swap'));
-const Stake = lazy(() => import('./pages/Stake'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
 
 function Header() {
@@ -180,21 +177,12 @@ function Header() {
                 </button>
                 <button
                   onClick={() => {
-                    setLocation('/swap');
+                    setLocation('/games/vyrejack/eth');
                     setMenuOpen(false);
                   }}
-                  className={location === '/swap' ? 'active' : ''}
+                  className={location.includes('/games/') ? 'active' : ''}
                 >
-                  🔄 SWAP
-                </button>
-                <button
-                  onClick={() => {
-                    setLocation('/stake');
-                    setMenuOpen(false);
-                  }}
-                  className={location === '/stake' ? 'active' : ''}
-                >
-                  📈 STAKE
+                  🎮 PLAY NOW
                 </button>
                 <button
                   onClick={() => {
@@ -228,17 +216,10 @@ function Header() {
               </button>
               <button
                 type="button"
-                onClick={() => setLocation('/swap')}
-                className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/swap' ? 'text-purple-400' : ''}`}
+                onClick={() => setLocation('/games/vyrejack/eth')}
+                className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location.includes('/games/') ? 'text-purple-400' : ''}`}
               >
-                🔄 SWAP
-              </button>
-              <button
-                type="button"
-                onClick={() => setLocation('/stake')}
-                className={`cursor-pointer hover:text-purple-400 transition-colors bg-transparent border-none ${location === '/stake' ? 'text-purple-400' : ''}`}
-              >
-                📈 STAKE
+                🎮 PLAY NOW
               </button>
               <button
                 type="button"
@@ -333,11 +314,11 @@ export function App() {
               <Switch>
                 <Route path="/" component={Home} />
                 <Route path="/vyrejack" component={VyreJack} />
+                <Route path="/games/vyrejack/eth" component={VyreJackEth} />
+                <Route path="/games/vyrejack/usdc" component={VyreJackUsdc} />
+                {/* Legacy routes */}
                 <Route path="/games/vyrejack-eth" component={VyreJackEth} />
-                <Route path="/games/vyrejack-chip" component={VyreJackChip} />
                 <Route path="/games/vyrejack-usdc" component={VyreJackUsdc} />
-                <Route path="/swap" component={Swap} />
-                <Route path="/stake" component={Stake} />
                 <Route path="/leaderboard" component={LeaderboardPage} />
 
                 {/* Fallback to Home */}

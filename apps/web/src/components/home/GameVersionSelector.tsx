@@ -1,19 +1,24 @@
 /**
  * GameVersionSelector - Card grid to choose VyreJack version
  *
- * 🔐 TOKEN APPROVAL: Checks allowance before navigating to ERC20 versions
- * Shows TokenApprovalModal if user needs to approve CHIP/USDC
+ * Shows ETH and USDC betting options with official token logos
  */
 
 import { useGameNavigation, type TokenType } from '@/hooks/useGameNavigation';
 import { TokenApprovalModal } from './TokenApprovalModal';
 import './styles/game-selector.css';
 
+// Official token logo URLs (from Trust Wallet Assets / CoinGecko)
+const TOKEN_LOGOS = {
+  eth: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
+  usdc: 'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
+} as const;
+
 interface GameVersion {
   id: TokenType;
   name: string;
   token: string;
-  tokenIcon: string;
+  tokenLogo: string;
   color: string;
   description: string;
   badge?: string;
@@ -24,7 +29,7 @@ const GAME_VERSIONS: GameVersion[] = [
     id: 'eth',
     name: 'VyreJack',
     token: 'ETH',
-    tokenIcon: '⟠',
+    tokenLogo: TOKEN_LOGOS.eth,
     color: 'emerald',
     description: 'Classic ETH betting',
     badge: '🔥 HOT',
@@ -33,7 +38,7 @@ const GAME_VERSIONS: GameVersion[] = [
     id: 'usdc',
     name: 'VyreJack',
     token: 'USDC',
-    tokenIcon: '💵',
+    tokenLogo: TOKEN_LOGOS.usdc,
     color: 'blue',
     description: 'Stable dollar betting',
     badge: 'STABLE',
@@ -63,7 +68,13 @@ export function GameVersionSelector() {
               {version.badge && <span className="version-badge">{version.badge}</span>}
 
               <div className="version-header">
-                <span className="version-token-icon">{version.tokenIcon}</span>
+                <img
+                  src={version.tokenLogo}
+                  alt={version.token}
+                  className="version-token-logo"
+                  width={40}
+                  height={40}
+                />
                 <div className="version-titles">
                   <h3 className="version-name">{version.name}</h3>
                   <span className="version-token">{version.token}</span>

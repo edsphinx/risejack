@@ -2,13 +2,18 @@
  * useAssetBalances - Hook for fetching multiple asset balances and approval status
  *
  * ⚡ PERFORMANCE: Parallel fetches, uses TokenService caching
- * Returns balances and approval status for CHIP, USDC, ETH
+ * Returns balances and approval status for USDC only (ETH is native)
  */
 
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import { TokenService } from '@/services/token.service';
-import { CHIP_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS } from '@/lib/contract';
+import { USDC_TOKEN_ADDRESS } from '@/lib/contract';
 import { logger } from '@/lib/logger';
+
+// Token logo URLs (same as GameVersionSelector)
+const TOKEN_LOGOS = {
+  usdc: 'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
+} as const;
 
 export interface AssetInfo {
   symbol: string;
@@ -38,30 +43,20 @@ export function useAssetBalances(account: `0x${string}` | null): UseAssetBalance
     setIsLoading(true);
 
     try {
-      // Fetch all balances and approvals in parallel
-      const [chipBalance, usdcBalance, chipAllowance, usdcAllowance] = await Promise.all([
-        TokenService.getBalance(CHIP_TOKEN_ADDRESS, account),
+      // Fetch USDC balance and approval (ETH is handled separately as native)
+      const [usdcBalance, usdcAllowance] = await Promise.all([
         TokenService.getBalance(USDC_TOKEN_ADDRESS, account),
-        TokenService.getAllowance(CHIP_TOKEN_ADDRESS, account),
         TokenService.getAllowance(USDC_TOKEN_ADDRESS, account),
       ]);
 
       setAssets([
-        {
-          symbol: 'CHIP',
-          balance: parseFloat(chipBalance.formatted).toFixed(2),
-          balanceRaw: chipBalance.raw,
-          decimals: chipBalance.decimals,
-          isApproved: chipAllowance.isApproved,
-          icon: '🟡',
-        },
         {
           symbol: 'USDC',
           balance: parseFloat(usdcBalance.formatted).toFixed(2),
           balanceRaw: usdcBalance.raw,
           decimals: usdcBalance.decimals,
           isApproved: usdcAllowance.isApproved,
-          icon: '💵',
+          icon: TOKEN_LOGOS.usdc,
         },
       ]);
     } catch (error) {

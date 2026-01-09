@@ -30,7 +30,7 @@ const GAME_VERSIONS: GameVersion[] = [
     name: 'VyreJack',
     token: 'ETH',
     tokenLogo: TOKEN_LOGOS.eth,
-    color: 'emerald',
+    color: 'purple',
     description: 'Classic ETH betting',
     badge: '🔥 HOT',
   },

@@ -190,10 +190,10 @@ export async function createSessionKey(
         spend: spendLimits,
       },
       // feeToken specifies which token to use for gas fees and limit
-      // METEORO FORMAT: { token: address, limit: 'decimal_wei_string' }
+      // Porto schema: { symbol: 'native' | TokenSymbol, limit: 'decimal_string' }
       feeToken: {
-        token: '0x0000000000000000000000000000000000000000', // Native ETH for gas
-        limit: '10000000000000000', // 0.01 ETH limit in wei (decimal string, NOT hex)
+        symbol: 'native', // Native ETH/gas token
+        limit: '0.01', // Limit in human-readable units (Porto parses this)
       },
     },
   ];

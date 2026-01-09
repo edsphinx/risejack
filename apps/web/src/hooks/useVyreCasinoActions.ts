@@ -89,6 +89,19 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         }
 
         if (status) {
+          // PRIORITY 1: Check for successful receipt (relay often returns status 500 but tx succeeded)
+          // A receipt with blockNumber and logs indicates on-chain success
+          const receipt = status.receipts?.[0];
+          if (receipt && receipt.blockNumber && receipt.logs && receipt.logs.length > 0) {
+            logger.log('[VyreCasino] ✅ Transaction confirmed via receipt!', {
+              blockNumber: receipt.blockNumber,
+              logsCount: receipt.logs.length,
+              gasUsed: receipt.gasUsed,
+            });
+            // Return the call ID since we don't have transactionHash in this format
+            return callId;
+          }
+
           if (status.status === 'CONFIRMED' || status.status === 'confirmed') {
             logger.log('[VyreCasino] ✅ Transaction CONFIRMED!', {
               txHash: status.receipts?.[0]?.transactionHash,
@@ -109,8 +122,13 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
             throw new Error(`Transaction failed: ${status.error || JSON.stringify(status)}`);
           }
 
-          // Log other statuses (PENDING, etc)
-          if (status.status && status.status !== 'PENDING' && status.status !== 'pending') {
+          // Log other statuses (PENDING, etc) - but not 500 with receipts (handled above)
+          if (
+            status.status &&
+            status.status !== 'PENDING' &&
+            status.status !== 'pending' &&
+            status.status !== 500
+          ) {
             logger.log(`[VyreCasino] Unexpected status: ${status.status}`, status);
           }
         }

@@ -133,38 +133,100 @@
   }
 }
 
-/* Primary CTA */
+/* Primary CTA - Premium animated button */
 .hero-cta-primary {
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
+  position: relative;
+  padding: 1.25rem 2.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: white;
-  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #8b5cf6 100%);
+  background-size: 200% 200%;
   border: none;
   border-radius: 16px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.4);
-  transition: all 0.3s;
+  gap: 0.75rem;
+  box-shadow:
+    0 0 20px rgba(139, 92, 246, 0.4),
+    0 0 60px rgba(236, 72, 153, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: gradient-shift 3s ease infinite;
+  overflow: hidden;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.hero-cta-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
+  border-radius: 16px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.hero-cta-primary::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, #a78bfa, #f472b6, #a78bfa);
+  border-radius: 18px;
+  z-index: -1;
+  opacity: 0;
+  filter: blur(8px);
+  transition: opacity 0.3s;
 }
 
 .hero-cta-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(139, 92, 246, 0.5);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 0 30px rgba(139, 92, 246, 0.6),
+    0 0 80px rgba(236, 72, 153, 0.3),
+    0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.hero-cta-primary:hover::before {
+  opacity: 1;
+}
+
+.hero-cta-primary:hover::after {
+  opacity: 0.6;
+}
+
+.hero-cta-primary:active {
+  transform: translateY(-2px) scale(0.98);
 }
 
 .hero-cta-primary:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
+  animation: none;
 }
 
 .hero-cta-primary .cta-spade-icon {
-  width: 20px;
-  height: 20px;
-  filter: brightness(0) invert(1);
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: transform 0.3s;
+}
+
+.hero-cta-primary:hover .cta-spade-icon {
+  transform: rotate(-10deg) scale(1.1);
 }
 
 /* Secondary CTAs */

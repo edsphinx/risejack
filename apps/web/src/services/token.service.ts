@@ -81,12 +81,6 @@ async function getAllowance(
   owner: `0x${string}`,
   spender: `0x${string}` = VYRECASINO_ADDRESS
 ): Promise<AllowanceState> {
-  console.log('[TokenService.getAllowance] Checking:', {
-    token,
-    owner,
-    spender,
-  });
-
   const amount = await publicClient.readContract({
     address: token,
     abi: ERC20_ABI,
@@ -96,12 +90,6 @@ async function getAllowance(
 
   // Consider "unlimited" if allowance is greater than 1e30
   const isUnlimited = amount > 10n ** 30n;
-
-  console.log('[TokenService.getAllowance] Result:', {
-    amount: amount.toString(),
-    isUnlimited,
-    isApproved: amount > 0n,
-  });
 
   return {
     amount,

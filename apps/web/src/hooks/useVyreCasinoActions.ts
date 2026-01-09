@@ -89,6 +89,18 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         }
 
         if (status) {
+          // Check for successful receipt first (even if relay status is error like 500)
+          // If we have a receipt with status 0x1 and transactionHash, the tx succeeded on-chain
+          const receipt = status.receipts?.[0];
+          if (receipt?.transactionHash && receipt?.status === '0x1') {
+            logger.log('[VyreCasino] ✅ Transaction confirmed via receipt!', {
+              txHash: receipt.transactionHash,
+              blockNumber: receipt.blockNumber,
+              gasUsed: receipt.gasUsed,
+            });
+            return receipt.transactionHash;
+          }
+
           if (status.status === 'CONFIRMED' || status.status === 'confirmed') {
             logger.log('[VyreCasino] ✅ Transaction CONFIRMED!', {
               txHash: status.receipts?.[0]?.transactionHash,
@@ -109,7 +121,7 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
             throw new Error(`Transaction failed: ${status.error || JSON.stringify(status)}`);
           }
 
-          // Log other statuses (PENDING, etc)
+          // Log other statuses (PENDING, numeric codes like 500, etc)
           if (status.status && status.status !== 'PENDING' && status.status !== 'pending') {
             logger.log(`[VyreCasino] Unexpected status: ${status.status}`, status);
           }

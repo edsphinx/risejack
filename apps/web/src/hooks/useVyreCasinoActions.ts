@@ -184,26 +184,18 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
       logger.log('[VyreCasino] Prepared object:', prepared);
 
       // 3. Sign Call
-      // Extract only what we need from prepared response
-      const { digest, capabilities, context, key } = prepared;
+      // Pattern from wallet-demo tests:
+      // const { digest, ...request } = prepared
+      // then { ...request, signature }
+      const { digest, ...request } = prepared;
       const signature = signWithSessionKey(digest, sessionKey);
 
       logger.log('[VyreCasino] Generated signature:', signature);
 
       // 4. Send Call
-      // NEW SCHEMA: context must only contain { preCall?, quote? }
-      // Do NOT include account, calls, nonce, or other fields
-      const cleanContext = {
-        ...(context.preCall ? { preCall: context.preCall } : {}),
-        ...(context.quote ? { quote: context.quote } : {}),
-      };
-
+      // Spread all prepared fields except digest, add our signature
       const sendParams = {
-        context: cleanContext,
-        key,
-        ...(capabilities?.feeSignature
-          ? { capabilities: { feeSignature: capabilities.feeSignature } }
-          : {}),
+        ...request,
         signature,
       };
 

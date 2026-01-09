@@ -3,10 +3,8 @@
  * Composes subcomponents, minimal logic in this file
  */
 
-import { useState, useEffect } from 'preact/hooks';
 import { useLocation } from 'wouter-preact';
 import { Logo } from '@/components/brand/Logo';
-import { ChipIcon } from '@/components/icons/ChipIcon';
 import { useWallet } from '@/context/WalletContext';
 import { useGameNavigation } from '@/hooks/useGameNavigation';
 import { GameVersionSelector } from '@/components/home/GameVersionSelector';
@@ -17,7 +15,6 @@ import { ComingSoonCard } from '@/components/home/ComingSoonCard';
 import { LeaderboardPreview } from '@/components/home/LeaderboardPreview';
 import { PoweredByRise } from '@/components/home/PoweredByRise';
 import { Footer } from '@/components/common/Footer';
-import { FaucetModal, useFaucetCanClaim } from '@/components/wallet/FaucetModal';
 import './styles/home.css';
 
 // Mock data - in production, fetch from backend/contract
@@ -40,22 +37,13 @@ export function Home() {
   // Game navigation with token approval
   const { navigate, needsApproval, pendingToken, clearPending } = useGameNavigation();
 
-  // Hero CTA → CHIP version (featured)
-  const navigateToGame = () => navigate('chip');
-  const navigateToStake = () => setLocation('/stake');
+  // Hero CTA → ETH version (default, no friction)
+  const navigateToGame = () => navigate('eth');
 
-  // Faucet modal state
-  const [faucetOpen, setFaucetOpen] = useState(false);
-  const canClaimFaucet = useFaucetCanClaim();
-
-  // Auto-open faucet modal when user can claim (first time)
-  useEffect(() => {
-    if (canClaimFaucet && wallet.isConnected) {
-      // Small delay to not overwhelm user right after connect
-      const timer = setTimeout(() => setFaucetOpen(true), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [canClaimFaucet, wallet.isConnected]);
+  // Scroll to live stats section
+  const scrollToStats = () => {
+    document.querySelector('.live-stats')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <div className="home-page">
@@ -75,7 +63,7 @@ export function Home() {
             </h1>
 
             <p className="hero-subtitle">
-              VyreJack with CHIP tokens • Web2-like UX, trustless under the hood
+              Play VyreJack with ETH or USDC • Web2-like UX, trustless under the hood
               <br />
               <span className="hero-subtitle-tech">
                 3-10ms Shreds • Enshrined VRF • Provably fair smart contracts
@@ -90,13 +78,11 @@ export function Home() {
             />
 
             <div className="hero-cta-secondary">
-              <button onClick={() => setFaucetOpen(true)} className="hero-cta-chip">
-                <ChipIcon size={40} />
-                Get CHIP
+              <button onClick={scrollToStats} className="hero-cta-stats">
+                📊 Live Stats
               </button>
-              <button onClick={navigateToStake} className="hero-cta-yield">
-                <img src="/assets/icons/yield.svg" alt="" className="cta-yield-icon" />
-                Earn Yield
+              <button onClick={() => setLocation('/provably-fair')} className="hero-cta-fair">
+                🔒 Provably Fair
               </button>
             </div>
           </div>
@@ -132,9 +118,6 @@ export function Home() {
 
       {/* Footer */}
       <Footer />
-
-      {/* Faucet Modal */}
-      <FaucetModal isOpen={faucetOpen} onClose={() => setFaucetOpen(false)} />
 
       {/* Token Approval Modal - for Hero CTA */}
       {needsApproval && pendingToken && pendingToken !== 'eth' && (

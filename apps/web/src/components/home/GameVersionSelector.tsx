@@ -21,12 +21,12 @@ interface GameVersion {
 
 const GAME_VERSIONS: GameVersion[] = [
   {
-    id: 'chip',
+    id: 'eth',
     name: 'VyreJack',
-    token: 'CHIP',
-    tokenIcon: '🟡',
-    color: 'amber',
-    description: 'Bet with CHIP tokens',
+    token: 'ETH',
+    tokenIcon: '⟠',
+    color: 'emerald',
+    description: 'Classic ETH betting',
     badge: '🔥 HOT',
   },
   {
@@ -35,17 +35,8 @@ const GAME_VERSIONS: GameVersion[] = [
     token: 'USDC',
     tokenIcon: '💵',
     color: 'blue',
-    description: 'Bet with USDC stablecoin',
-    badge: 'NEW',
-  },
-  {
-    id: 'eth',
-    name: 'VyreJack',
-    token: 'ETH',
-    tokenIcon: '⟠',
-    color: 'emerald',
-    description: 'Classic ETH betting',
-    badge: 'OG',
+    description: 'Stable dollar betting',
+    badge: 'STABLE',
   },
 ];
 

@@ -16,8 +16,6 @@ import './components/wallet/styles/mobile-header.css';
 
 // Lazy-loaded pages - each becomes a separate chunk
 const Home = lazy(() => import('./pages/Home'));
-const VyreJack = lazy(() => import('./pages/VyreJack'));
-const VyreJackEth = lazy(() => import('./pages/games/VyreJackEth'));
 const VyreJackUsdc = lazy(() => import('./pages/games/VyreJackUsdc'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
 
@@ -313,12 +311,13 @@ export function App() {
             <Suspense fallback={<PageLoader />}>
               <Switch>
                 <Route path="/" component={Home} />
-                <Route path="/vyrejack" component={VyreJack} />
-                <Route path="/games/vyrejack/eth" component={VyreJackEth} />
+                <Route path="/vyrejack" component={VyreJackUsdc} />
+                <Route path="/games/vyrejack" component={VyreJackUsdc} />
                 <Route path="/games/vyrejack/usdc" component={VyreJackUsdc} />
-                {/* Legacy routes */}
-                <Route path="/games/vyrejack-eth" component={VyreJackEth} />
+                {/* Legacy routes - redirect to USDC */}
                 <Route path="/games/vyrejack-usdc" component={VyreJackUsdc} />
+                <Route path="/games/vyrejack-eth" component={VyreJackUsdc} />
+                <Route path="/games/vyrejack/eth" component={VyreJackUsdc} />
                 <Route path="/leaderboard" component={LeaderboardPage} />
 
                 {/* Fallback to Home */}

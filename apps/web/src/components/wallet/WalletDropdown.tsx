@@ -157,7 +157,8 @@ function AssetBalanceRow({ asset, accountAddress, onApproved }: AssetBalanceRowP
 
       const provider = getProvider();
 
-      const tokenAddress = asset.symbol === 'CHIP' ? CHIP_TOKEN_ADDRESS : USDC_TOKEN_ADDRESS;
+      // Only USDC token now
+      const tokenAddress = USDC_TOKEN_ADDRESS;
       const maxApproval = BigInt(
         '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
       );

@@ -39,6 +39,7 @@ import './styles/action-buttons.css';
 interface GameBoardCasinoProps {
   token: `0x${string}`;
   tokenSymbol: string;
+  tokenContext?: 'ETH' | 'CHIP' | 'USDC';
 }
 
 // XP popup state
@@ -47,9 +48,13 @@ interface XPPopupState {
   key: number;
 }
 
-export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
+export function GameBoardCasino({ token, tokenSymbol, tokenContext }: GameBoardCasinoProps) {
   const [betAmount, setBetAmount] = useState('10');
   const [xpPopup, setXpPopup] = useState<XPPopupState | null>(null);
+
+  // Derive context if not provided
+  const context =
+    tokenContext || (tokenSymbol === 'USDC' ? 'USDC' : tokenSymbol === 'CHIP' ? 'CHIP' : 'ETH');
 
   const wallet = useWallet();
   const isActiveTab = useTabFocus();
@@ -88,8 +93,7 @@ export function GameBoardCasino({ token, tokenSymbol }: GameBoardCasinoProps) {
   // Game WRITE actions hook
   const actions = useVyreCasinoActions({
     address: wallet.address as `0x${string}` | null,
-    hasSessionKey: wallet.hasSessionKey ?? false,
-    keyPair: wallet.keyPair ?? null,
+    tokenContext: context,
     onSuccess: () => {
       logger.log('[GameBoardCasino] Action success, refreshing state');
       refreshBalance();

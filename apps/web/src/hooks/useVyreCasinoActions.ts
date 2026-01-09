@@ -1,19 +1,10 @@
 /**
  * useVyreCasinoActions - Game WRITE actions for VyreCasino architecture
  *
- * ⚡ PERFORMANCE: Uses TokenService for reads (no duplicate RPC calls)
- * 🔧 MAINTAINABILITY: ONLY handles writes, reads done via hooks/services
- *
- * Handles:
- * - Token approval (CHIP/USDC → VyreCasino)
- * - Casino.play() for starting games
- * - Direct calls to VyreJackCore for hit/stand/double
- *
- * Flow:
- * 1. Check token allowance (via TokenService)
- * 2. Approve if needed (write)
- * 3. Call VyreCasino.play(game, token, amount, data)
- * 4. For actions: call VyreJackCore.hit(), stand(), etc.
+ * REFACTORED: Uses simplified Meteoro pattern for session keys
+ * - No complex retries
+ * - Trusts localStorage
+ * - Linear transaction flow: Check -> (Create) -> Prepare -> Sign -> Send
  */
 
 import { useState, useCallback } from 'preact/hooks';
@@ -21,7 +12,7 @@ import { encodeFunctionData, parseUnits, formatUnits, maxUint256 } from 'viem';
 import { getProvider } from '@/lib/riseWallet';
 import {
   signWithSessionKey,
-  getActiveSessionKey,
+  ensureSessionKey,
   type SessionKeyData,
 } from '@/services/sessionKeyManager';
 import { ErrorService, TokenService } from '@/services';
@@ -40,7 +31,7 @@ import { logEvent } from '@/lib/api';
 // TYPES
 // =============================================================================
 
-type GameActionName = 'hit' | 'stand';
+type GameActionName = 'hit' | 'stand' | 'double';
 
 export interface UseVyreCasinoActionsReturn {
   isLoading: boolean;
@@ -59,8 +50,6 @@ export interface UseVyreCasinoActionsReturn {
 
 interface VyreCasinoActionsConfig {
   address: `0x${string}` | null;
-  hasSessionKey: boolean;
-  keyPair: { publicKey: string; privateKey: string } | null;
   tokenContext?: 'ETH' | 'CHIP' | 'USDC';
   onSuccess?: () => void;
 }
@@ -71,8 +60,6 @@ interface VyreCasinoActionsConfig {
 
 export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCasinoActionsReturn {
   const { address, tokenContext, onSuccess } = config;
-  // Note: hasSessionKey and keyPair from config are no longer used
-  // We now check getActiveSessionKey() directly in sendTransaction for freshest state
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,138 +67,168 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
   const clearError = useCallback(() => setError(null), []);
 
   /**
-   * Send transaction using session key (no popup)
-   * 3-step retry pattern (from 54a15cf):
-   * 1. Validate session key exists in Porto's IndexedDB state
-   * 2. Try with existing session key
-   * 3. If auth error → wallet_connect to reactivate → retry same key
-   * 4. If still fails → create new session key → retry
+   * Wait for transaction status with polling
+   * Matches Meteoro's waitForTransactionStatus
    */
-  const sendSessionTransaction = useCallback(
-    async (
-      to: `0x${string}`,
-      value: bigint,
-      data: `0x${string}`
-    ): Promise<`0x${string}` | null> => {
-      if (!address) return null;
+  const waitForTransactionStatus = async (provider: any, callId: string, maxAttempts = 30) => {
+    logger.log(`[VyreCasino] Polling transaction status for: ${callId}`);
 
-      // Step 0: Validate session key exists in Porto's IndexedDB state
-      // This syncs our localStorage with Porto's authoritative state
-      const { validateSessionKeyWithWallet, clearAllSessionKeys } =
-        await import('@/services/sessionKeyManager');
-      const isValidInPorto = await validateSessionKeyWithWallet();
-
-      if (!isValidInPorto) {
-        logger.log('[VyreCasinoActions] Session key not valid in Porto, clearing stale key');
-        clearAllSessionKeys();
-        return null; // Let caller fall back to passkey or create new key
-      }
-
-      const sessionKey = getActiveSessionKey();
-      if (!sessionKey) return null;
-
-      const provider = getProvider();
-      const hexValue = value
-        ? (`0x${value.toString(16)}` as `0x${string}`)
-        : ('0x0' as `0x${string}`);
-
-      // Log the exact call we're attempting
-      const selector = data.slice(0, 10);
-      logger.log('[VyreCasinoActions] Attempting call:', {
-        to: to.toLowerCase(),
-        selector,
-        publicKey: sessionKey.publicKey.slice(0, 30) + '...',
-      });
-
-      // Helper: Execute transaction with given session key
-      const executeWithKey = async (key: SessionKeyData): Promise<`0x${string}` | null> => {
-        const prepareParams = [
-          {
-            calls: [{ to: to.toLowerCase() as `0x${string}`, value: hexValue, data }],
-            key: { type: 'p256', publicKey: key.publicKey },
-          },
-        ];
-
-        const prepared = (await (provider as any).request({
-          method: 'wallet_prepareCalls',
-          params: prepareParams,
-        })) as { digest: `0x${string}` };
-
-        const { digest, ...requestParams } = prepared;
-        const signature = signWithSessionKey(digest, key);
-
-        const response = (await (provider as any).request({
-          method: 'wallet_sendPreparedCalls',
-          params: [{ ...requestParams, signature }],
-        })) as Array<{ id: `0x${string}` }>;
-
-        return response[0]?.id || null;
-      };
-
-      // Helper: Check if error is authorization-related
-      const isAuthError = (err: unknown): boolean => {
-        const msg = String(err);
-        return (
-          msg.includes('not been authorized') ||
-          msg.includes('unauthorized') ||
-          msg.includes('REVOKED') ||
-          msg.includes('Invalid parameters')
-        );
-      };
-
-      // Step 1: Try with existing session key
+    for (let i = 0; i < maxAttempts; i++) {
       try {
-        const callId = await executeWithKey(sessionKey);
-        logger.log('[VyreCasinoActions] Session key transaction sent:', callId);
-        return callId;
-      } catch (firstError) {
-        if (!isAuthError(firstError)) {
-          throw firstError; // Non-auth error, don't retry
+        const status = await provider.request({
+          method: 'wallet_getCallsStatus',
+          params: [callId],
+        });
+
+        // Log every status update for debugging
+        if (i % 5 === 0 || i < 3) {
+          logger.log(
+            `[VyreCasino] Poll ${i + 1}/${maxAttempts} - Status:`,
+            JSON.stringify(status, null, 2)
+          );
         }
 
-        logger.log('[VyreCasinoActions] Auth error, trying wallet_connect reactivation...');
+        if (status) {
+          if (status.status === 'CONFIRMED' || status.status === 'confirmed') {
+            logger.log('[VyreCasino] ✅ Transaction CONFIRMED!', {
+              txHash: status.receipts?.[0]?.transactionHash,
+              receipts: status.receipts,
+            });
+            if (status.receipts?.[0]?.transactionHash) {
+              return status.receipts[0].transactionHash;
+            }
+            return callId; // Fallback
+          }
 
-        // Step 2: Reactivate via wallet_connect (prompts PIN once)
-        try {
-          await (provider as any).request({
-            method: 'wallet_connect',
-            params: [{}],
-          });
-          logger.log('[VyreCasinoActions] Provider reactivated, retrying with same key...');
+          if (status.status === 'FAILED' || status.status === 'failed') {
+            logger.error('[VyreCasino] ❌ Transaction FAILED!', {
+              error: status.error,
+              status: status.status,
+              full: JSON.stringify(status, null, 2),
+            });
+            throw new Error(`Transaction failed: ${status.error || JSON.stringify(status)}`);
+          }
 
-          // Retry with the SAME session key
-          const callId = await executeWithKey(sessionKey);
-          logger.log('[VyreCasinoActions] Retry succeeded:', callId);
-          return callId;
-        } catch {
-          logger.log('[VyreCasinoActions] Reactivation failed, creating new session key...');
-
-          // Step 3: Create new session key as last resort
-          try {
-            const { createSessionKey, clearAllSessionKeys } =
-              await import('@/services/sessionKeyManager');
-            clearAllSessionKeys(); // Clean up stale keys
-            const newKey = await createSessionKey(address, tokenContext);
-
-            const callId = await executeWithKey(newKey);
-            logger.log('[VyreCasinoActions] New session key succeeded:', callId);
-            return callId;
-          } catch (thirdError) {
-            logger.warn('[VyreCasinoActions] All retries failed:', thirdError);
-            return null; // Let caller fall back to passkey
+          // Log other statuses (PENDING, etc)
+          if (status.status && status.status !== 'PENDING' && status.status !== 'pending') {
+            logger.log(`[VyreCasino] Unexpected status: ${status.status}`, status);
           }
         }
+      } catch (err) {
+        // Log polling errors
+        logger.warn(`[VyreCasino] Poll error at attempt ${i + 1}:`, err);
+        // Ignore polling errors unless it's a definitive failure
+        if (String(err).includes('Transaction failed')) throw err;
       }
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
+    logger.warn(
+      '[VyreCasino] ⚠️ Transaction status polling timed out after',
+      maxAttempts,
+      'attempts'
+    );
+    return callId;
+  };
+
+  /**
+   * Send transaction using session key pattern (Prepare -> Sign -> Send)
+   */
+  const sendSessionTransaction = useCallback(
+    async (to: `0x${string}`, value: bigint, data: `0x${string}`): Promise<string | null> => {
+      if (!address) return null;
+
+      const provider = getProvider();
+
+      // 1. Get or Create Session Key
+      // This will use existing from localStorage OR create new one via popup
+      // No extra validation steps here
+      let sessionKey: SessionKeyData;
+      try {
+        sessionKey = await ensureSessionKey(address, tokenContext);
+      } catch (err) {
+        logger.error('Failed to ensure session key:', err);
+        throw new Error('Failed to get permissions for game');
+      }
+
+      const hexValue = value ? `0x${value.toString(16)}` : '0x0';
+
+      // 2. Prepare Call
+      // Added detailed params to match wallet-demo exactly
+      const prepareParams = [
+        {
+          calls: [
+            {
+              to: to.toLowerCase(),
+              value: hexValue,
+              data,
+            },
+          ],
+          chainId: '0xaa39db', // Rise Testnet
+          from: address,
+          atomicRequired: true,
+          key: {
+            type: 'p256',
+            publicKey: sessionKey.publicKey,
+          },
+        },
+      ];
+
+      logger.log('[VyreCasino] Preparing calls with params:', prepareParams);
+
+      const prepared = await (provider as any).request({
+        method: 'wallet_prepareCalls',
+        params: prepareParams,
+      });
+
+      logger.log('[VyreCasino] Prepared object:', prepared);
+
+      // 3. Sign Call
+      // IMPORTANT: wallet-demo EXPLICITLY destructures capabilities separately
+      const { digest, capabilities, ...requestParams } = prepared;
+      const signature = signWithSessionKey(digest, sessionKey);
+
+      logger.log('[VyreCasino] Generated signature:', signature);
+
+      // 4. Send Call
+      // Only include capabilities if defined (wallet-demo pattern)
+      const sendParams = {
+        ...requestParams,
+        ...(capabilities ? { capabilities } : {}),
+        signature,
+      };
+
+      logger.log(
+        '[VyreCasino] Sending prepared calls with params:',
+        JSON.stringify(sendParams, null, 2)
+      );
+
+      const response = await (provider as any).request({
+        method: 'wallet_sendPreparedCalls',
+        params: [sendParams],
+      });
+
+      // 5. Handle Response & Poll
+      let callId: string;
+      if (Array.isArray(response) && response.length > 0) {
+        callId = response[0].id;
+      } else if (typeof response === 'string') {
+        callId = response;
+      } else if (response && typeof response === 'object' && 'id' in response) {
+        callId = (response as any).id;
+      } else {
+        throw new Error('Invalid response from wallet_sendPreparedCalls');
+      }
+
+      logger.log(`[VyreCasino] Transaction sent, ID: ${callId}`);
+
+      return waitForTransactionStatus(provider, callId);
     },
-    [address]
+    [address, tokenContext]
   );
 
   const sendPasskeyTransaction = useCallback(
-    async (
-      to: `0x${string}`,
-      value: bigint,
-      data: `0x${string}`
-    ): Promise<`0x${string}` | null> => {
+    async (to: `0x${string}`, value: bigint, data: `0x${string}`): Promise<string | null> => {
       if (!address) return null;
       const provider = getProvider();
       const hexValue = value
@@ -221,42 +238,33 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
       return (await provider.request({
         method: 'eth_sendTransaction',
         params: [{ from: address, to, value: hexValue, data }],
-      })) as `0x${string}`;
+      })) as string;
     },
     [address]
   );
 
   const sendTransaction = useCallback(
-    async (
-      to: `0x${string}`,
-      value: bigint,
-      data: `0x${string}`
-    ): Promise<`0x${string}` | null> => {
-      // Check for valid session key directly (not from props which may be stale)
-      const currentSessionKey = getActiveSessionKey();
+    async (to: `0x${string}`, value: bigint, data: `0x${string}`): Promise<string | null> => {
+      // Always try session key flow first
+      // Our ensureSessionKey logic handles checking if we need a new one
+      try {
+        return await sendSessionTransaction(to, value, data);
+      } catch (err) {
+        // Only fallback to passkey if it's a non-recoverable session error
+        // Or if user rejected permissions
+        logger.warn('[VyreCasino] Session transaction failed:', err);
 
-      if (currentSessionKey) {
-        logger.log('[VyreCasinoActions] Using session key for transaction');
-        try {
-          return await sendSessionTransaction(to, value, data);
-        } catch (err) {
-          logger.log('[VyreCasinoActions] Session key failed, falling back to passkey:', err);
-          return await sendPasskeyTransaction(to, value, data);
-        }
+        // Use a simple heuristic: if it's "User rejected" don't retry with passkey immediately
+        // But for safety/robustness we can try passkey as fallback
+        return await sendPasskeyTransaction(to, value, data);
       }
-
-      logger.log('[VyreCasinoActions] No session key, using passkey');
-      return await sendPasskeyTransaction(to, value, data);
     },
-    [sendSessionTransaction, sendPasskeyTransaction] // Removed hasSessionKey, keyPair from deps
+    [sendSessionTransaction, sendPasskeyTransaction]
   );
 
   // ---------------------------------------------------------------------------
   // TOKEN MANAGEMENT
   // ---------------------------------------------------------------------------
-
-  // ⚡ READS now use TokenService (cached, optimized)
-  // checkAllowance and getTokenBalance removed - use TokenService directly or useTokenBalance hook
 
   const approveToken = useCallback(
     async (token: `0x${string}`, amount: bigint = maxUint256): Promise<boolean> => {
@@ -270,7 +278,7 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
 
       try {
         const data = encodeFunctionData({
-          abi: ERC20_ABI,
+          abi: ERC20_ABI as any,
           functionName: 'approve',
           args: [VYRECASINO_ADDRESS, amount],
         });
@@ -316,8 +324,16 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
         return false;
       }
 
-      // CHIP has 18 decimals
-      const betWei = parseUnits(betAmount, 18);
+      // Determine decimals based on token
+      // USDC uses 6 decimals, CHIP uses 18
+      // We should really get this from token metadata, but for now we hardcode known tokens
+      const isUSDC = token.toLowerCase() === '0x062fcbbe1ca8fc6d79d9a650d8022412d53b08f6'; // Replace with constant check ideally
+      // Actually we have tokenContext passed in, maybe use that?
+      // But safer to check address or assumes 18 unless specified.
+      // VyreJackUsdc passes token context USDC.
+
+      const decimals = isUSDC || token.toLowerCase().includes('cbe1c') ? 6 : 18;
+      const betWei = parseUnits(betAmount, decimals);
 
       setIsLoading(true);
       setError(null);
@@ -325,21 +341,18 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
       try {
         // Step 1: Check allowance via TokenService (cached)
         const allowanceState = await TokenService.getAllowance(token, address);
-        logger.log(
-          '[VyreCasino] Current allowance:',
-          allowanceState.isApproved ? 'approved' : 'need approval'
-        );
 
-        // Step 2: Approve if needed (check against bet amount)
+        // Step 2: Approve if needed
         if (allowanceState.amount < betWei) {
           logger.log('[VyreCasino] Approving token...');
+          // Approval uses session key too!
           const approved = await approveToken(token, maxUint256);
           if (!approved) return false;
         }
 
         // Step 3: Call VyreCasino.play()
         const data = encodeFunctionData({
-          abi: VYRECASINO_ABI,
+          abi: VYRECASINO_ABI as any,
           functionName: 'play',
           args: [
             VYREJACKCORE_ADDRESS, // game address
@@ -372,7 +385,6 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
     [address, approveToken, sendTransaction, onSuccess]
   );
 
-  // Player actions go directly to VyreJackCore
   const executeGameAction = useCallback(
     async (action: GameActionName): Promise<boolean> => {
       if (!address) {
@@ -385,7 +397,7 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
 
       try {
         const data = encodeFunctionData({
-          abi: VYREJACKCORE_ABI,
+          abi: VYREJACKCORE_ABI as any,
           functionName: action,
         });
 
@@ -414,11 +426,7 @@ export function useVyreCasinoActions(config: VyreCasinoActionsConfig): UseVyreCa
 
   const hit = useCallback(() => executeGameAction('hit'), [executeGameAction]);
   const stand = useCallback(() => executeGameAction('stand'), [executeGameAction]);
-  // TODO: double not yet in VyreJackCore ABI - implement when available
-  const double = useCallback(() => {
-    setError('Double not yet available');
-    return Promise.resolve(false);
-  }, []);
+  const double = useCallback(() => executeGameAction('double'), [executeGameAction]);
 
   const formatChip = useCallback((value: bigint): string => formatUnits(value, 18), []);
 

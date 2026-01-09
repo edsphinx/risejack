@@ -1,243 +1,183 @@
-/**
- * Session Key Manager
- * Handles creation, validation, and management of Rise Wallet session keys
- * Based on Meteoro's sessionKeyManager.js
- */
-
-import { P256, PublicKey, Signature } from 'ox';
+import { P256, Signature, PublicKey } from 'ox';
 import { getProvider } from '@/lib/riseWallet';
-import { getGamePermissions, type TokenContext } from '@/lib/gamePermissions';
+import { GAME_CALLS, getSpendLimits, type TokenContext } from '@/lib/gamePermissions';
 import { logger } from '@/lib/logger';
 
-// Storage prefix
-const STORAGE_PREFIX = 'vyrejack.sessionKey';
-
-// Session key expiry - "Infinite" (~10 years) for keyless experience
-// Security: Rise Wallet (Porto) requires PIN/Passkey to unlock, so this is safe
-// Users can always recover via social login if they lose device
-const SESSION_EXPIRY_SECONDS = 10 * 365 * 24 * 60 * 60; // ~10 years = 315,360,000 seconds
-
-// Flag to indicate long-duration mode (affects UI behavior)
-export const SESSION_KEY_LONG_DURATION = true;
-
-// Threshold for showing expiry warnings (not really needed with infinite keys)
-export const EXPIRY_WARNING_THRESHOLD_HOURS = 24;
-
-// Module-level cache
-let activeKeyPair: SessionKeyData | null = null;
+// =============================================================================
+// TYPES
+// =============================================================================
 
 export interface SessionKeyData {
   privateKey: string;
   publicKey: string;
   expiry: number;
   createdAt: number;
-  address?: string;
-  tokenContext?: TokenContext;
-  permissions?: ReturnType<typeof getGamePermissions>;
+  address: string; // Wallet address this key belongs to
+  context?: TokenContext; // Context this key was created for (ETH/CHIP/USDC)
 }
 
-/**
- * Get storage key for a public key
- */
-function getStorageKey(publicKey: string): string {
-  return `${STORAGE_PREFIX}.${publicKey}`;
+export type { TokenContext };
+
+// Configuration
+const SESSION_KEY_STORAGE_PREFIX = 'vyrejack_session_key';
+const SESSION_DURATION_SECONDS = 7 * 24 * 60 * 60; // 7 days
+
+// Cache active key in memory
+let activeKeyPair: SessionKeyData | null = null;
+
+// =============================================================================
+// STORAGE HELPERS
+// =============================================================================
+
+function getStorageKey(walletAddress: string): string {
+  if (!walletAddress) return 'vyrejack_session_key_unknown';
+  // Store one key per wallet address to support multi-account switching
+  return `${SESSION_KEY_STORAGE_PREFIX}_${walletAddress.toLowerCase()}`;
 }
 
-/**
- * Get all stored session keys from localStorage
- */
-export function getStoredSessionKeys(): SessionKeyData[] {
-  if (typeof window === 'undefined') return [];
-
-  const keys: SessionKeyData[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith(STORAGE_PREFIX)) {
-      try {
-        const data = JSON.parse(localStorage.getItem(key) || '');
-        if (data?.publicKey) {
-          keys.push(data);
-        }
-      } catch {
-        // Ignore invalid entries
+export function getActiveSessionKey(walletAddress?: string | null): SessionKeyData | null {
+  // 1. Check in-memory cache first
+  if (activeKeyPair) {
+    // If no address specified, return cached key (legacy behavior support)
+    // If address specified, ensure it matches
+    if (
+      !walletAddress ||
+      (activeKeyPair.address && activeKeyPair.address.toLowerCase() === walletAddress.toLowerCase())
+    ) {
+      if (isSessionKeyValid(activeKeyPair)) {
+        return activeKeyPair;
       }
+    } else {
+      // Address mismatch, clear cache
+      activeKeyPair = null;
     }
   }
-  return keys;
-}
 
-/**
- * Check if a session key is still valid (not expired)
- */
-export function isSessionKeyValid(sessionKey: SessionKeyData | null): boolean {
-  if (!sessionKey?.publicKey || !sessionKey?.privateKey || !sessionKey?.expiry) {
-    return false;
-  }
-  const now = Math.floor(Date.now() / 1000);
-  return sessionKey.expiry > now;
-}
-
-/**
- * Get the active session key pair (if any)
- */
-export function getActiveSessionKey(): SessionKeyData | null {
-  // First check module-level cache
-  if (activeKeyPair && isSessionKeyValid(activeKeyPair)) {
-    return activeKeyPair;
+  // 2. Check localStorage
+  // We strictly require walletAddress to lookup from storage to prevent leaking keys between accounts
+  if (!walletAddress) {
+    return null;
   }
 
-  // Try to restore from localStorage
-  const storedKeys = getStoredSessionKeys();
-  const validKey = storedKeys.find((key) => isSessionKeyValid(key));
+  try {
+    const storageKey = getStorageKey(walletAddress);
+    const stored = localStorage.getItem(storageKey);
 
-  if (validKey) {
-    activeKeyPair = validKey;
-    return validKey;
+    if (stored) {
+      const data = JSON.parse(stored) as SessionKeyData;
+
+      // Basic integrity check
+      if (data.publicKey && data.privateKey && data.expiry) {
+        // Expiry check
+        if (isSessionKeyValid(data)) {
+          logger.log(
+            `🔑 [Session] Key restored from localStorage for ${walletAddress.slice(0, 6)}...`
+          );
+          activeKeyPair = data;
+          return data;
+        } else {
+          logger.log(
+            `🔑 [Session] Stored key expired for ${walletAddress.slice(0, 6)}... clearing.`
+          );
+          localStorage.removeItem(storageKey);
+        }
+      }
+    }
+  } catch (e) {
+    logger.error('Error reading session key from storage:', e);
   }
 
   return null;
 }
 
-/**
- * Check if we have a usable session key
- */
-export function hasUsableSessionKey(): boolean {
-  return getActiveSessionKey() !== null;
-}
-
-/**
- * Validate that a session key exists in Rise Wallet (not just localStorage)
- * Uses Porto's hydrated zustand state instead of RPC calls to avoid "provider disconnected" errors
- */
-export async function validateSessionKeyWithWallet(): Promise<boolean> {
-  const sessionKey = getActiveSessionKey();
-  if (!sessionKey) return false;
-
-  try {
-    // Import and wait for Porto's zustand store to hydrate from IndexedDB
-    const { getRiseWallet, waitForHydration } = await import('@/lib/riseWallet');
-    await waitForHydration();
-
-    const rw = getRiseWallet();
-
-    // Access Porto's hydrated zustand state DIRECTLY instead of using RPC
-    // This avoids "provider disconnected" errors after page refresh
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const state = (rw._internal.store as any).getState();
-    const accounts = state?.accounts as
-      | Array<{ address: string; keys?: Array<{ publicKey?: string; expiry?: number }> }>
-      | undefined;
-
-    if (!accounts || accounts.length === 0) {
-      logger.warn('🔑 No accounts in Porto state, cannot validate session key');
-      return false;
-    }
-
-    // Get keys from first account (session keys are stored with account)
-    const accountKeys = accounts[0].keys;
-
-    if (!accountKeys || !Array.isArray(accountKeys)) {
-      logger.warn('🔑 No keys found in Porto account state');
-      // Clear stale local session key since Rise Wallet doesn't have keys
-      clearAllSessionKeys();
-      return false;
-    }
-
-    // Debug: Log ALL keys in Porto state (not just session role)
-    logger.log(`🔑 [DEBUG] Porto account has ${accountKeys.length} total keys:`);
-    accountKeys.forEach(
-      (k: { publicKey?: string; expiry?: number; role?: string; type?: string }, i: number) => {
-        logger.log(
-          `   [${i}] type=${k.type} role=${k.role} pk=${k.publicKey?.slice(0, 30)}... expires=${k.expiry}`
-        );
-      }
-    );
-    logger.log(`🔑 [DEBUG] Our localStorage publicKey: ${sessionKey.publicKey?.slice(0, 30)}...`);
-    logger.log(`🔑 [DEBUG] Full localStorage publicKey length: ${sessionKey.publicKey?.length}`);
-
-    // Check if our session key's publicKey exists in the account's keys
-    const now = Math.floor(Date.now() / 1000);
-    const matchingKey = accountKeys.find(
-      (k: { publicKey?: string; expiry?: number }) =>
-        k.publicKey === sessionKey.publicKey && (k.expiry ?? 0) > now
-    );
-
-    if (matchingKey) {
-      // Also verify the key has permissions for our current contracts
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const keyPermissions = (matchingKey as any).permissions;
-      const permittedCalls = keyPermissions?.calls as Array<{ to?: string }> | undefined;
-
-      if (permittedCalls && Array.isArray(permittedCalls)) {
-        // Check if VyreCasino address is in the permitted calls
-        const { VYRECASINO_ADDRESS } = await import('@/lib/contract');
-        const casinoLower = VYRECASINO_ADDRESS.toLowerCase();
-        const hasVyreCasino = permittedCalls.some((call) => call.to?.toLowerCase() === casinoLower);
-
-        if (hasVyreCasino) {
-          logger.log('🔑 Session key validated with Porto state ✓ (has VyreCasino permissions)');
-          return true;
-        } else {
-          logger.warn('🔑 Session key exists but has WRONG PERMISSIONS (not for VyreCasino v4)');
-          // Log what contracts this key HAS permissions for
-          const addresses = permittedCalls.map((c) => c.to).filter(Boolean);
-          logger.log('🔑 [DEBUG] Key has permissions for:', addresses);
-          return false;
-        }
-      } else {
-        // No permissions means it's an old key format or admin key
-        logger.warn('🔑 Session key has no permissions array, may be incompatible');
-        return false;
-      }
-    } else {
-      // More detailed error logging
-      const anyMatching = accountKeys.find(
-        (k: { publicKey?: string }) => k.publicKey === sessionKey.publicKey
-      );
-      if (anyMatching) {
-        logger.warn('🔑 Session key found but EXPIRED in Porto');
-      } else {
-        logger.warn('🔑 Session key publicKey NOT found in any Porto account keys');
-      }
-      // Don't clear here anymore - let the caller decide
-      return false;
-    }
-  } catch (error) {
-    logger.warn('🔑 Failed to validate session key with Porto state:', error);
+export function isSessionKeyValid(sessionKey: SessionKeyData | null): boolean {
+  if (!sessionKey || !sessionKey.publicKey || !sessionKey.privateKey) {
     return false;
   }
+
+  const now = Math.floor(Date.now() / 1000);
+  if (sessionKey.expiry <= now) {
+    return false;
+  }
+
+  return true;
 }
 
 /**
- * Create a new session key and request permissions from Rise Wallet
- * @param walletAddress - The wallet address to associate with the session key
- * @param tokenContext - The token context (ETH, CHIP, USDC) for spend limits
+ * Check if we have a valid session key ready to use for this address
  */
+export function hasUsableSessionKey(walletAddress: string | null): boolean {
+  return getActiveSessionKey(walletAddress) !== null;
+}
+
+// =============================================================================
+// CORE ACTIONS - METEORO PATTERN
+// =============================================================================
+
+/**
+ * Ensure we have a valid session key - reuse existing or create new
+ * This is the PREFERRED function to call
+ */
+export async function ensureSessionKey(
+  walletAddress: string,
+  tokenContext: TokenContext = 'ALL'
+): Promise<SessionKeyData> {
+  if (!walletAddress) throw new Error('Wallet address required');
+
+  // 1. Trust LocalStorage first (Meteoro pattern)
+  // We DO NOT validate against Porto DB here. Trust the key exists.
+  // If it fails at the time, we'll handle it then.
+  const existingKey = getActiveSessionKey(walletAddress);
+
+  if (existingKey && isSessionKeyValid(existingKey)) {
+    // STRICT CONTEXT CHECK (Modified for Universal Keys)
+    const currentContext = existingKey.context || 'ETH';
+
+    // Universal Key Check: 'ALL' context is valid for EVERYTHING
+    if (currentContext === 'ALL') {
+      logger.log(`🔑 [Session] Reusing Universal ('ALL') session key for ${tokenContext}`);
+      return existingKey;
+    }
+
+    // Exact Match Check
+    if (currentContext === tokenContext) {
+      logger.log(`🔑 [Session] Reusing valid ${currentContext} session key`);
+      return existingKey;
+    }
+
+    logger.log(
+      `🔑 [Session] Context mismatch (Found: ${currentContext}, Needed: ${tokenContext}). Creating new key...`
+    );
+  }
+
+  // 2. Create new if missing or mismatch
+  logger.log(`🔑 [Session] No valid key found for ${tokenContext}, creating new one...`);
+  return createSessionKey(walletAddress, tokenContext);
+}
+
 export async function createSessionKey(
   walletAddress: string,
-  tokenContext?: TokenContext
+  tokenContext: TokenContext = 'ALL'
 ): Promise<SessionKeyData> {
-  logger.log('🔑 Creating new session key for context:', tokenContext || 'default');
+  if (!walletAddress) throw new Error('Wallet address required');
 
   const provider = getProvider();
+  if (!provider) throw new Error('Wallet provider not available');
 
-  // Generate P256 key pair
+  logger.log(`🔑 [Session] Creating NEW session key for ${tokenContext}...`);
+
+  // 1. Generate P256 Key Pair
   const privateKey = P256.randomPrivateKey();
   const publicKey = PublicKey.toHex(P256.getPublicKey({ privateKey }), {
     includePrefix: false,
   });
 
-  logger.log('🔑 Generated P256 key pair');
-  logger.log('   Public key:', publicKey.slice(0, 20) + '...');
+  const expiry = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
 
-  // Calculate expiry
-  const expiry = Math.floor(Date.now() / 1000) + SESSION_EXPIRY_SECONDS;
+  // 2. Request Permissions
+  const spendLimits = getSpendLimits(tokenContext);
+  logger.log('🔑 [Session] Requesting permissions with limits:', spendLimits);
 
-  // Get permissions based on token context
-  const permissions = getGamePermissions(tokenContext);
-  logger.log('🔑 Using permissions for', tokenContext || 'default', ':', permissions);
-
-  // Request permissions from Rise Wallet
   const permissionParams = [
     {
       key: {
@@ -245,145 +185,101 @@ export async function createSessionKey(
         publicKey: publicKey,
       },
       expiry: expiry,
-      permissions: permissions,
+      permissions: {
+        calls: GAME_CALLS,
+        spend: spendLimits,
+      },
+      // feeToken specifies which token to use for gas fees and limit
+      // METEORO FORMAT: { token: address, limit: 'decimal_wei_string' }
       feeToken: {
-        token: '0x0000000000000000000000000000000000000000',
-        limit: '10000000000000000', // 0.01 ETH for gas
+        token: '0x0000000000000000000000000000000000000000', // Native ETH for gas
+        limit: '10000000000000000', // 0.01 ETH limit in wei (decimal string, NOT hex)
       },
     },
   ];
 
-  logger.log('🔑 Requesting permissions:', permissionParams);
+  console.log('--- GRANT PERMISSIONS PARAMS ---');
+  console.dir(permissionParams, { depth: null });
+  console.log('--------------------------------');
 
-  // Check if provider is connected using eth_accounts (silent, no popup)
-  // If this returns accounts, we're connected and can proceed
-  try {
-    const accounts = await (
-      provider as { request: (args: { method: string }) => Promise<string[]> }
-    ).request({
-      method: 'eth_accounts', // Silent - no popup
-    });
-    if (!accounts || accounts.length === 0) {
-      throw new Error('No accounts connected');
-    }
-    logger.log('🔑 Provider connected, accounts:', accounts[0]);
-  } catch (e) {
-    logger.warn('🔑 Provider not connected, cannot create session key:', e);
-    throw new Error('Wallet not connected');
-  }
-
-  // Call wallet_grantPermissions
-  await (
-    provider as { request: (args: { method: string; params: unknown }) => Promise<unknown> }
-  ).request({
+  await (provider as any).request({
     method: 'wallet_grantPermissions',
     params: permissionParams,
   });
 
-  logger.log('🔑 Permissions granted');
-
-  // Store session key data (like Meteoro - includes permissions)
+  // 3. Save to Storage
   const sessionKeyData: SessionKeyData = {
     privateKey,
     publicKey,
     expiry,
     createdAt: Date.now(),
     address: walletAddress,
-    tokenContext,
-    permissions,
+    context: tokenContext,
   };
 
-  // Save to localStorage
-  localStorage.setItem(getStorageKey(publicKey), JSON.stringify(sessionKeyData));
-
-  // Update cache
+  const storageKey = getStorageKey(walletAddress);
+  localStorage.setItem(storageKey, JSON.stringify(sessionKeyData));
   activeKeyPair = sessionKeyData;
 
-  logger.log('🔑 Session key created successfully');
-  logger.log('   Expires:', new Date(expiry * 1000).toLocaleString());
+  logger.log(
+    '🔑 [Session] Key created and saved! Expires:',
+    new Date(expiry * 1000).toLocaleString()
+  );
 
   return sessionKeyData;
 }
 
-/**
- * Revoke a session key
- */
-export async function revokeSessionKey(publicKey: string): Promise<void> {
-  logger.log('🔑 Revoking session key:', publicKey.slice(0, 20) + '...');
+export function clearAllSessionKeys() {
+  activeKeyPair = null;
 
-  const provider = getProvider();
-
-  try {
-    await (
-      provider as { request: (args: { method: string; params: unknown }) => Promise<unknown> }
-    ).request({
-      method: 'wallet_revokePermissions',
-      params: [{ id: publicKey }],
-    });
-    logger.log('🔑 Permissions revoked on wallet');
-  } catch {
-    logger.warn('⚠️ Failed to revoke on wallet (may already be revoked)');
-  }
-
-  // Clean up local storage
-  localStorage.removeItem(getStorageKey(publicKey));
-
-  // Clear cache if this was the active key
-  if (activeKeyPair?.publicKey === publicKey) {
-    activeKeyPair = null;
-  }
-
-  logger.log('🔑 Session key removed');
-}
-
-/**
- * Clear all stored session keys
- */
-export function clearAllSessionKeys(): void {
-  logger.log('🔑 Clearing all session keys...');
-
+  // Clear persistent storage matching our prefix
   const keysToRemove: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key?.startsWith(STORAGE_PREFIX)) {
+    if (key && key.startsWith(SESSION_KEY_STORAGE_PREFIX)) {
       keysToRemove.push(key);
     }
   }
 
-  keysToRemove.forEach((key) => localStorage.removeItem(key));
-  activeKeyPair = null;
-
-  logger.log(`🔑 Cleared ${keysToRemove.length} session keys`);
+  keysToRemove.forEach((k) => localStorage.removeItem(k));
+  logger.log('🔑 [Session] All session keys cleared from storage');
 }
 
-/**
- * Sign a digest using session key
- */
+export async function revokeSessionKey(publicKey: string) {
+  try {
+    const provider = getProvider();
+    if (provider) {
+      await (provider as any).request({
+        method: 'wallet_revokePermissions',
+        params: [{ publicKey }],
+      });
+    }
+  } catch (error) {
+    logger.warn('Error revoking permission (non-critical):', error);
+  }
+  // Always clear local
+  clearAllSessionKeys();
+}
+
+// =============================================================================
+// CRYPTO HELPERS
+// =============================================================================
+
 export function signWithSessionKey(digest: `0x${string}`, sessionKey: SessionKeyData): string {
   if (!sessionKey?.privateKey) {
     throw new Error('No valid session key for signing');
   }
 
-  const signature = Signature.toHex(
+  return Signature.toHex(
     P256.sign({
       payload: digest,
       privateKey: sessionKey.privateKey as `0x${string}`,
     })
   );
-
-  return signature;
 }
 
-/**
- * Get time remaining until session key expires
- */
-export function getSessionKeyTimeRemaining(sessionKey: SessionKeyData | null): {
-  seconds: number;
-  minutes: number;
-  hours: number;
-  expired: boolean;
-} {
-  if (!sessionKey?.expiry) {
+export function getSessionKeyTimeRemaining(sessionKey: SessionKeyData | null) {
+  if (!sessionKey || !sessionKey.expiry) {
     return { seconds: 0, minutes: 0, hours: 0, expired: true };
   }
 

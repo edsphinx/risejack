@@ -183,8 +183,30 @@ export function GameBoard() {
   // Can surrender only on first action
   const canSurrender = canPlay && game.gameData?.playerCards.length === 2;
 
-  // Debug log removed - runs on every render, use React DevTools instead
-  // logger.log('[GameBoard] 🎮 Render decision:', { gameState, canBet, canPlay });
+  // DEBUG: Log render decisions
+  logger.log('[GameBoard] 🎮 RENDER STATE:', {
+    'gameData.state': game.gameData?.state,
+    stateLabel: game.gameData
+      ? [
+          'Idle',
+          'WaitingVRF',
+          'PlayerTurn',
+          'DealerTurn',
+          'PlayerWin',
+          'DealerWin',
+          'Push',
+          'Blackjack',
+        ][game.gameData.state]
+      : 'null',
+    isActiveTab: isActiveTab,
+    canBet: canBet,
+    canPlay: canPlay,
+    isIdle: isIdle,
+    isWaitingVRF: isWaitingVRF,
+    gameResult: gameResult,
+    cooldownRemaining: cooldownRemaining,
+    lastGameResult: !!game.lastGameResult,
+  });
 
   // Combined error
   const error = wallet.error || game.error;

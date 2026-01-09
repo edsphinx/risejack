@@ -1,12 +1,12 @@
 /**
  * useSessionKey - Session key hook without wagmi
- * Uses sessionKeyManager service (Meteoro pattern)
+ * REFACTORED: Simplified to align with Meteoro pattern
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'preact/hooks';
 import {
   getActiveSessionKey,
-  createSessionKey,
+  ensureSessionKey,
   revokeSessionKey,
   getSessionKeyTimeRemaining,
   isSessionKeyValid,
@@ -30,8 +30,6 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
   const [isCreating, setIsCreating] = useState(false);
 
   // Load existing session key on mount or address change
-  // METEORO PATTERN: Trust localStorage + expiry check - don't validate with Porto
-  // Authorization errors are handled at transaction time, not at restore time
   useEffect(() => {
     if (!address) {
       setSessionData(null);
@@ -39,22 +37,17 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
     }
 
     const restoreFromLocalStorage = () => {
-      const existingKey = getActiveSessionKey();
-      logger.log('🔑 [DEBUG] restoreFromLocalStorage:', {
-        hasKey: !!existingKey,
-        publicKey: existingKey?.publicKey?.slice(0, 20),
-        expiry: existingKey?.expiry,
-        isValid: existingKey ? isSessionKeyValid(existingKey) : false,
+      // getActiveSessionKey now handles validation internally
+      const existingKey = getActiveSessionKey(address);
+
+      logger.log('🔑 [useSessionKey] Restore check:', {
+        address,
+        found: !!existingKey,
       });
 
-      if (existingKey && isSessionKeyValid(existingKey)) {
-        // METEORO PATTERN: Just use the key - if it fails, handle at transaction time
-        logger.log('🔑 Session key restored from localStorage ✓');
+      if (existingKey) {
         setSessionData(existingKey);
-      } else if (existingKey) {
-        // Key exists but is expired
-        logger.log('🔑 Session key expired, clearing...');
-        clearAllSessionKeys();
+      } else {
         setSessionData(null);
       }
     };
@@ -62,26 +55,24 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
     restoreFromLocalStorage();
   }, [address]);
 
-  // Update timer periodically - less frequently for long-duration keys
+  // Update timer periodically
   useEffect(() => {
     if (!sessionData) return;
 
     // Update every minute if more than 1 hour remaining, every second if less
-    const remaining = getSessionKeyTimeRemaining(sessionData);
-    const intervalMs = remaining.hours > 1 ? 60000 : 1000;
-
+    // Or just every 5 seconds is fine for UI
     const interval = setInterval(() => {
       if (!isSessionKeyValid(sessionData)) {
-        logger.log('🔑 Session key expired');
+        logger.log('🔑 [useSessionKey] Key expired during polling');
         setSessionData(null);
       } else {
         // Force re-render to update time remaining
         setSessionData({ ...sessionData });
       }
-    }, intervalMs);
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, [sessionData?.publicKey, sessionData?.expiry]);
+  }, [sessionData?.publicKey]);
 
   const hasSessionKey = Boolean(sessionData && isSessionKeyValid(sessionData));
 
@@ -110,11 +101,13 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
 
     try {
       setIsCreating(true);
-      const newKey = await createSessionKey(address);
+      // Ensure uses trusting logic now
+      const newKey = await ensureSessionKey(address);
       setSessionData(newKey);
       return true;
     } catch (err) {
       logger.error('🔑 Failed to create session key:', err);
+      // If ensure fails, it might be permission rejected
       return false;
     } finally {
       setIsCreating(false);
@@ -129,6 +122,9 @@ export function useSessionKey(address: `0x${string}` | null): UseSessionKeyRetur
       setSessionData(null);
     } catch (err) {
       logger.error('🔑 Failed to revoke session key:', err);
+      // Force clear anyway
+      clearAllSessionKeys();
+      setSessionData(null);
     }
   }, [sessionData]);
 

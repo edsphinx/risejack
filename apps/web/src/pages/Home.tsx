@@ -7,7 +7,6 @@ import { Logo } from '@/components/brand/Logo';
 import { useWallet } from '@/context/WalletContext';
 import { useGameNavigation } from '@/hooks/useGameNavigation';
 import { GameVersionSelector } from '@/components/home/GameVersionSelector';
-import { TokenApprovalModal } from '@/components/home/TokenApprovalModal';
 import { LiveStats } from '@/components/home/LiveStats';
 import { LiveWinsTicker } from '@/components/home/LiveWinsTicker';
 import { ComingSoonCard } from '@/components/home/ComingSoonCard';
@@ -32,11 +31,11 @@ const COMING_SOON_GAMES = [
 export function Home() {
   const wallet = useWallet();
 
-  // Game navigation with token approval
-  const { navigate, needsApproval, pendingToken, clearPending } = useGameNavigation();
+  // Simple game navigation - just connect and go
+  const { navigate } = useGameNavigation();
 
-  // Hero CTA → ETH version (default, no friction)
-  const navigateToGame = () => navigate('eth');
+  // Hero CTA → Navigate to VyreJack
+  const navigateToGame = () => navigate();
 
   return (
     <div className="home-page">
@@ -56,7 +55,7 @@ export function Home() {
             </h1>
 
             <p className="hero-subtitle">
-              Play VyreJack with ETH or USDC • Web2-like UX, trustless under the hood
+              Play VyreJack with USDC • Web2-like UX, trustless under the hood
               <br />
               <span className="hero-subtitle-tech">
                 3-10ms Shreds • Enshrined VRF • Provably fair smart contracts
@@ -102,15 +101,6 @@ export function Home() {
 
       {/* Footer */}
       <Footer />
-
-      {/* Token Approval Modal - for Hero CTA */}
-      {needsApproval && pendingToken && pendingToken !== 'eth' && (
-        <TokenApprovalModal
-          tokenType={pendingToken}
-          onClose={clearPending}
-          onApproved={clearPending}
-        />
-      )}
     </div>
   );
 }

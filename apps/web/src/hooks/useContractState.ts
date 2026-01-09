@@ -52,23 +52,36 @@ export function useContractState(address: `0x${string}` | null): UseContractStat
         dealerValue: dv,
       } = await ContractService.getFullGameData(addr);
 
+      const stateLabels = [
+        'Idle',
+        'WaitingVRF',
+        'PlayerTurn',
+        'DealerTurn',
+        'PlayerWin',
+        'DealerWin',
+        'Push',
+        'Blackjack',
+      ];
+
       logger.log('[ContractState] 🔍 Game state:', {
         state: gd?.state,
-        stateLabel: gd
-          ? [
-              'Idle',
-              'WaitingVRF',
-              'PlayerTurn',
-              'DealerTurn',
-              'PlayerWin',
-              'DealerWin',
-              'Push',
-              'Blackjack',
-            ][gd.state]
-          : 'null',
+        stateLabel: gd ? stateLabels[gd.state] : 'null',
         playerCards: gd?.playerCards,
+        dealerCards: gd?.dealerCards,
         bet: gd?.bet?.toString(),
+        playerValue: pv,
+        dealerValue: dv,
       });
+
+      // DEBUG: Log if state changed
+      if (gd) {
+        logger.log(`[ContractState] ➡️ STATE = ${stateLabels[gd.state]} (${gd.state})`);
+        logger.log(
+          `[ContractState] 🂿 Player cards: ${gd.playerCards?.length || 0}, Dealer cards: ${gd.dealerCards?.length || 0}`
+        );
+        logger.log(`[ContractState] 💰 Bet: ${gd.bet?.toString() || '0'}`);
+      }
+
       setGameData(gd);
       setPlayerValue(pv);
       setDealerValue(dv);

@@ -34,11 +34,8 @@ const TOKEN_INFO: Record<Exclude<TokenType, 'eth'>, TokenMeta> = {
   usdc: { name: 'USDC', address: USDC_TOKEN_ADDRESS, color: '#38bdf8' },
 };
 
-const ROUTES: Record<TokenType, string> = {
-  chip: '/games/vyrejack-chip',
-  usdc: '/games/vyrejack-usdc',
-  eth: '/games/vyrejack-eth',
-};
+// All routes now go to the unified /vyrejack (USDC)
+const GAME_ROUTE = '/vyrejack';
 
 export function TokenApprovalModal({ tokenType, onClose, onApproved }: TokenApprovalModalProps) {
   const [, setLocation] = useLocation();
@@ -49,6 +46,13 @@ export function TokenApprovalModal({ tokenType, onClose, onApproved }: TokenAppr
   if (tokenType === 'eth') return null;
 
   const tokenInfo = TOKEN_INFO[tokenType];
+
+  // DEBUG: Log wallet state
+  logger.log('[TokenApprovalModal] wallet state:', {
+    address: wallet.address,
+    isConnected: wallet.isConnected,
+    isConnecting: wallet.isConnecting,
+  });
 
   const handleApprove = async () => {
     if (!wallet.address) return;
@@ -96,7 +100,7 @@ export function TokenApprovalModal({ tokenType, onClose, onApproved }: TokenAppr
 
       // Navigate to game
       onApproved();
-      setLocation(ROUTES[tokenType]);
+      setLocation(GAME_ROUTE);
     } catch (err) {
       logger.error('[TokenApprovalModal] Approval failed:', err);
       setError(err instanceof Error ? err.message : 'Approval failed');
@@ -138,11 +142,7 @@ export function TokenApprovalModal({ tokenType, onClose, onApproved }: TokenAppr
           <button className="approval-btn-cancel" onClick={onClose} disabled={isApproving}>
             Cancel
           </button>
-          <button
-            className="approval-btn-approve"
-            onClick={handleApprove}
-            disabled={isApproving || !wallet.address}
-          >
+          <button className="approval-btn-approve" onClick={handleApprove} disabled={isApproving}>
             {isApproving ? 'Approving...' : `Approve ${tokenInfo.name}`}
           </button>
         </div>
